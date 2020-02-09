@@ -1,0 +1,39 @@
+# comments start with octothorpe and run to the end of the line.
+# blank lines are ignored.
+
+# a quantity of cards is represented by a single line:
+4 SET Card Oracle Name
+
+# the first token is of the form `[0-9]+x?`
+# the second token is a 3+ character set code, all uppercase: `[A-Z][A-Z0-9]{2+}`
+# the rest of the line (excluding leading / trailing whitespace) is
+#   taken as the oracle card name, irrespective of case.
+
+# variants are specified by following the oracle card name with a pipe character,
+# and then one or more variation specifiers.
+#
+# for example, this is a foiled Opt from Dominaria:
+#
+1 DOM Opt | foil
+
+# this is a promo (both promo and foil):
+1 ELD Once Upon a Time | promo foil
+
+# variation specifiers in parentheses are reserved for collector use,
+# allowing collectors to make up new variations, ad hoc.
+#
+1 3ED Clone | (signed: Signed by the artist)
+
+# grading and condition can be set as a variant, using CK codes
+# (NM, EX, VG, G):
+4 DOM Cancel | NM
+3 DOM Cancel | VG
+1 DOM Cancel | G
+
+# because of the whitespace insensitivity on the oracle card name,
+# you can (and should) line up the pipes for legibility:
+
+1x DOM Opt               | NM foil
+1x DOM Cancel            | NM
+1x DOM Cancel            | NM (signed)
+1x ELD Once Upon a Time  | promo foil

@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+
+LINES=${LINES:-100000}
+N=${N:-10}
+
+echo "[$(date)] $N iterations; $LINES target lines";
+for n in $(seq 1 $N); do
+  echo -n "run$n:";
+  ./bench/parse/gen-input $LINES | cargo run --bin parse-bench 2>/dev/null
+done

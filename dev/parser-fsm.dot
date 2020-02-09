@@ -1,0 +1,134 @@
+/*
+
+  dev/parser-fsm.dot - GraphViz DAG representing the FSM / DFA for parsing
+                       the Vault of Cardboard (native) card data import
+                       format (CDIF).
+
+ */
+digraph lang {
+   rankdir = LR
+   edge [color="#888888"]
+   node [shape=circle]
+   { node [style=filled,fillcolor="#eeeeee",fontcolor="#777777",color="#dddddd"] 2 3 5 7 11 13 14 }
+   { node [style=filled,fillcolor="#000099",fontcolor="#ffffff",color="#000099"] 0 }
+   { node [style=filled,fillcolor="#ff91a2"]             1 }
+   { node [style=filled,fillcolor="#ffb7b2"]             4 }
+   { node [style=filled,fillcolor="#ffdac1",label="6†"]  6 }
+   { node [style=filled,fillcolor="#e2f0cb"]             8 }
+   { node [style=filled,fillcolor="#b5ead7"]             9 10}
+   { node [style=filled,fillcolor="#c7ceea",label="12†"] 12 }
+   { node [style=filled,fillcolor="#b7d0e3"]             14 }
+   { node [shape=none] START 99 [label="END"] }
+
+
+   /*
+        0  starting state   The parser FSM begins in this state
+
+        1  in(quantity)     The parser has seen a digit, and is expecting the rest of the
+                            quantity numeric value.
+
+        2  after("x")       The parser has seen the optional 'x' suffix, so the quantity is
+                            now known and it is expecting at least one whitespace character.
+
+        3  after(quantity)  The parser has encountered at least one delimiting whitespace
+                            while parsing the numeric quantity - that quantity is now known,
+                            and the parser expects to (eventually) move to the set code.
+
+        4  in(set)          The parser has seen at least one printable character and is
+                            in the process of identifying the set that the card(s) belong to.
+
+        5  after(set)       The parser has seen at least one whitespace character, and now
+                            knows the entirety of the set code.  It is now expecting to
+                            find either whitespace, or the start of an Oracle card name.
+
+        6  in(oracle)       The parser has seen a non-whitespace character, and has started
+                            tracking the full text of the Oracle card name.  This will
+                            continue until either end-of-line, or the pipe-variant delimiter
+                            is encountered.
+
+                            †NOTE: The recognized value for the oracle may contain trailing
+                            whitespace, since it consumes ALL characters until it sees ')';
+                            This is acceptable -- trailing whitespace should be trivial to
+                            remove from the final recognized token value.
+
+        7 before(vars)      The parser has seen the singleton pipe-variant delimiter ("|")
+                            and is expecting either whitespace or the beginning of a
+                            print-card variant attribute.
+
+        8 in(gvariant)      The parser has seen a printable character and is interpreting
+                            the remainder of the printable string as a global variant token,
+                            with global, prescribed semantics (i.e. "NM" or "foil").
+
+        9 in(lvariant)      The parser has seen the '(' opening delimiter for local variants,
+                            and is expecting to immediately see the first printable character
+                            of the local variant short name, without intervening whitespace.
+
+       10 in(lkey)          The parser has seen at least one printable character for the
+                            local variant key, and is expecting to see either more of that,
+                            or the key-value delimiter (":") -- no whitespace is allowed.
+
+       11 after(lkey)       The parser has seen the key-value delimiter, and now knows the
+                            local variant key.  It is expecting to see optional whitespace,
+                            or the beginning of the local variant value (as a printable).
+
+       12 in(lvalue)        The parser has seen the first printable character for the local
+                            variant value (or _annotation_, if you prefer).  It will continue
+                            to consume all characters until the ')' closing delimiter is seen.
+
+                            †NOTE: The recognized value for the lvalue may contain trailing
+                            whitespace, since it consumes ALL characters until it sees ')';
+                            This is acceptable -- trailing whitespace should be trivial to
+                            remove from the final recognized token value.
+
+       13 after(lvar)       The parser has seen the ')' closing delimiter for local variants;
+                            the entirety of the local variant (key and value) is now known.
+                            Now the parser is expecting at least one whitespace character
+                            before it starts to recognize the next variant.
+
+
+       14 in(comment)       The parser has seen the comment delimiter, '#', and is now in a
+                            pattern of input exhaustion until it reaches end-of-line and
+                            terminates.
+
+    */
+
+   START -> 0
+    0 ->  0 [label="WS"]
+    0 ->  1 [label="DIGIT"]
+    0 -> 14 [label="'#'"]
+    0 -> 99 [label="EOL"]
+    1 ->  1 [label="DIGIT"]
+    1 ->  2 [label="'x'"]
+    1 ->  3 [label="WS"]
+    2 ->  3 [label="WS"]
+    3 ->  3 [label="WS"]
+    3 ->  4 [label="LETTER"]
+    4 ->  4 [label="LETTER"]
+    4 ->  5 [label="WS"]
+    5 ->  5 [label="WS"]
+    5 ->  6 [label="LETTER"]
+    6 ->  6 [label="*"]
+    6 ->  7 [label="'|'"]
+    6 -> 14 [label="'#'"]
+    6 -> 99 [label="EOL"]
+    7 ->  7 [label="WS"]
+    7 ->  8 [label="LETTER"]
+    7 ->  9 [label="'('"]
+    7 -> 14 [label="'#'"]
+    7 -> 99 [label="EOL"]
+    8 ->  7 [label="WS"]
+    8 ->  8 [label="LETTER"]
+    8 -> 99 [label="EOL"]
+    9 -> 10 [label="LETTER"]
+   10 -> 10 [label="LETTER"]
+   10 -> 11 [label="':'"]
+   11 -> 11 [label="WS"]
+   11 -> 12 [label="LETTER"]
+   12 -> 12 [label="*"]
+   12 -> 13 [label="')'"]
+   13 ->  7 [label="WS"]
+   13 -> 14 [label="'#'"]
+   13 -> 99 [label="EOL"]
+   14 -> 14 [label="*"]
+   14 -> 99 [label="EOL"]
+}

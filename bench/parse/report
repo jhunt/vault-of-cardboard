@@ -1,0 +1,43 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use List::Util qw/sum/;
+use POSIX qw/ceil/;
+
+chomp(my $run = <>);
+print "VAULT OF CARDBOARD\n";
+print "PARSER BENCHMARK\n\n";
+print "run $run...\n\n";
+
+printf "%8s  %12s  %12s  %12s  %12s  %12s\n", ('=' x 6), ('=' x 10), ('=' x 10), ('=' x 10), ('=' x 10), ('=' x 10);
+printf "%8s  %12s  %12s  %12s  %12s  %12s\n", "RUN", "LINES", "MS", "L/ms", "ms/L", "L<200ms";
+printf "%8s  %12s  %12s  %12s  %12s  %12s\n", ('=' x 6), ('=' x 10), ('=' x 10), ('=' x 10), ('=' x 10), ('=' x 10);
+my (@LPM, @MPL);
+while (<>) {
+	chomp;
+	my ($run, $lines, $ms) = split /:/;
+	my $lines_per_ms = $lines * 1.0 / $ms;
+	my $ms_per_line  = $ms * 1.0 / $lines;
+
+	push @LPM, $lines_per_ms;
+	push @MPL, $ms_per_line;
+
+	printf "%8s  %12d  %12d  %12.2lf  %12.2le  %12d\n",
+		$run, $lines, $ms, $lines_per_ms, $ms_per_line, int($lines_per_ms * 200);
+}
+
+sub median {
+	sum((sort { $a <=> $b } @_)[ int($#_/2), ceil($#_/2) ])/2;
+}
+
+sub mean {
+	sum(@_)/@_;
+}
+
+
+printf "%36s  %12s  %12s  %12s\n", ('-' x 34), ('-' x 10), ('-' x 10), ('-' x 10);
+printf "%36s  %12.2lf  %12.2le  %12.2lf k\n", "MEAN", mean(@LPM), mean(@MPL), int(mean(@LPM) * 200) / 1000;
+printf "%36s  %12.2lf  %12.2le  %12.2lf k\n", "MEDIAN", median(@LPM), median(@MPL), int(median(@LPM) * 200) / 1000;
+print "\nrun $run...\n\n";
+print "VAULT OF CARDBOARD\n";
+print "PARSER BENCHMARK\n";
