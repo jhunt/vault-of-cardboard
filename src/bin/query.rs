@@ -1,40 +1,43 @@
-extern crate iron;
-
+use std::fmt::Display;
 use vault_of_cardboard::scryfall;
 
-use iron::prelude::*;
-use iron::status;
+fn or<T: Display>(pri: &Option<T>, sec: &str) -> String {
+    match pri {
+        Some(pri) => format!("{}", pri),
+        None => sec.to_string(),
+    }
+}
+
+fn yn(maybe: &Option<bool>) -> String {
+    match maybe {
+        Some(true) => "yes",
+        Some(false) => "no",
+        None => "unknown",
+    }.to_string()
+}
 
 fn main() {
-    let set = scryfall::data::Set::from_file("data/cache/mir.set").unwrap();
+    let set = scryfall::Set::from_stdin().unwrap();
 
     println!(
         "----[ {} {}: {} ]-------------------",
         set.object, set.code, set.name
     );
-    println!("id:    {}", set.id);
-    println!("type:  {}", set.set_type);
+    println!("id:    {}", or(&set.id, "UNKNOWN"));
+    println!("type:  {}", or(&set.set_type, "UNKNOWN"));
     println!("date:  {}", set.released_at);
     println!("size:  {}", set.card_count);
-    println!("block: {} ({})", set.block, set.block_code);
-    println!("");
     println!(
-        "digital?:   {}",
-        match set.digital {
-            true => "yes",
-            false => "no",
-        }
-    );
-    println!(
-        "foil only?: {}",
-        match set.foil_only {
-            true => "yes",
-            false => "no",
-        }
+        "block: {} ({})",
+        or(&set.block, "???"),
+        or(&set.block_code, "???")
     );
     println!("");
-    println!("mtgo code:    {}", set.mtgo_code);
-    println!("tcgplayer id: {}", set.tcgplayer_id);
+    println!("digital?:   {}", yn(&Some(set.digital)));
+    println!("foil only?: {}", yn(&Some(set.foil_only)));
+    println!("");
+    println!("mtgo code:    {}", or(&set.mtgo_code, "(none)"));
+    println!("tcgplayer id: {}", or(&set.tcgplayer_id, "(none)"));
     println!("");
     println!("icon (svg):      {}", set.icon_svg_uri);
     println!("scryfall uri:    {}", set.uri);
@@ -48,23 +51,25 @@ fn main() {
         );
         println!("  |");
         println!("  | {} ({})", card.name, card.type_line);
-        println!("  | costs {} (cmc {})", card.mana_cost, card.cmc);
-        println!("  | oracle: {}", card.oracle_text);
         println!(
-            "  | flavor: {}",
-            match card.flavor_text {
-                Some(t) => t,
-                None => String::from("(none)"),
-            }
+            "  | costs {} (cmc {})",
+            or(&card.mana_cost, "nothing"),
+            card.cmc
         );
+        println!("  | oracle: {}", or(&card.oracle_text, "(none)"));
+        println!("  | flavor: {}", or(&card.flavor_text, "(none)"));
         println!("  |");
         println!("  | colors: {:?}", card.colors);
         println!("  | color identity: {:?}", card.color_identity);
-        println!("  | card back {}", card.card_back_id);
+        println!("  | card back {}", or(&card.card_back_id, "UNKNOWN"));
         println!("  |");
         println!("  | {} rarity", card.rarity);
         println!("  | #{}  {}", card.collector_number, card.released_at);
-        println!("  | art by {} [{}]", card.artist, card.illustration_id);
+        println!(
+            "  | art by {} [{}]",
+            card.artist,
+            or(&card.illustration_id, "-")
+        );
         println!("  | {} frame with {} border", card.frame, card.border_color);
         println!("  | {} layout", card.layout);
         println!("  |");
@@ -72,76 +77,101 @@ fn main() {
         println!("  | legal in {}", card.legalities.as_str());
         println!(
             "  | from {} {} set ({})",
-            card.set_name, card.set_type, card.set
+            card.set_name,
+            or(&card.set_type, "{unknown}"),
+            card.set
         );
         println!("  |      {}", card.set_uri);
         println!("  |");
-        if card.foil {
-            println!("  | this is a FOIL card")
+        if let Some(foil) = card.foil {
+            if foil {
+                println!("  | this is a FOIL card")
+            }
         }
-        if card.nonfoil {
-            println!("  | this is a non-foil card")
+        if let Some(nonfoil) = card.nonfoil {
+            if nonfoil {
+                println!("  | this is a non-foil card")
+            }
         }
-        if card.full_art {
-            println!("  | this is a FULL ART card")
+        if let Some(full_art) = card.full_art {
+            if full_art {
+                println!("  | this is a FULL ART card")
+            }
         }
-        if card.oversized {
-            println!("  | this is an OVERSIZED card")
+        if let Some(oversized) = card.oversized {
+            if oversized {
+                println!("  | this is an OVERSIZED card")
+            }
         }
-        if card.textless {
-            println!("  | this is a TEXTLESS card")
+        if let Some(textless) = card.textless {
+            if textless {
+                println!("  | this is a TEXTLESS card")
+            }
         }
-        if card.reprint {
-            println!("  | this is a REPRINT (oracle {})", card.oracle_id)
+
+        if let Some(reprint) = card.reprint {
+            if reprint {
+                println!("  | this is a REPRINT (oracle {})", card.oracle_id)
+            }
         }
-        if card.variation {
-            println!("  | this is an ALTERNATE ART card")
+        if let Some(variation) = card.variation {
+            if variation {
+                println!("  | this is an ALTERNATE ART card")
+            }
         }
-        if card.reserved {
-            println!("  | this card is on the RESERVED LIST :(")
+        if let Some(reserved) = card.reserved {
+            if reserved {
+                println!("  | this card is on the RESERVED LIST :(")
+            }
         }
-        if card.story_spotlight {
-            println!("  | this is a STORY SPOTLIGHT card")
+        if let Some(story_spotlight) = card.story_spotlight {
+            if story_spotlight {
+                println!("  | this is a STORY SPOTLIGHT card")
+            }
         }
-        if card.promo {
-            println!("  | this is a PROMOTIONAL card")
+        if let Some(promo) = card.promo {
+            if promo {
+                println!("  | this is a PROMOTIONAL card")
+            }
         }
-        if card.booster {
-            println!("  | available in booster packs")
+        if let Some(booster) = card.booster {
+            if booster {
+                println!("  | available in booster packs")
+            }
         }
-        if card.digital {
-            println!("  | available in digital formats")
+        if let Some(digital) = card.digital {
+            if digital {
+                println!("  | available in digital formats")
+            }
         }
         println!("  |");
         println!("  |  rulings: {}", card.rulings_uri);
         println!("  |");
+        if let Some(prices) = card.prices {
         println!("  | current(ish) prices");
-        println!("  |   eur: €{}", card.prices.eur);
-        println!("  |   tix:  {}", card.prices.tix);
-        println!("  |   usd: ${}", card.prices.usd);
-        if let Some(usd) = card.prices.usd_foil {
+        println!("  |   eur: €{}", or(&prices.eur, "-"));
+        println!("  |   tix:  {}", or(&prices.tix, "-"));
+        println!("  |   usd: ${}", or(&prices.usd, "-"));
+        if let Some(usd) = prices.usd_foil {
             println!("  |   usd: {} (foil)", usd);
         }
         println!("  |");
+        }
         println!("  | purchase at");
         println!("  |   tcgplayer:   {}", card.purchase_uris.tcgplayer);
         println!("  |   cardhoarder: {}", card.purchase_uris.cardhoarder);
         println!("  |   cardmarket:   {}", card.purchase_uris.cardmarket);
         println!("  |");
-        println!("  | available imagery");
-        println!("  |   png:         {}", card.image_uris.png);
-        println!("  |   small:       {}", card.image_uris.small);
-        println!("  |   art_crop:    {}", card.image_uris.art_crop);
-        println!("  |   normal:      {}", card.image_uris.normal);
-        println!("  |   large:       {}", card.image_uris.large);
-        println!("  |   border_crop: {}", card.image_uris.border_crop);
-        println!(
-            "  |   high res?    {}",
-            match card.highres_image {
-                true => "available!",
-                false => "not available :(",
-            }
-        );
+        if let Some(uris) = card.image_uris {
+            println!("  | available imagery");
+            println!("  |   png:         {}", uris.png);
+            println!("  |   small:       {}", uris.small);
+            println!("  |   art_crop:    {}", uris.art_crop);
+            println!("  |   normal:      {}", uris.normal);
+            println!("  |   large:       {}", uris.large);
+            println!("  |   border_crop: {}", uris.border_crop);
+        }
+        println!("  |   high res?    {}", yn(&Some(card.highres_image)));
         println!("  |");
         println!("  | other web resources:");
         println!("  |    - uri: {}", card.uri);
@@ -153,15 +183,11 @@ fn main() {
         }
         println!("  |");
         println!("  | known elsewhere as");
-        println!("  |   tcgplayer id: {}", card.tcgplayer_id);
-        println!("  |   mtgo id:      {}", card.mtgo_id);
-        println!("  |   mtgo foil id: {}", card.mtgo_foil_id);
+        println!("  |   tcgplayer id: {}", or(&card.tcgplayer_id, "~"));
+        println!("  |   mtgo id:      {}", or(&card.mtgo_id, "~"));
+        println!("  |   mtgo foil id: {}", or(&card.mtgo_foil_id, "~"));
         println!("  |   multiverse:   {:?}", card.multiverse_ids);
         println!("  |");
         println!("");
     }
-
-    Iron::new(|_: &mut Request| Ok(Response::with((status::Ok, "Hello World!"))))
-        .http("localhost:3000")
-        .unwrap();
 }

@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+
+N=${N:-10}
+
+echo "[$(date)] $N iterations";
+for n in $(seq 1 $N); do
+  echo -n "run$n:";
+  cargo run --release --bin scryfall-bench 2>/dev/null
+done

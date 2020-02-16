@@ -1,31 +1,37 @@
-use std::fs::File;
+use std::fs::{self, File};
 use std::io;
 use std::io::prelude::*;
+use std::collections::HashMap;
 
 use serde::Deserialize;
-use std::collections::HashMap;
 
 #[derive(Deserialize)]
 pub struct Legality {
-    pub legacy: String,
-    pub oldschool: String,
-    pub vintage: String,
-    pub pauper: String,
-    pub duel: String,
-    pub standard: String,
-    pub future: String,
-    pub frontier: String,
-    pub modern: String,
-    pub commander: String,
-    pub penny: String,
+    pub brawl: Option<String>,
+    pub commander: Option<String>,
+    pub duel: Option<String>,
+    pub frontier: Option<String>,
+    pub future: Option<String>,
+    pub historic: Option<String>,
+    pub legacy: Option<String>,
+    pub modern: Option<String>,
+    pub oldschool: Option<String>,
+    pub pauper: Option<String>,
+    pub penny: Option<String>,
+    pub pioneer: Option<String>,
+    pub standard: Option<String>,
+    pub vintage: Option<String>,
 }
 
 impl Legality {
     pub fn as_str(&self) -> String {
-        fn is_legal(s: &String) -> bool {
-            match s.as_ref() {
-                "legal" => true,
-                _ => false,
+        fn is_legal(s: &Option<String>) -> bool {
+            match s {
+                Some(s) => match s.as_ref() {
+                    "legal" => true,
+                    _ => false,
+                },
+                None => false,
             }
         }
 
@@ -123,10 +129,10 @@ pub struct ImageURIs {
 
 #[derive(Deserialize)]
 pub struct Prices {
-    pub eur: String,
+    pub eur: Option<String>,
     pub usd_foil: Option<String>,
-    pub tix: String,
-    pub usd: String,
+    pub tix: Option<String>,
+    pub usd: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -137,33 +143,33 @@ pub struct Card {
 
     pub name: String,
     pub type_line: String,
-    pub oracle_text: String,
+    pub oracle_text: Option<String>,
     pub flavor_text: Option<String>,
 
     pub artist: String,
-    pub illustration_id: String,
+    pub illustration_id: Option<String>,
 
     pub released_at: String,
     pub collector_number: String,
 
     pub cmc: f32,
-    pub mana_cost: String,
+    pub mana_cost: Option<String>,
 
     pub legalities: Legality,
     pub purchase_uris: PurchaseURIs,
     pub set: String,
     pub set_name: String,
-    pub set_type: String,
+    pub set_type: Option<String>,
     pub set_uri: String,
 
     pub frame: String,
     pub border_color: String,
     pub layout: String,
 
-    pub tcgplayer_id: u32,
+    pub tcgplayer_id: Option<u32>,
     pub multiverse_ids: Vec<u32>,
-    pub mtgo_foil_id: u32,
-    pub mtgo_id: u32,
+    pub mtgo_foil_id: Option<u32>,
+    pub mtgo_id: Option<u32>,
 
     pub scryfall_uri: String,
     pub scryfall_set_uri: String,
@@ -172,54 +178,54 @@ pub struct Card {
     pub prints_search_uri: String,
     pub highres_image: bool,
 
-    pub foil: bool,
-    pub nonfoil: bool,
-    pub full_art: bool,
-    pub oversized: bool,
-    pub textless: bool,
-    pub reprint: bool,
-    pub reserved: bool,
-    pub variation: bool,
+    pub foil: Option<bool>,
+    pub nonfoil: Option<bool>,
+    pub full_art: Option<bool>,
+    pub oversized: Option<bool>,
+    pub textless: Option<bool>,
+    pub reprint: Option<bool>,
+    pub reserved: Option<bool>,
+    pub variation: Option<bool>,
 
-    pub booster: bool,
-    pub digital: bool,
+    pub booster: Option<bool>,
+    pub digital: Option<bool>,
 
-    pub story_spotlight: bool,
-    pub promo: bool,
+    pub story_spotlight: Option<bool>,
+    pub promo: Option<bool>,
 
-    pub prices: Prices,
-    pub card_back_id: String,
+    pub prices: Option<Prices>,
+    pub card_back_id: Option<String>,
     pub games: Vec<String>,
 
     pub uri: String,
     pub related_uris: HashMap<String, String>,
     pub rulings_uri: String,
-    pub image_uris: ImageURIs,
+    pub image_uris: Option<ImageURIs>,
 
     pub rarity: String,
     pub color_identity: Vec<String>,
-    pub colors: Vec<String>,
+    pub colors: Option<Vec<String>>,
 }
 
 #[derive(Deserialize)]
 pub struct Set {
     pub object: String,
-    pub id: String,
+    pub id: Option<String>,
 
     pub code: String,
     pub name: String,
-    pub set_type: String,
+    pub set_type: Option<String>,
     pub released_at: String,
     pub card_count: u32,
 
-    pub block: String,
-    pub block_code: String,
+    pub block: Option<String>,
+    pub block_code: Option<String>,
 
     pub digital: bool,
     pub foil_only: bool,
 
-    pub mtgo_code: String,
-    pub tcgplayer_id: u32,
+    pub mtgo_code: Option<String>,
+    pub tcgplayer_id: Option<u32>,
 
     pub icon_svg_uri: String,
     pub uri: String,
@@ -229,48 +235,35 @@ pub struct Set {
 }
 
 impl Set {
-    pub fn from_file(file: &str) -> Result<Set, io::Error> {
+    pub fn from<T: Read>(src: &mut T) -> Result<Set, io::Error> {
         let mut s = String::new();
-        File::open(file)?.read_to_string(&mut s)?;
+        src.read_to_string(&mut s)?;
         Ok(serde_json::from_str(&s)?)
-
-        /*
-        let mut file = match File::open("data/cache/mir.set") {
-            // The `description` method of `io::Error` returns a string that
-            // describes the error
-            Err(why) => panic!("couldn't open mir: {}", why.description()),
-            Ok(file) => file,
-        };
-
-        // Read the file contents into a string, returns `io::Result<usize>`
-        let mut s = String::new();
-        let s = match file.read_to_string(&mut s) {
-            Err(why) => panic!("couldn't read mir: {}", why.description()),
-            Ok(_) => s,
-        };
-
-        let set: scryfall::data::Set = match serde_json::from_str(&s) {
-            Err(why) => {
-                if why.is_syntax() {
-                    panic!(
-                        "couldn't parse mir: (syntax error on line {}, column {}): {}",
-                        why.line(),
-                        why.column(),
-                        why.description()
-                    );
-                } else if why.is_data() {
-                    panic!(
-                        "couldn't parse mir: (semantic error on line {}, column {}): {}",
-                        why.line(),
-                        why.column(),
-                        why.description()
-                    );
-                } else {
-                    panic!("couldn't parse mir: {}", why.description());
-                }
-            }
-            Ok(set) => set,
-        };
-        */
     }
+    pub fn from_file(file: &str) -> Result<Set, io::Error> {
+        Set::from(&mut File::open(file)?)
+    }
+    pub fn from_stdin() -> Result<Set, io::Error> {
+        Set::from(&mut io::stdin().lock())
+    }
+}
+
+pub fn sets(root: &str) -> HashMap<String, Set> {
+    let mut sets: HashMap<String, Set> = HashMap::new();
+
+    for ent in fs::read_dir(root).unwrap() {
+        let ent = ent.unwrap();
+        let path = ent.path();
+
+        let metadata = fs::metadata(&path).unwrap();
+        if metadata.is_file() {
+            let set = Set::from_file(path.to_str().unwrap()).unwrap();
+            match &set.id {
+                Some(id) => sets.insert(id.to_string(), set),
+                None => sets.insert("NO-ID".to_string(), set),
+            };
+        }
+    }
+
+    sets
 }
