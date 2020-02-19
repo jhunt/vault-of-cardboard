@@ -1,4 +1,5 @@
 use super::schema::{collections, collectors, decks, transactions};
+use redis;
 use chrono::{naive::NaiveDate, DateTime, Utc};
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
@@ -27,6 +28,12 @@ impl std::convert::From<diesel::ConnectionError> for Error {
 
 impl std::convert::From<diesel_migrations::RunMigrationsError> for Error {
     fn from(_e: diesel_migrations::RunMigrationsError) -> Error {
+        Error {} // FIXME
+    }
+}
+
+impl std::convert::From<redis::RedisError> for Error {
+    fn from(_e: redis::RedisError) -> Error{
         Error {} // FIXME
     }
 }
@@ -113,8 +120,35 @@ pub struct NewDeck<'a> {
     pub maybe: &'a str,
 }
 
+use std::collections::HashMap;
+pub struct Session {
+    pub id: Uuid,
+    pub attrs: HashMap<String, String>,
+}
+
+impl Session {
+    pub fn new(id: Option<Uuid>) -> Session {
+        Session{
+            id: match id {
+                Some(id) => id,
+                None => Uuid::new_v4(),
+            },
+            attrs: HashMap::new(),
+        }
+    }
+
+    pub fn set(&mut self, k: &str, v: &str) {
+        self.attrs.insert(k.to_string(), v.to_string());
+    }
+
+    pub fn get(&self, k: &str) -> String {
+        self.attrs[k].to_string()
+    }
+}
+
 pub struct Database {
-    conn: PgConnection,
+    pg: PgConnection,
+    rd: redis::Client,
 }
 
 embed_migrations!("migrations/");
@@ -129,12 +163,13 @@ fn gen_uuid(id: Option<Uuid>) -> Uuid {
 
 impl Database {
     // Connect to a DSN (must be PostgreSQL) and run migrations.
-    pub fn connect(dsn: &str) -> Result<Database, Error> {
+    pub fn connect(pg: &str, rd: &str) -> Result<Database, Error> {
         let db = Database {
-            conn: PgConnection::establish(dsn)?,
+            pg: PgConnection::establish(pg)?,
+            rd: redis::Client::open(rd)?,
         };
 
-        embedded_migrations::run(&db.conn)?;
+        embedded_migrations::run(&db.pg)?;
         Ok(db)
     }
 
@@ -146,7 +181,61 @@ impl Database {
     // with implicit (but unavoidable) transactional rollback.
     //
     pub fn testmode(&self) -> Result<(), Error> {
-        self.conn.begin_test_transaction()?;
+        self.pg.begin_test_transaction()?;
+        Ok(())
+    }
+
+    // Persist a Session object to Redis.
+    //
+    // Session objects expire after 1h.  This is currently hard-coded.
+    //
+    pub fn set_session(&self, s: Session) -> Result<Session, Error> {
+        let key = format!("session:{}", s.id);
+
+        let mut cmd = redis::cmd("HMSET");
+        let mut cmd = cmd.arg(&key).arg("id").arg(s.id.to_string());
+        for (k, v) in &s.attrs {
+            cmd = cmd.arg(k).arg(v);
+        }
+        cmd.query::<bool>(&mut self.rd.get_connection()?)?;
+
+        let mut cmd = redis::cmd("EXPIRE");
+        let cmd = cmd.arg(&key).arg("3600"); // FIXME
+        cmd.query::<bool>(&mut self.rd.get_connection()?)?;
+
+        Ok(s)
+    }
+
+    // Retrieve a Session object from Redis.
+    pub fn get_session(&self, id: Uuid) -> Result<Option<Session>, Error> {
+        let key = format!("session:{}", id);
+        let mut cmd = redis::cmd("HGETALL");
+        let cmd = cmd.arg(key);
+
+        let lst = cmd.query::<HashMap<String, String>>(&mut self.rd.get_connection()?)?;
+        Ok(if lst.contains_key("id") {
+            Some(Session{
+                id: id,
+                attrs: lst,
+            })
+        } else {
+            None
+        })
+    }
+
+    // Forcibly expire a Session from Redis.
+    //
+    // After this call, attempts to retrieve the Session object via
+    // `get_session()` will return Ok(None), assuming no Redis errors
+    // (transport, connection, etc.) are encountered.
+    //
+    pub fn expire_session(&self, s: &Session) -> Result<(), Error> {
+        let key = format!("session:{}", s.id);
+        let mut cmd = redis::cmd("DEL");
+        let cmd = cmd.arg(key);
+
+        cmd.query::<i32>(&mut self.rd.get_connection()?)?;
+
         Ok(())
     }
 
@@ -163,11 +252,11 @@ impl Database {
         let id = gen_uuid(id);
         let collector = diesel::insert_into(collectors::table)
             .values((&new, collectors::dsl::id.eq(id)))
-            .get_result(&self.conn)?;
+            .get_result(&self.pg)?;
 
         diesel::insert_into(collections::table)
             .values(&NewCollection { id, collector: id })
-            .get_result::<Collection>(&self.conn)?;
+            .get_result::<Collection>(&self.pg)?;
 
         Ok(collector)
     }
@@ -177,7 +266,7 @@ impl Database {
         Ok(Some(
             collectors::dsl::collectors
                 .find(id)
-                .get_result::<Collector>(&self.conn)?,
+                .get_result::<Collector>(&self.pg)?,
         ))
     }
 
@@ -193,7 +282,7 @@ impl Database {
         obj: &Collector,
         upd: CollectorUpdate,
     ) -> Result<Collector, Error> {
-        Ok(diesel::update(obj).set(&upd).get_result(&self.conn)?)
+        Ok(diesel::update(obj).set(&upd).get_result(&self.pg)?)
     }
 
     // Find a Collection by its UUID.
@@ -201,7 +290,7 @@ impl Database {
         Ok(Some(
             collections::dsl::collections
                 .find(id)
-                .get_result::<Collection>(&self.conn)?,
+                .get_result::<Collection>(&self.pg)?,
         ))
     }
 
@@ -213,7 +302,7 @@ impl Database {
     ) -> Result<Transaction, Error> {
         Ok(diesel::insert_into(transactions::table)
             .values((&new, transactions::dsl::id.eq(gen_uuid(id))))
-            .get_result(&self.conn)?)
+            .get_result(&self.pg)?)
     }
 
     //pub fn update_transaction
@@ -231,7 +320,7 @@ impl Database {
                 decks::dsl::created_at.eq(now),
                 decks::dsl::updated_at.eq(now),
             ))
-            .get_result(&self.conn)?)
+            .get_result(&self.pg)?)
     }
 
     //pub fn snapshot_deck
@@ -247,12 +336,35 @@ mod test {
     fn connect() -> Database {
         use std::env;
 
-        let dsn = env::var("TEST_DATABASE_URL")
+        let pg = env::var("TEST_DATABASE_URL")
             .or_else(|_| env::var("DATABASE_URL"))
             .expect("Either TEST_DATABASE_URL or DATABASE_URL must be set in the environment.");
-        let db = Database::connect(&dsn).unwrap();
+
+        let rd = env::var("TEST_REDIS_URL")
+            .or_else(|_| env::var("REDIS_URL"))
+            .expect("Either TEST_REDIS_URL or REDIS_URL must be set in the environment.");
+
+        let db = Database::connect(&pg, &rd).unwrap();
         db.testmode().unwrap();
         db
+    }
+
+    #[test]
+    pub fn it_should_be_able_to_create_a_session() {
+        let db = connect();
+
+        let mut session = Session::new(None);
+        session.set("foo", "bar");
+        assert_eq!(session.get("foo"), "bar");
+
+        let session = db.set_session(session).unwrap();
+        assert_eq!(session.get("foo"), "bar");
+
+        let session = db.get_session(session.id).unwrap().unwrap();
+        assert_eq!(session.get("foo"), "bar");
+
+        assert!(db.expire_session(&session).is_ok());
+        assert!(db.get_session(session.id).unwrap().is_none());
     }
 
     #[test]
@@ -368,6 +480,173 @@ mod test {
             },
         );
         assert!(!other.is_err());
+    }
+
+    #[test]
+    pub fn it_should_be_able_to_update_a_collectors_username() {
+        let db = connect();
+
+        let jhunt = db.create_collector(
+            None,
+            NewCollector {
+                username: "jhunt",
+                email: "james@example.com",
+                password: "sekrit",
+            },
+        ).unwrap();
+
+        let found = db.find_collector_by_uuid(jhunt.id);
+        assert!(found.is_ok());
+        let found = found.unwrap();
+        assert!(found.is_some());
+        let found = found.unwrap();
+        assert_eq!("jhunt", found.username);
+
+        let updated = db.update_collector(
+            &jhunt,
+            CollectorUpdate{
+                username: Some("james"),
+                email: None,
+                password: None,
+            },
+        );
+        assert!(updated.is_ok());
+        let updated = updated.unwrap();
+        assert_eq!("james", updated.username);
+
+        let found = db.find_collector_by_uuid(updated.id);
+        assert!(found.is_ok());
+        let found = found.unwrap();
+        assert!(found.is_some());
+        let found = found.unwrap();
+        assert_eq!("james", found.username);
+    }
+
+    #[test]
+    pub fn it_should_not_be_able_to_reuse_usernames_via_update() {
+        let db = connect();
+
+        let jhunt = db.create_collector(
+            None,
+            NewCollector {
+                username: "jhunt",
+                email: "james@example.com",
+                password: "sekrit",
+            },
+        ).unwrap();
+        db.find_collector_by_uuid(jhunt.id).unwrap().unwrap();
+
+        let james = db.create_collector(
+            None,
+            NewCollector {
+                username: "james",
+                email: "other-james@example.com",
+                password: "sekrit",
+            },
+        ).unwrap();
+        db.find_collector_by_uuid(james.id).unwrap().unwrap();
+
+        let updated = db.update_collector(
+            &jhunt,
+            CollectorUpdate{
+                username: Some("james"),
+                email: None,
+                password: None,
+            },
+        );
+        assert!(updated.is_err());
+    }
+
+
+    #[test]
+    pub fn it_should_be_able_to_update_a_collectors_email() {
+        let db = connect();
+
+        let jhunt = db.create_collector(
+            None,
+            NewCollector {
+                username: "jhunt",
+                email: "james@example.com",
+                password: "sekrit",
+            },
+        ).unwrap();
+
+        let found = db.find_collector_by_uuid(jhunt.id);
+        assert!(found.is_ok());
+        let found = found.unwrap();
+        assert!(found.is_some());
+        let found = found.unwrap();
+        assert_eq!("jhunt", found.username);
+
+        let updated = db.update_collector(
+            &jhunt,
+            CollectorUpdate{
+                username: None,
+                email: Some("jhunt@example.com"),
+                password: None,
+            },
+        );
+        assert!(updated.is_ok());
+        let updated = updated.unwrap();
+        assert_eq!("jhunt@example.com", updated.email);
+
+        let found = db.find_collector_by_uuid(updated.id);
+        assert!(found.is_ok());
+        let found = found.unwrap();
+        assert!(found.is_some());
+        let found = found.unwrap();
+        assert_eq!("jhunt@example.com", found.email);
+    }
+
+    #[test]
+    pub fn it_should_be_able_to_reuse_email_addresses_via_update() {
+        let db = connect();
+
+        let jhunt = db.create_collector(
+            None,
+            NewCollector {
+                username: "jhunt",
+                email: "james@example.com",
+                password: "sekrit",
+            },
+        ).unwrap();
+        db.find_collector_by_uuid(jhunt.id).unwrap().unwrap();
+
+        let james = db.create_collector(
+            None,
+            NewCollector {
+                username: "james",
+                email: "other-james@example.com",
+                password: "sekrit",
+            },
+        ).unwrap();
+        db.find_collector_by_uuid(james.id).unwrap().unwrap();
+
+        let updated = db.update_collector(
+            &jhunt,
+            CollectorUpdate{
+                username: None,
+                email: Some("other-james@example.com"),
+                password: None,
+            },
+        );
+        assert!(updated.is_ok());
+        let updated = updated.unwrap();
+        assert_eq!("other-james@example.com", updated.email);
+
+        let found = db.find_collector_by_uuid(jhunt.id);
+        assert!(found.is_ok());
+        let found = found.unwrap();
+        assert!(found.is_some());
+        let found = found.unwrap();
+        assert_eq!("other-james@example.com", found.email);
+
+        let found = db.find_collector_by_uuid(james.id);
+        assert!(found.is_ok());
+        let found = found.unwrap();
+        assert!(found.is_some());
+        let found = found.unwrap();
+        assert_eq!("other-james@example.com", found.email);
     }
 
     #[test]
