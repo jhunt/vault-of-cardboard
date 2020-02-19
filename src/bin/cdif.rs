@@ -1,10 +1,35 @@
 use std::io;
 use std::io::prelude::*;
+use std::collections::HashMap;
 
-use vault_of_cardboard::parser::{Parser,Collector};
+use vault_of_cardboard::parser;
+
+pub struct Collector {
+    map: HashMap<String, parser::Line>
+}
+
+impl Collector {
+    pub fn new() -> Collector {
+        Collector{
+            map: HashMap::new(),
+        }
+    }
+
+    pub fn track(&mut self, line: parser::Line) {
+        match self.map.get_mut(&line.id()) {
+            Some(l) => { l.quantity += line.quantity; }
+            None => { self.map.insert(line.id(), line); }
+        };
+    }
+
+    pub fn print(&self) {
+        for (_, l) in &self.map {
+            println!("{}", l.as_cdif_string());
+        }
+    }
+}
 
 fn main() {
-    let mut p = Parser::new();
     let mut n = 0;
     let mut c = Collector::new();
     let stdin = io::stdin();
@@ -13,7 +38,7 @@ fn main() {
         n = n + 1;
         match line {
             Ok(line) => {
-                match p.parse_line(&line) {
+                match parser::parse_line(&line) {
                     Some(l) => {
                         c.track(l);
                     },

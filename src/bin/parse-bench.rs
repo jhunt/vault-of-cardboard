@@ -2,10 +2,9 @@ use std::io;
 use std::io::prelude::*;
 use std::time::Instant;
 
-use vault_of_cardboard::parser::Parser;
+use vault_of_cardboard::parser;
 
 fn main() {
-    let mut p = Parser::new();
     let mut n = 0;
     let stdin = io::stdin();
 
@@ -14,7 +13,7 @@ fn main() {
         n = n + 1;
         match line {
             Ok(line) => {
-                match p.parse_line(&line) {
+                match parser::parse_line(&line) {
                     Some(_) => (),
                     None => println!("{}: syntax error!", line),
                 };
