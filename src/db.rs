@@ -1,12 +1,21 @@
 use super::schema::{collections, collectors, decks, transactions};
-use redis;
+use bcrypt;
 use chrono::{naive::NaiveDate, DateTime, Utc};
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
+use redis;
 use uuid::Uuid;
 
 #[derive(std::fmt::Debug)]
 pub struct Error {}
+
+const PWHASH_COST: u32 = 10;
+
+impl std::convert::From<bcrypt::BcryptError> for Error {
+    fn from(_e: bcrypt::BcryptError) -> Error {
+        Error {} // FIXME
+    }
+}
 
 impl std::convert::From<uuid::parser::ParseError> for Error {
     fn from(_e: uuid::parser::ParseError) -> Error {
@@ -33,7 +42,7 @@ impl std::convert::From<diesel_migrations::RunMigrationsError> for Error {
 }
 
 impl std::convert::From<redis::RedisError> for Error {
-    fn from(_e: redis::RedisError) -> Error{
+    fn from(_e: redis::RedisError) -> Error {
         Error {} // FIXME
     }
 }
@@ -51,7 +60,6 @@ pub struct Collector {
 pub struct NewCollector<'a> {
     pub username: &'a str,
     pub email: &'a str,
-    pub password: &'a str,
 }
 
 #[derive(AsChangeset)]
@@ -128,7 +136,7 @@ pub struct Session {
 
 impl Session {
     pub fn new(id: Option<Uuid>) -> Session {
-        Session{
+        Session {
             id: match id {
                 Some(id) => id,
                 None => Uuid::new_v4(),
@@ -214,10 +222,7 @@ impl Database {
 
         let lst = cmd.query::<HashMap<String, String>>(&mut self.rd.get_connection()?)?;
         Ok(if lst.contains_key("id") {
-            Some(Session{
-                id: id,
-                attrs: lst,
-            })
+            Some(Session { id: id, attrs: lst })
         } else {
             None
         })
@@ -248,10 +253,20 @@ impl Database {
         &self,
         id: Option<Uuid>,
         new: NewCollector,
+        password: Option<&str>,
     ) -> Result<Collector, Error> {
         let id = gen_uuid(id);
+        let crypted = match password {
+            Some(password) => bcrypt::hash(password, PWHASH_COST)?,
+            None => "password-not-specified".to_string(),
+        };
+
         let collector = diesel::insert_into(collectors::table)
-            .values((&new, collectors::dsl::id.eq(id)))
+            .values((
+                &new,
+                collectors::dsl::id.eq(id),
+                collectors::dsl::password.eq(crypted),
+            ))
             .get_result(&self.pg)?;
 
         diesel::insert_into(collections::table)
@@ -259,6 +274,30 @@ impl Database {
             .get_result::<Collection>(&self.pg)?;
 
         Ok(collector)
+    }
+
+    pub fn authenticate_collector(
+        &self,
+        username: &str,
+        password: &str,
+    ) -> Result<Option<Collector>, Error> {
+        let mut found = collectors::dsl::collectors
+            .filter(collectors::dsl::username.eq(username))
+            .get_results::<Collector>(&self.pg)?;
+
+        match found.len() {
+            1 => {
+                let collector = found.pop().unwrap();
+                match bcrypt::verify(&password, &collector.password) {
+                    Ok(true) => Ok(Some(collector)),
+                    _ => Ok(None),
+                }
+            }
+            _ => {
+                let _ = bcrypt::verify(&password, "");
+                Ok(None)
+            }
+        }
     }
 
     // Find a Collector by their UUID.
@@ -377,8 +416,8 @@ mod test {
             NewCollector {
                 username: "jhunt",
                 email: "james@example.com",
-                password: "sekrit",
             },
+            None,
         );
         assert!(jhunt.is_ok());
 
@@ -400,8 +439,8 @@ mod test {
             NewCollector {
                 username: "jhunt",
                 email: "james@example.com",
-                password: "sekrit",
             },
+            None,
         );
         assert!(jhunt.is_ok());
         let jhunt = jhunt.unwrap();
@@ -419,8 +458,8 @@ mod test {
             NewCollector {
                 username: &found.username,
                 email: "other-james@example.com",
-                password: "a different sekrit",
             },
+            None,
         );
         assert!(err.is_err());
     }
@@ -434,8 +473,8 @@ mod test {
             NewCollector {
                 username: "jhunt",
                 email: "james@example.com",
-                password: "sekrit",
             },
+            None,
         );
         assert!(jhunt.is_ok());
         let jhunt = jhunt.unwrap();
@@ -451,8 +490,8 @@ mod test {
             NewCollector {
                 username: "other-jhunt",
                 email: &found.email,
-                password: "a different sekrit",
             },
+            None,
         );
         assert!(!other.is_err());
     }
@@ -461,14 +500,16 @@ mod test {
     pub fn it_should_be_able_to_reuse_passwords() {
         let db = connect();
 
-        let jhunt = db.create_collector(
-            None,
-            NewCollector {
-                username: "jhunt",
-                email: "james@example.com",
-                password: "sekrit",
-            },
-        ).unwrap();
+        let jhunt = db
+            .create_collector(
+                None,
+                NewCollector {
+                    username: "jhunt",
+                    email: "james@example.com",
+                },
+                Some("sekrit"),
+            )
+            .unwrap();
 
         db.find_collector_by_uuid(jhunt.id).unwrap();
         let other = db.create_collector(
@@ -476,8 +517,8 @@ mod test {
             NewCollector {
                 username: "other-jhunt",
                 email: "other-james@example.com",
-                password: "sekrit",
             },
+            Some("sekrit"),
         );
         assert!(!other.is_err());
     }
@@ -486,14 +527,16 @@ mod test {
     pub fn it_should_be_able_to_update_a_collectors_username() {
         let db = connect();
 
-        let jhunt = db.create_collector(
-            None,
-            NewCollector {
-                username: "jhunt",
-                email: "james@example.com",
-                password: "sekrit",
-            },
-        ).unwrap();
+        let jhunt = db
+            .create_collector(
+                None,
+                NewCollector {
+                    username: "jhunt",
+                    email: "james@example.com",
+                },
+                None,
+            )
+            .unwrap();
 
         let found = db.find_collector_by_uuid(jhunt.id);
         assert!(found.is_ok());
@@ -504,7 +547,7 @@ mod test {
 
         let updated = db.update_collector(
             &jhunt,
-            CollectorUpdate{
+            CollectorUpdate {
                 username: Some("james"),
                 email: None,
                 password: None,
@@ -526,29 +569,33 @@ mod test {
     pub fn it_should_not_be_able_to_reuse_usernames_via_update() {
         let db = connect();
 
-        let jhunt = db.create_collector(
-            None,
-            NewCollector {
-                username: "jhunt",
-                email: "james@example.com",
-                password: "sekrit",
-            },
-        ).unwrap();
+        let jhunt = db
+            .create_collector(
+                None,
+                NewCollector {
+                    username: "jhunt",
+                    email: "james@example.com",
+                },
+                None,
+            )
+            .unwrap();
         db.find_collector_by_uuid(jhunt.id).unwrap().unwrap();
 
-        let james = db.create_collector(
-            None,
-            NewCollector {
-                username: "james",
-                email: "other-james@example.com",
-                password: "sekrit",
-            },
-        ).unwrap();
+        let james = db
+            .create_collector(
+                None,
+                NewCollector {
+                    username: "james",
+                    email: "other-james@example.com",
+                },
+                None,
+            )
+            .unwrap();
         db.find_collector_by_uuid(james.id).unwrap().unwrap();
 
         let updated = db.update_collector(
             &jhunt,
-            CollectorUpdate{
+            CollectorUpdate {
                 username: Some("james"),
                 email: None,
                 password: None,
@@ -557,19 +604,20 @@ mod test {
         assert!(updated.is_err());
     }
 
-
     #[test]
     pub fn it_should_be_able_to_update_a_collectors_email() {
         let db = connect();
 
-        let jhunt = db.create_collector(
-            None,
-            NewCollector {
-                username: "jhunt",
-                email: "james@example.com",
-                password: "sekrit",
-            },
-        ).unwrap();
+        let jhunt = db
+            .create_collector(
+                None,
+                NewCollector {
+                    username: "jhunt",
+                    email: "james@example.com",
+                },
+                None,
+            )
+            .unwrap();
 
         let found = db.find_collector_by_uuid(jhunt.id);
         assert!(found.is_ok());
@@ -580,7 +628,7 @@ mod test {
 
         let updated = db.update_collector(
             &jhunt,
-            CollectorUpdate{
+            CollectorUpdate {
                 username: None,
                 email: Some("jhunt@example.com"),
                 password: None,
@@ -602,29 +650,33 @@ mod test {
     pub fn it_should_be_able_to_reuse_email_addresses_via_update() {
         let db = connect();
 
-        let jhunt = db.create_collector(
-            None,
-            NewCollector {
-                username: "jhunt",
-                email: "james@example.com",
-                password: "sekrit",
-            },
-        ).unwrap();
+        let jhunt = db
+            .create_collector(
+                None,
+                NewCollector {
+                    username: "jhunt",
+                    email: "james@example.com",
+                },
+                None,
+            )
+            .unwrap();
         db.find_collector_by_uuid(jhunt.id).unwrap().unwrap();
 
-        let james = db.create_collector(
-            None,
-            NewCollector {
-                username: "james",
-                email: "other-james@example.com",
-                password: "sekrit",
-            },
-        ).unwrap();
+        let james = db
+            .create_collector(
+                None,
+                NewCollector {
+                    username: "james",
+                    email: "other-james@example.com",
+                },
+                None,
+            )
+            .unwrap();
         db.find_collector_by_uuid(james.id).unwrap().unwrap();
 
         let updated = db.update_collector(
             &jhunt,
-            CollectorUpdate{
+            CollectorUpdate {
                 username: None,
                 email: Some("other-james@example.com"),
                 password: None,
@@ -658,8 +710,8 @@ mod test {
             NewCollector {
                 username: "jhunt",
                 email: "james@example.com",
-                password: "sekrit",
             },
+            None,
         );
         assert!(jhunt.is_ok());
         let jhunt = jhunt.unwrap();
@@ -674,21 +726,26 @@ mod test {
     pub fn it_can_create_a_transaction() {
         let db = connect();
 
-        let jhunt = db.create_collector(
-            None,
-            NewCollector {
-                username: "jhunt",
-                email: "james@example.com",
-                password: "sekrit",
-            },
-        ).unwrap();
+        let jhunt = db
+            .create_collector(
+                None,
+                NewCollector {
+                    username: "jhunt",
+                    email: "james@example.com",
+                },
+                None,
+            )
+            .unwrap();
 
-        let txn = db.create_transaction(None, NewTransaction{
-            collection: jhunt.id,
-            dated: &NaiveDate::from_ymd(2020, 01, 14),
-            gain: "1x XLN Opt\n",
-            loss: "",
-        });
+        let txn = db.create_transaction(
+            None,
+            NewTransaction {
+                collection: jhunt.id,
+                dated: &NaiveDate::from_ymd(2020, 01, 14),
+                gain: "1x XLN Opt\n",
+                loss: "",
+            },
+        );
         assert!(txn.is_ok());
         let txn = txn.unwrap();
 
@@ -702,23 +759,28 @@ mod test {
     pub fn it_can_create_a_deck() {
         let db = connect();
 
-        let jhunt = db.create_collector(
-            None,
-            NewCollector {
-                username: "jhunt",
-                email: "james@example.com",
-                password: "sekrit",
-            },
-        ).unwrap();
+        let jhunt = db
+            .create_collector(
+                None,
+                NewCollector {
+                    username: "jhunt",
+                    email: "james@example.com",
+                },
+                None,
+            )
+            .unwrap();
 
-        let deck = db.create_deck(None, NewDeck{
-            collector: jhunt.id,
-            title: "Niv-Mizzet",
-            description: "Draw a card, 1 damage to you...",
-            main: "1x GRN Niv-Mizzet\n",
-            side: "1x RNA Niv-Mizzet, Parun\n",
-            maybe: "1x WAR Niv-Mizzet, Reborn\n",
-        });
+        let deck = db.create_deck(
+            None,
+            NewDeck {
+                collector: jhunt.id,
+                title: "Niv-Mizzet",
+                description: "Draw a card, 1 damage to you...",
+                main: "1x GRN Niv-Mizzet\n",
+                side: "1x RNA Niv-Mizzet, Parun\n",
+                maybe: "1x WAR Niv-Mizzet, Reborn\n",
+            },
+        );
         assert!(deck.is_ok());
         let deck = deck.unwrap();
 
@@ -730,5 +792,59 @@ mod test {
         assert_eq!(deck.maybe, "1x WAR Niv-Mizzet, Reborn\n");
         assert_eq!(deck.lineage, deck.id);
         assert_eq!(deck.ordinal, 0);
+    }
+
+    #[test]
+    pub fn it_can_authenticate_a_collector() {
+        let db = connect();
+
+        db.create_collector(
+            None,
+            NewCollector {
+                username: "jhunt",
+                email: "james@example.com",
+            },
+            Some("sekrit"),
+        )
+        .expect("unable to create collector 'jhunt'");
+
+        db.create_collector(
+            None,
+            NewCollector {
+                username: "james",
+                email: "other-james@example.com",
+            },
+            Some("my sekrit pas sword"),
+        )
+        .expect("unable to create collector 'james'");
+
+        let who = db
+            .authenticate_collector("jhunt", "sekrit")
+            .expect("no error should occur while authenticating with correct credentials");
+        assert!(who.is_some());
+        let who = who.unwrap();
+        assert_eq!(who.username, "jhunt");
+
+        let who = db
+            .authenticate_collector("james", "my sekrit pas sword")
+            .expect("no error should occur while authenticating with correct credentials");
+        assert!(who.is_some());
+        let who = who.unwrap();
+        assert_eq!(who.username, "james");
+
+        let who = db
+            .authenticate_collector("jhunt", "not their password")
+            .expect("no error should occur while authenticating with incorrect credentials");
+        assert!(who.is_none());
+
+        let who = db
+            .authenticate_collector("not jhunt", "sekrit")
+            .expect("no error should occur while authenticating with an unknown username");
+        assert!(who.is_none());
+
+        let who = db
+            .authenticate_collector("james", "sekrit")
+            .expect("no error should occur while authenticating with incorrect credentials");
+        assert!(who.is_none());
     }
 }
