@@ -1,6 +1,5 @@
 use serde::{Serialize, Serializer};
 use std::collections::HashMap;
-use std::convert::From;
 
 use super::scryfall;
 
@@ -41,10 +40,10 @@ pub struct Set {
     pub cards: Vec<PrintCard>,
 }
 
-impl From<&scryfall::Set> for Set {
+impl std::convert::From<&scryfall::Set> for Set {
     fn from(set: &scryfall::Set) -> Self {
         Set {
-            code: set.code.to_string(),
+            code: set.code.to_string().to_uppercase(),
             name: set.name.to_string(),
             released_at: set.released_at.to_string(),
             cards: set.cards.iter().map(|c| PrintCard::from(c)).collect(),
@@ -131,7 +130,7 @@ pub struct OracleCard {
     pub colors: Vec<String>,
 }
 
-impl From<&scryfall::Card> for OracleCard {
+impl std::convert::From<&scryfall::Card> for OracleCard {
     fn from(card: &scryfall::Card) -> Self {
         OracleCard {
             id: card.oracle_id.to_string(),
@@ -257,7 +256,7 @@ fn maybe_legal(s: &Option<String>) -> bool {
     }
 }
 
-impl From<&scryfall::Card> for PrintCard {
+impl std::convert::From<&scryfall::Card> for PrintCard {
     fn from(card: &scryfall::Card) -> Self {
         PrintCard {
             id: card.id.to_string(),
