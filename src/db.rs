@@ -6,46 +6,12 @@ use diesel::prelude::*;
 use redis;
 use uuid::Uuid;
 
-#[derive(std::fmt::Debug)]
-pub struct Error {}
+mod errors {
+    error_chain! {}
+}
+use errors::*;
 
 const PWHASH_COST: u32 = 10;
-
-impl std::convert::From<bcrypt::BcryptError> for Error {
-    fn from(_e: bcrypt::BcryptError) -> Error {
-        Error {} // FIXME
-    }
-}
-
-impl std::convert::From<uuid::parser::ParseError> for Error {
-    fn from(_e: uuid::parser::ParseError) -> Error {
-        Error {} // FIXME
-    }
-}
-
-impl std::convert::From<diesel::result::Error> for Error {
-    fn from(_e: diesel::result::Error) -> Error {
-        Error {} // FIXME
-    }
-}
-
-impl std::convert::From<diesel::ConnectionError> for Error {
-    fn from(_e: diesel::ConnectionError) -> Error {
-        Error {} // FIXME
-    }
-}
-
-impl std::convert::From<diesel_migrations::RunMigrationsError> for Error {
-    fn from(_e: diesel_migrations::RunMigrationsError) -> Error {
-        Error {} // FIXME
-    }
-}
-
-impl std::convert::From<redis::RedisError> for Error {
-    fn from(_e: redis::RedisError) -> Error {
-        Error {} // FIXME
-    }
-}
 
 #[derive(Identifiable, Queryable)]
 pub struct Collector {
@@ -171,13 +137,13 @@ fn gen_uuid(id: Option<Uuid>) -> Uuid {
 
 impl Database {
     // Connect to a DSN (must be PostgreSQL) and run migrations.
-    pub fn connect(pg: &str, rd: &str) -> Result<Database, Error> {
+    pub fn connect(pg: &str, rd: &str) -> Result<Database> {
         let db = Database {
-            pg: PgConnection::establish(pg)?,
-            rd: redis::Client::open(rd)?,
+            pg: PgConnection::establish(pg).chain_err(|| "unable to connect to database")?,
+            rd: redis::Client::open(rd).chain_err(|| "unable to connect to session store")?,
         };
 
-        embedded_migrations::run(&db.pg)?;
+        embedded_migrations::run(&db.pg).chain_err(|| "failed to run database migrations")?;
         Ok(db)
     }
 
@@ -188,8 +154,10 @@ impl Database {
     // able to run SQL queries / statements until an error is encountered,
     // with implicit (but unavoidable) transactional rollback.
     //
-    pub fn testmode(&self) -> Result<(), Error> {
-        self.pg.begin_test_transaction()?;
+    pub fn testmode(&self) -> Result<()> {
+        self.pg
+            .begin_test_transaction()
+            .chain_err(|| "unable to initiate test transaction")?;
         Ok(())
     }
 
@@ -197,7 +165,7 @@ impl Database {
     //
     // Session objects expire after 1h.  This is currently hard-coded.
     //
-    pub fn set_session(&self, s: Session) -> Result<Session, Error> {
+    pub fn set_session(&self, s: Session) -> Result<Session> {
         let key = format!("session:{}", s.id);
 
         let mut cmd = redis::cmd("HMSET");
@@ -205,22 +173,41 @@ impl Database {
         for (k, v) in &s.attrs {
             cmd = cmd.arg(k).arg(v);
         }
-        cmd.query::<bool>(&mut self.rd.get_connection()?)?;
+        cmd.query::<bool>(
+            &mut self
+                .rd
+                .get_connection()
+                .chain_err(|| "unable to connect to session store")?,
+        )
+        .chain_err(|| "failed to insert session object into session store")?;
 
         let mut cmd = redis::cmd("EXPIRE");
         let cmd = cmd.arg(&key).arg("3600"); // FIXME
-        cmd.query::<bool>(&mut self.rd.get_connection()?)?;
+        cmd.query::<bool>(
+            &mut self
+                .rd
+                .get_connection()
+                .chain_err(|| "unable to connect to session store")?,
+        )
+        .chain_err(|| "failed to set session expiration in session store")?;
 
         Ok(s)
     }
 
     // Retrieve a Session object from Redis.
-    pub fn get_session(&self, id: Uuid) -> Result<Option<Session>, Error> {
+    pub fn get_session(&self, id: Uuid) -> Result<Option<Session>> {
         let key = format!("session:{}", id);
         let mut cmd = redis::cmd("HGETALL");
         let cmd = cmd.arg(key);
 
-        let lst = cmd.query::<HashMap<String, String>>(&mut self.rd.get_connection()?)?;
+        let lst = cmd
+            .query::<HashMap<String, String>>(
+                &mut self
+                    .rd
+                    .get_connection()
+                    .chain_err(|| "unable to connect to session store")?,
+            )
+            .chain_err(|| "failed to retrieve session from session store")?;
         Ok(if lst.contains_key("id") {
             Some(Session { id: id, attrs: lst })
         } else {
@@ -234,12 +221,18 @@ impl Database {
     // `get_session()` will return Ok(None), assuming no Redis errors
     // (transport, connection, etc.) are encountered.
     //
-    pub fn expire_session(&self, s: &Session) -> Result<(), Error> {
+    pub fn expire_session(&self, s: &Session) -> Result<()> {
         let key = format!("session:{}", s.id);
         let mut cmd = redis::cmd("DEL");
         let cmd = cmd.arg(key);
 
-        cmd.query::<i32>(&mut self.rd.get_connection()?)?;
+        cmd.query::<i32>(
+            &mut self
+                .rd
+                .get_connection()
+                .chain_err(|| "unable to connect to session store")?,
+        )
+        .chain_err(|| "failed to delete session key from session store")?;
 
         Ok(())
     }
@@ -254,10 +247,11 @@ impl Database {
         id: Option<Uuid>,
         new: NewCollector,
         password: Option<&str>,
-    ) -> Result<Collector, Error> {
+    ) -> Result<Collector> {
         let id = gen_uuid(id);
         let crypted = match password {
-            Some(password) => bcrypt::hash(password, PWHASH_COST)?,
+            Some(password) => bcrypt::hash(password, PWHASH_COST)
+                .chain_err(|| "failed to hash collector password")?,
             None => "password-not-specified".to_string(),
         };
 
@@ -267,11 +261,13 @@ impl Database {
                 collectors::dsl::id.eq(id),
                 collectors::dsl::password.eq(crypted),
             ))
-            .get_result(&self.pg)?;
+            .get_result(&self.pg)
+            .chain_err(|| "failed to insert collector record into database")?;
 
         diesel::insert_into(collections::table)
             .values(&NewCollection { id, collector: id })
-            .get_result::<Collection>(&self.pg)?;
+            .get_result::<Collection>(&self.pg)
+            .chain_err(|| "failed to insert collection record for new collector into database")?;
 
         Ok(collector)
     }
@@ -280,10 +276,11 @@ impl Database {
         &self,
         username: &str,
         password: &str,
-    ) -> Result<Option<Collector>, Error> {
+    ) -> Result<Option<Collector>> {
         let mut found = collectors::dsl::collectors
             .filter(collectors::dsl::username.eq(username))
-            .get_results::<Collector>(&self.pg)?;
+            .get_results::<Collector>(&self.pg)
+            .chain_err(|| "failed to retrieve collector record from database")?;
 
         match found.len() {
             1 => {
@@ -301,11 +298,12 @@ impl Database {
     }
 
     // Find a Collector by their UUID.
-    pub fn find_collector_by_uuid(&self, id: Uuid) -> Result<Option<Collector>, Error> {
+    pub fn find_collector_by_uuid(&self, id: Uuid) -> Result<Option<Collector>> {
         Ok(Some(
             collectors::dsl::collectors
                 .find(id)
-                .get_result::<Collector>(&self.pg)?,
+                .get_result::<Collector>(&self.pg)
+                .chain_err(|| "failed to retrieve collector record from database")?,
         ))
     }
 
@@ -316,38 +314,35 @@ impl Database {
     //
     // Returns the final Collector object, after updates are applied.
     //
-    pub fn update_collector(
-        &self,
-        obj: &Collector,
-        upd: CollectorUpdate,
-    ) -> Result<Collector, Error> {
-        Ok(diesel::update(obj).set(&upd).get_result(&self.pg)?)
+    pub fn update_collector(&self, obj: &Collector, upd: CollectorUpdate) -> Result<Collector> {
+        Ok(diesel::update(obj)
+            .set(&upd)
+            .get_result(&self.pg)
+            .chain_err(|| "failed to update collector record in database")?)
     }
 
     // Find a Collection by its UUID.
-    pub fn find_collection_by_uuid(&self, id: Uuid) -> Result<Option<Collection>, Error> {
+    pub fn find_collection_by_uuid(&self, id: Uuid) -> Result<Option<Collection>> {
         Ok(Some(
             collections::dsl::collections
                 .find(id)
-                .get_result::<Collection>(&self.pg)?,
+                .get_result::<Collection>(&self.pg)
+                .chain_err(|| "failed to retrieve collection from database")?,
         ))
     }
 
     // Create a new Transaction.
-    pub fn create_transaction(
-        &self,
-        id: Option<Uuid>,
-        new: NewTransaction,
-    ) -> Result<Transaction, Error> {
+    pub fn create_transaction(&self, id: Option<Uuid>, new: NewTransaction) -> Result<Transaction> {
         Ok(diesel::insert_into(transactions::table)
             .values((&new, transactions::dsl::id.eq(gen_uuid(id))))
-            .get_result(&self.pg)?)
+            .get_result(&self.pg)
+            .chain_err(|| "failed to insert transaction record into database")?)
     }
 
     //pub fn update_transaction
     //pub fn delete_transaction
 
-    pub fn create_deck(&self, id: Option<Uuid>, new: NewDeck) -> Result<Deck, Error> {
+    pub fn create_deck(&self, id: Option<Uuid>, new: NewDeck) -> Result<Deck> {
         let now = Utc::now();
         let id = gen_uuid(id);
         Ok(diesel::insert_into(decks::table)
@@ -359,7 +354,8 @@ impl Database {
                 decks::dsl::created_at.eq(now),
                 decks::dsl::updated_at.eq(now),
             ))
-            .get_result(&self.pg)?)
+            .get_result(&self.pg)
+            .chain_err(|| "failed to insert deck record into database")?)
     }
 
     //pub fn snapshot_deck
