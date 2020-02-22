@@ -10,6 +10,7 @@ mod errors {
     error_chain! {}
 }
 use errors::*;
+pub use errors::Error;
 
 const PWHASH_COST: u32 = 10;
 
