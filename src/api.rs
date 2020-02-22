@@ -348,7 +348,7 @@ impl API {
             .find_collector_by_uuid(
                 Uuid::parse_str(uid).chain_err(|| "unable to parse collector uuid")?,
             )
-            .chain_err(|| "unable to find collector to post deck to")?
+            .chain_err(|| "unable to find collector to retrieve decks from")?
         {
             Some(collector) => collector,
             None => return Ok(not_found("collector", uid, None)),
@@ -365,7 +365,7 @@ impl API {
             .find_collector_by_uuid(
                 Uuid::parse_str(uid).chain_err(|| "unable to parse collector uuid")?,
             )
-            .chain_err(|| "unable to find collector to post deck to")?
+            .chain_err(|| "unable to find collector to retrieve deck for")?
         {
             Some(collector) => collector,
             None => return Ok(not_found("collector", uid, None)),
