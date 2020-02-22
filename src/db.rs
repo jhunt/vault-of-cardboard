@@ -9,8 +9,8 @@ use uuid::Uuid;
 mod errors {
     error_chain! {}
 }
-use errors::*;
 pub use errors::Error;
+use errors::*;
 
 const PWHASH_COST: u32 = 10;
 
