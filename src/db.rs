@@ -95,6 +95,16 @@ pub struct NewDeck<'a> {
     pub maybe: &'a str,
 }
 
+#[derive(AsChangeset)]
+#[table_name = "decks"]
+pub struct UpdateDeck {
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub main: Option<String>,
+    pub side: Option<String>,
+    pub maybe: Option<String>,
+}
+
 use std::collections::HashMap;
 pub struct Session {
     pub id: Uuid,
@@ -353,6 +363,13 @@ impl Database {
     //pub fn update_transaction
     //pub fn delete_transaction
 
+    pub fn find_decks_for_collector(&self, uid: Uuid) -> Result<Vec<Deck>> {
+        Ok(decks::dsl::decks
+            .filter(decks::dsl::collector.eq(uid))
+            .get_results::<Deck>(&self.pg)
+            .chain_err(|| "unable to retrieve decks for collector uuid")?)
+    }
+
     pub fn find_deck_by_uuid(&self, uid: Uuid, id: Uuid) -> Result<Option<Deck>> {
         match decks::dsl::decks
             .find(id)
@@ -363,7 +380,7 @@ impl Database {
             Err(diesel::NotFound) => Ok(None),
             Err(e) => Err(Error::with_chain(
                 e,
-                "failed to retrieve deck from database",
+                "failed to retrieve deck record from database",
             )),
         }
     }
@@ -384,9 +401,30 @@ impl Database {
             .chain_err(|| "failed to insert deck record into database")?)
     }
 
+    pub fn update_deck(&self, id: Uuid, upd: UpdateDeck) -> Result<Option<Deck>> {
+        diesel::update(decks::table)
+            .set((&upd, decks::dsl::updated_at.eq(Utc::now())))
+            .execute(&self.pg)
+            .chain_err(|| "failed to update deck record in database")?;
+
+        match decks::dsl::decks.find(id).get_result::<Deck>(&self.pg) {
+            Ok(deck) => Ok(Some(deck)),
+            Err(diesel::NotFound) => Ok(None),
+            Err(e) => Err(Error::with_chain(
+                e,
+                "failed to udpate deck record in database",
+            )),
+        }
+    }
+
+    pub fn delete_deck(&self, id: Uuid) -> Result<()> {
+        diesel::delete(decks::dsl::decks.filter(decks::dsl::id.eq(id)))
+            .execute(&self.pg)
+            .chain_err(|| "failed to delete deck record from database")?;
+        Ok(())
+    }
+
     //pub fn snapshot_deck
-    //pub fn update_deck
-    //pub fn delete_deck
 }
 
 #[cfg(test)]

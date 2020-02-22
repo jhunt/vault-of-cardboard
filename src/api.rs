@@ -17,8 +17,20 @@ pub enum Object {
     Response(Response),
     Authenticated(Authenticated),
     Deck(Deck),
+    Decks(Vec<Deck>),
     Transaction(Transaction),
 }
+
+impl Object {
+    fn list_of_decks(other: Vec<db::Deck>) -> Self {
+        let mut decks = vec![];
+        for deck in other {
+            decks.push(Deck::from(deck));
+        }
+        Object::Decks(decks)
+    }
+}
+
 #[derive(Serialize)]
 pub struct NotFound {
     kind: String,
@@ -95,6 +107,15 @@ pub struct DeckCreationAttempt {
     pub main: String,
     pub side: String,
     pub maybe: String,
+}
+
+#[derive(Deserialize)]
+pub struct DeckUpdateAttempt {
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub main: Option<String>,
+    pub side: Option<String>,
+    pub maybe: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -223,7 +244,7 @@ impl API {
             .find_collector_by_uuid(
                 Uuid::parse_str(uid).chain_err(|| "unable to parse collector uuid")?,
             )
-            .chain_err(|| "unable to find collector to post deck to")?
+            .chain_err(|| "unable to find collector to create deck for")?
         {
             Some(collector) => collector,
             None => return Ok(not_found("collector", uid, None)),
@@ -246,6 +267,96 @@ impl API {
                 message: "deck-creation-failed".to_string(),
             })),
         }
+    }
+
+    pub fn update_deck(&self, uid: &str, did: &str, upd: DeckUpdateAttempt) -> Result<Object> {
+        let collector = match self
+            .db
+            .find_collector_by_uuid(
+                Uuid::parse_str(uid).chain_err(|| "unable to parse collector uuid")?,
+            )
+            .chain_err(|| "unable to find collector to update deck for")?
+        {
+            Some(collector) => collector,
+            None => return Ok(not_found("collector", uid, None)),
+        };
+
+        let deck = match self.db.find_deck_by_uuid(
+                collector.id,
+                Uuid::parse_str(did).chain_err(|| "unable to parse deck uuid")?,
+            ).chain_err(|| "unable to find deck to update")?
+        {
+            Some(deck) => deck,
+            None => return Ok(not_found("deck", did, None)),
+        };
+
+        match self.db.update_deck(
+            deck.id,
+            db::UpdateDeck {
+                title: upd.title,
+                description: upd.description,
+                main: upd.main,
+                side: upd.side,
+                maybe: upd.maybe,
+            },
+        ) {
+            Ok(Some(deck)) => Ok(Object::Deck(Deck::from(deck))),
+            Ok(None) => Ok(not_found("deck", did, None)),
+            _ => Ok(Object::Response(Response {
+                ok: false,
+                message: "deck-update-failed".to_string(),
+            })),
+        }
+    }
+
+    pub fn delete_deck(&self, uid: &str, did: &str) -> Result<Object> {
+        let collector = match self
+            .db
+            .find_collector_by_uuid(
+                Uuid::parse_str(uid).chain_err(|| "unable to parse collector uuid")?,
+            )
+            .chain_err(|| "unable to find collector to update deck for")?
+        {
+            Some(collector) => collector,
+            None => return Ok(not_found("collector", uid, None)),
+        };
+
+        let deck = match self.db.find_deck_by_uuid(
+                collector.id,
+                Uuid::parse_str(did).chain_err(|| "unable to parse deck uuid")?,
+            ).chain_err(|| "unable to find deck to update")?
+        {
+            Some(deck) => deck,
+            None => return Ok(not_found("deck", did, None)),
+        };
+
+        match self.db.delete_deck(deck.id) {
+            Ok(_) => Ok(Object::Response(Response {
+                ok: true,
+                message: "deck-removed".to_string(),
+            })),
+            _ => Ok(Object::Response(Response {
+                ok: false,
+                message: "deck-removal-failed".to_string(),
+            })),
+        }
+    }
+
+    pub fn retrieve_decks_for_collector(&self, uid: &str) -> Result<Object> {
+        let collector = match self
+            .db
+            .find_collector_by_uuid(
+                Uuid::parse_str(uid).chain_err(|| "unable to parse collector uuid")?,
+            )
+            .chain_err(|| "unable to find collector to post deck to")?
+        {
+            Some(collector) => collector,
+            None => return Ok(not_found("collector", uid, None)),
+        };
+
+        Ok(Object::list_of_decks(self.db
+            .find_decks_for_collector(collector.id)
+            .chain_err(|| "unable to find decks by collector uuid")?))
     }
 
     pub fn retrieve_deck(&self, uid: &str, did: &str) -> Result<Object> {

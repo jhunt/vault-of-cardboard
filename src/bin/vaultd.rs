@@ -175,7 +175,18 @@ fn main() {
 
     router.get(
         "/v1/collectors/:uid/decks",
-        |_r: &mut Request| done!(??? => "deck retrieval"),
+        |r: &mut Request| {
+            let api = boot();
+            let uid = param!(r, "uid");
+
+            match api.retrieve_decks_for_collector(&uid) {
+                Ok(res) => done!(res),
+                Err(e) => {
+                    println!("decks retrieval fail: {}", e);
+                    done!(500 => "decks retrieval failed")
+                }
+            }
+        },
         "v1_get_all_decks_handler",
     );
 
@@ -221,14 +232,44 @@ fn main() {
     );
 
     router.patch(
-        "/v1/collectors/:uid/decks/:tid",
-        |_r: &mut Request| done!(??? => "deck update"),
+        "/v1/collectors/:uid/decks/:did",
+        |r: &mut Request| {
+            let api = boot();
+            let uid = param!(r, "uid");
+            let did = param!(r, "did");
+
+            match serde_json::from_reader(&mut r.body) {
+                Err(e) => {
+                    println!("error: {}", e);
+                    done!(400 => "bad request")
+                }
+                Ok(attempt) => match api.update_deck(&uid, &did, attempt) {
+                    Ok(res) => done!(res),
+                    Err(e) => {
+                        println!("deck update fail: {}", e);
+                        done!(500 => "deck update failed")
+                    }
+                },
+            }
+        },
         "v1_update_single_deck_handler",
     );
 
     router.delete(
         "/v1/collectors/:uid/decks/:did",
-        |_r: &mut Request| done!(??? => "deck removal"),
+        |r: &mut Request| {
+            let api = boot();
+            let uid = param!(r, "uid");
+            let did = param!(r, "did");
+
+            match api.delete_deck(&uid, &did) {
+                Ok(res) => done!(res),
+                Err(e) => {
+                    println!("deck removal fail: {}", e);
+                    done!(500 => "deck removal failed")
+                }
+            }
+        },
         "v1_delete_single_deck_handler",
     );
 
