@@ -19,6 +19,7 @@ pub enum Object {
     Deck(Deck),
     Decks(Vec<Deck>),
     Transaction(Transaction),
+    Transactions(Vec<Transaction>),
 }
 
 impl Object {
@@ -28,6 +29,14 @@ impl Object {
             decks.push(Deck::from(deck));
         }
         Object::Decks(decks)
+    }
+
+    fn list_of_transactions(other: Vec<db::Transaction>) -> Self {
+        let mut transactions = vec![];
+        for txn in other {
+            transactions.push(Transaction::from(txn));
+        }
+        Object::Transactions(transactions)
     }
 }
 
@@ -77,6 +86,13 @@ pub struct TransactionCreationAttempt {
     pub dated: NaiveDate,
     pub gain: String,
     pub loss: String,
+}
+
+#[derive(Deserialize)]
+pub struct TransactionUpdateAttempt {
+    pub gain: Option<String>,
+    pub loss: Option<String>,
+    pub dated: Option<NaiveDate>,
 }
 
 #[derive(Serialize)]
@@ -209,6 +225,23 @@ impl API {
         }
     }
 
+    pub fn retrieve_transactions_for_collection(&self, cid: &str) -> Result<Object> {
+        let collection = match self
+            .db
+            .find_collection_by_uuid(
+                Uuid::parse_str(cid).chain_err(|| "unable to parse collection uuid")?,
+            )
+            .chain_err(|| "unable to find collection to retrieve transactions for")?
+        {
+            Some(collection) => collection,
+            None => return Ok(not_found("collection", cid, None)),
+        };
+
+        Ok(Object::list_of_transactions(self.db
+            .find_transactions_for_collection(collection.id)
+            .chain_err(|| "unable to find transactions by collection uuid")?))
+    }
+
     pub fn post_transaction(&self, cid: &str, new: TransactionCreationAttempt) -> Result<Object> {
         let collection = match self
             .db
@@ -234,6 +267,102 @@ impl API {
             _ => Ok(Object::Response(Response {
                 ok: false,
                 message: "transaction-creation-failed".to_string(),
+            })),
+        }
+    }
+
+    pub fn retrieve_transaction(&self, cid: &str, tid: &str) -> Result<Object> {
+        let collection = match self
+            .db
+            .find_collection_by_uuid(
+                Uuid::parse_str(cid).chain_err(|| "unable to parse collection uuid")?,
+            )
+            .chain_err(|| "unable to find collection to retrieve transaction from")?
+        {
+            Some(collection) => collection,
+            None => return Ok(not_found("collection", cid, None)),
+        };
+
+        match self
+            .db
+            .find_transaction_by_uuid(
+                collection.id,
+                Uuid::parse_str(tid).chain_err(|| "unable to parse transaction uuid")?,
+            )
+            .chain_err(|| "unable to find transaction by uuid")?
+        {
+            Some(transaction) => Ok(Object::Transaction(Transaction::from(transaction))),
+            None => Ok(not_found("transaction", tid, None)),
+        }
+    }
+
+    pub fn update_transaction(&self, cid: &str, tid: &str, upd: TransactionUpdateAttempt) -> Result<Object> {
+        let collection = match self
+            .db
+            .find_collection_by_uuid(
+                Uuid::parse_str(cid).chain_err(|| "unable to parse collection uuid")?,
+            )
+            .chain_err(|| "unable to find collection to update transaction for")?
+        {
+            Some(collection) => collection,
+            None => return Ok(not_found("collection", cid, None)),
+        };
+
+        let transaction = match self.db.find_transaction_by_uuid(
+                collection.id,
+                Uuid::parse_str(tid).chain_err(|| "unable to parse transaction uuid")?,
+            ).chain_err(|| "unable to find transaction to update")?
+        {
+            Some(transaction) => transaction,
+            None => return Ok(not_found("transaction", tid, None)),
+        };
+
+        match self.db.update_transaction(
+            transaction.id,
+            db::UpdateTransaction {
+                dated: upd.dated,
+                gain: upd.gain,
+                loss: upd.loss,
+            },
+        ) {
+            Ok(Some(transaction)) => Ok(Object::Transaction(Transaction::from(transaction))),
+            Ok(None) => Ok(not_found("transaction", tid, None)),
+            _ => Ok(Object::Response(Response {
+                ok: false,
+                message: "transaction-update-failed".to_string(),
+            })),
+        }
+    }
+
+    pub fn delete_transaction(&self, cid: &str, tid: &str) -> Result<Object> {
+        let collection = match self
+            .db
+            .find_collection_by_uuid(
+                Uuid::parse_str(cid).chain_err(|| "unable to parse collection uuid")?,
+            )
+            .chain_err(|| "unable to find collection to update transaction for")?
+        {
+            Some(collection) => collection,
+            None => return Ok(not_found("collection", cid, None)),
+        };
+
+        let transaction = match self.db.find_transaction_by_uuid(
+                collection.id,
+                Uuid::parse_str(tid).chain_err(|| "unable to parse transaction uuid")?,
+            ).chain_err(|| "unable to find transaction to update")?
+        {
+            Some(transaction) => transaction,
+            None => return Ok(not_found("transaction", tid, None)),
+        };
+
+        match self.db.delete_transaction(transaction.id) {
+            Ok(_) => Ok(Object::Response(Response {
+                ok: true,
+                message: "transaction-removed".to_string(),
+            })),
+            _ => Ok(Object::Response(Response {
+                ok: false,
+                message: "transaction-removal-failed".to_string(),
             })),
         }
     }

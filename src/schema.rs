@@ -38,6 +38,7 @@ table! {
         gain -> Text,
         loss -> Text,
         created_at -> Timestamptz,
+        updated_at -> Timestamptz,
     }
 }
 

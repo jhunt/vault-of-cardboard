@@ -127,13 +127,24 @@ fn main() {
     );
 
     router.get(
-        "/v1/collectors/:uid/decks",
-        |_r: &mut Request| done!(??? => "deck retrieval"),
+        "/v1/collectors/:uid/collections/_/transactions",
+        |r: &mut Request| {
+            let api = boot();
+            let uid = param!(r, "uid");
+
+            match api.retrieve_transactions_for_collection(&uid) {
+                Ok(res) => done!(res),
+                Err(e) => {
+                    println!("transactions retrieval fail: {}", e);
+                    done!(500 => "transactions retrieval failed")
+                }
+            }
+        },
         "v1_get_all_transactions_handler",
     );
 
     router.post(
-        "/v1/collectors/:uid/decks",
+        "/v1/collectors/:uid/collections/_/transactions",
         |r: &mut Request| {
             let api = boot();
             let uid = param!(r, "uid");
@@ -156,20 +167,62 @@ fn main() {
     );
 
     router.get(
-        "/v1/collectors/:uid/transactions/:tid",
-        |_r: &mut Request| done!(??? => "transaction retrieval"),
+        "/v1/collectors/:uid/collections/_/transactions/:tid",
+        |r: &mut Request| {
+            let api = boot();
+            let uid = param!(r, "uid");
+            let tid = param!(r, "tid");
+
+            match api.retrieve_transaction(&uid, &tid) {
+                Ok(res) => done!(res),
+                Err(e) => {
+                    println!("transaction retrieval fail: {}", e);
+                    done!(500 => "transaction retrieval failed")
+                }
+            }
+        },
         "v1_get_single_transaction_handler",
     );
 
     router.patch(
-        "/v1/collectors/:uid/transactions/:tid",
-        |_r: &mut Request| done!(??? => "transaction update"),
+        "/v1/collectors/:uid/collections/_/transactions/:tid",
+        |r: &mut Request| {
+            let api = boot();
+            let uid = param!(r, "uid");
+            let tid = param!(r, "tid");
+
+            match serde_json::from_reader(&mut r.body) {
+                Err(e) => {
+                    println!("error: {}", e);
+                    done!(400 => "bad request")
+                }
+                Ok(attempt) => match api.update_transaction(&uid, &tid, attempt) {
+                    Ok(res) => done!(res),
+                    Err(e) => {
+                        println!("transaction update fail: {}", e);
+                        done!(500 => "transaction update failed")
+                    }
+                },
+            }
+        },
         "v1_update_single_transaction_handler",
     );
 
     router.delete(
-        "/v1/collectors/:uid/transactions/:tid",
-        |_r: &mut Request| done!(??? => "transaction removal"),
+        "/v1/collectors/:uid/collections/_/transactions/:tid",
+        |r: &mut Request| {
+            let api = boot();
+            let uid = param!(r, "uid");
+            let tid = param!(r, "tid");
+
+            match api.delete_transaction(&uid, &tid) {
+                Ok(res) => done!(res),
+                Err(e) => {
+                    println!("transaction removal fail: {}", e);
+                    done!(500 => "transaction removal failed")
+                }
+            }
+        },
         "v1_delete_single_transaction_handler",
     );
 

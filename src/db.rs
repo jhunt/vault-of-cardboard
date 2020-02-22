@@ -58,6 +58,7 @@ pub struct Transaction {
     pub gain: String,
     pub loss: String,
     pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Insertable)]
@@ -67,6 +68,14 @@ pub struct NewTransaction<'a> {
     pub dated: &'a NaiveDate,
     pub gain: &'a str,
     pub loss: &'a str,
+}
+
+#[derive(AsChangeset)]
+#[table_name = "transactions"]
+pub struct UpdateTransaction {
+    pub gain: Option<String>,
+    pub loss: Option<String>,
+    pub dated: Option<NaiveDate>,
 }
 
 #[derive(Queryable)]
@@ -352,6 +361,29 @@ impl Database {
         }
     }
 
+    pub fn find_transactions_for_collection(&self, cid: Uuid) -> Result<Vec<Transaction>> {
+        Ok(transactions::dsl::transactions
+            .filter(transactions::dsl::collection.eq(cid))
+            .get_results::<Transaction>(&self.pg)
+            .chain_err(|| "unable to retrieve transactions for collection uuid")?)
+    }
+
+    // Find a Transaction by its UUID.
+    pub fn find_transaction_by_uuid(&self, cid: Uuid, id: Uuid) -> Result<Option<Transaction>> {
+        match transactions::dsl::transactions
+            .find(id)
+            .filter(transactions::dsl::collection.eq(cid))
+            .get_result::<Transaction>(&self.pg)
+        {
+            Ok(transaction) => Ok(Some(transaction)),
+            Err(diesel::NotFound) => Ok(None),
+            Err(e) => Err(Error::with_chain(
+                e,
+                "failed to retrieve transaction from database",
+            )),
+        }
+    }
+
     // Create a new Transaction.
     pub fn create_transaction(&self, id: Option<Uuid>, new: NewTransaction) -> Result<Transaction> {
         Ok(diesel::insert_into(transactions::table)
@@ -360,8 +392,28 @@ impl Database {
             .chain_err(|| "failed to insert transaction record into database")?)
     }
 
-    //pub fn update_transaction
-    //pub fn delete_transaction
+    pub fn update_transaction(&self, id: Uuid, upd: UpdateTransaction) -> Result<Option<Transaction>> {
+        diesel::update(transactions::dsl::transactions.find(id))
+            .set((&upd, transactions::dsl::updated_at.eq(Utc::now())))
+            .execute(&self.pg)
+            .chain_err(|| "failed to update transaction record in database")?;
+
+        match transactions::dsl::transactions.find(id).get_result::<Transaction>(&self.pg) {
+            Ok(transaction) => Ok(Some(transaction)),
+            Err(diesel::NotFound) => Ok(None),
+            Err(e) => Err(Error::with_chain(
+                e,
+                "failed to udpate transaction record in database",
+            )),
+        }
+    }
+
+    pub fn delete_transaction(&self, id: Uuid) -> Result<()> {
+        diesel::delete(transactions::dsl::transactions.filter(transactions::dsl::id.eq(id)))
+            .execute(&self.pg)
+            .chain_err(|| "failed to delete transaction record from database")?;
+        Ok(())
+    }
 
     pub fn find_decks_for_collector(&self, uid: Uuid) -> Result<Vec<Deck>> {
         Ok(decks::dsl::decks

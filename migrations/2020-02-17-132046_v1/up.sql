@@ -24,7 +24,8 @@ CREATE TABLE transactions (
     gain         TEXT     NOT NULL DEFAULT '',
     loss         TEXT     NOT NULL DEFAULT '',
 
-    created_at   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    created_at   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE decks (
