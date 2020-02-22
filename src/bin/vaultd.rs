@@ -36,30 +36,28 @@ macro_rules! param {
     };
 }
 
-macro_rules! unimpl {
-    ($s: expr) => {
-        Ok(Response::with((
-            status::InternalServerError,
-            format!("{}: unimplemented.", $s),
-        )))
-    };
-}
-
 macro_rules! done {
     (204) => {
         Ok(Response::with(status::NoContent))
     };
 
     (200 => $o: expr) => {
-        Ok(Response::with((status::Ok, json!($o).to_string())))
+        Ok(Response::with((status::Ok, format!("{}\n", json!($o).to_string()))))
     };
 
     (400 => $s: expr) => {
-        Ok(Response::with((status::BadRequest, $s)))
+        Ok(Response::with((status::BadRequest, format!("{}\n", $s))))
     };
 
     (403 => $s: expr) => {
-        Ok(Response::with((status::Forbidden, $s)))
+        Ok(Response::with((status::Forbidden, format!("{}\n", $s))))
+    };
+
+    (??? => $s: expr) => {
+        Ok(Response::with((
+            status::InternalServerError,
+            format!("{}: unimplemented.\n", $s),
+        )))
     };
 }
 
@@ -110,7 +108,7 @@ fn main() {
 
     router.get(
         "/v1/collectors/:uid/decks",
-        |_r: &mut Request| unimpl!("deck retrieval"),
+        |_r: &mut Request| done!(??? => "deck retrieval"),
         "v1_get_all_transactions_handler",
     );
 
@@ -139,25 +137,25 @@ fn main() {
 
     router.get(
         "/v1/collectors/:uid/transactions/:tid",
-        |_r: &mut Request| unimpl!("transaction retrieval"),
+        |_r: &mut Request| done!(??? => "transaction retrieval"),
         "v1_get_single_transaction_handler",
     );
 
     router.patch(
         "/v1/collectors/:uid/transactions/:tid",
-        |_r: &mut Request| unimpl!("transaction update"),
+        |_r: &mut Request| done!(??? => "transaction update"),
         "v1_update_single_transaction_handler",
     );
 
     router.delete(
         "/v1/collectors/:uid/transactions/:tid",
-        |_r: &mut Request| unimpl!("transaction removal"),
+        |_r: &mut Request| done!(??? => "transaction removal"),
         "v1_delete_single_transaction_handler",
     );
 
     router.get(
         "/v1/collectors/:uid/decks",
-        |_r: &mut Request| unimpl!("deck retrieval"),
+        |_r: &mut Request| done!(??? => "deck retrieval"),
         "v1_get_all_decks_handler",
     );
 
@@ -186,19 +184,19 @@ fn main() {
 
     router.get(
         "/v1/collectors/:uid/decks/:did",
-        |_r: &mut Request| unimpl!("deck retreival"),
+        |_r: &mut Request| done!(??? => "deck retreival"),
         "v1_get_single_deck_handler",
     );
 
     router.patch(
         "/v1/collectors/:uid/decks/:tid",
-        |_r: &mut Request| unimpl!("deck update"),
+        |_r: &mut Request| done!(??? => "deck update"),
         "v1_update_single_deck_handler",
     );
 
     router.delete(
         "/v1/collectors/:uid/decks/:did",
-        |_r: &mut Request| unimpl!("deck removal"),
+        |_r: &mut Request| done!(??? => "deck removal"),
         "v1_delete_single_deck_handler",
     );
 
