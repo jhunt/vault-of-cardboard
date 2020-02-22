@@ -318,15 +318,14 @@ impl API {
         };
 
         match self.db.update_transaction(
-            transaction.id,
+            &transaction,
             db::UpdateTransaction {
                 dated: upd.dated,
                 gain: upd.gain,
                 loss: upd.loss,
             },
         ) {
-            Ok(Some(transaction)) => Ok(Object::Transaction(Transaction::from(transaction))),
-            Ok(None) => Ok(not_found("transaction", tid, None)),
+            Ok(transaction) => Ok(Object::Transaction(Transaction::from(transaction))),
             _ => Ok(Object::Response(Response {
                 ok: false,
                 message: "transaction-update-failed".to_string(),
@@ -420,7 +419,7 @@ impl API {
         };
 
         match self.db.update_deck(
-            deck.id,
+            &deck,
             db::UpdateDeck {
                 title: upd.title,
                 description: upd.description,
@@ -429,8 +428,7 @@ impl API {
                 maybe: upd.maybe,
             },
         ) {
-            Ok(Some(deck)) => Ok(Object::Deck(Deck::from(deck))),
-            Ok(None) => Ok(not_found("deck", did, None)),
+            Ok(deck) => Ok(Object::Deck(Deck::from(deck))),
             _ => Ok(Object::Response(Response {
                 ok: false,
                 message: "deck-update-failed".to_string(),

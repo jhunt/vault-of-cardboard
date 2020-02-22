@@ -50,7 +50,7 @@ pub struct NewCollection {
     pub collector: Uuid,
 }
 
-#[derive(Queryable)]
+#[derive(Identifiable, Queryable)]
 pub struct Transaction {
     pub id: Uuid,
     pub collection: Uuid,
@@ -78,7 +78,7 @@ pub struct UpdateTransaction {
     pub dated: Option<NaiveDate>,
 }
 
-#[derive(Queryable)]
+#[derive(Identifiable, Queryable)]
 pub struct Deck {
     pub id: Uuid,
     pub collector: Uuid,
@@ -392,20 +392,11 @@ impl Database {
             .chain_err(|| "failed to insert transaction record into database")?)
     }
 
-    pub fn update_transaction(&self, id: Uuid, upd: UpdateTransaction) -> Result<Option<Transaction>> {
-        diesel::update(transactions::dsl::transactions.find(id))
+    pub fn update_transaction(&self, obj: &Transaction, upd: UpdateTransaction) -> Result<Transaction> {
+        Ok(diesel::update(obj)
             .set((&upd, transactions::dsl::updated_at.eq(Utc::now())))
-            .execute(&self.pg)
-            .chain_err(|| "failed to update transaction record in database")?;
-
-        match transactions::dsl::transactions.find(id).get_result::<Transaction>(&self.pg) {
-            Ok(transaction) => Ok(Some(transaction)),
-            Err(diesel::NotFound) => Ok(None),
-            Err(e) => Err(Error::with_chain(
-                e,
-                "failed to udpate transaction record in database",
-            )),
-        }
+            .get_result(&self.pg)
+            .chain_err(|| "failed to update transaction record in database")?)
     }
 
     pub fn delete_transaction(&self, id: Uuid) -> Result<()> {
@@ -453,20 +444,11 @@ impl Database {
             .chain_err(|| "failed to insert deck record into database")?)
     }
 
-    pub fn update_deck(&self, id: Uuid, upd: UpdateDeck) -> Result<Option<Deck>> {
-        diesel::update(decks::dsl::decks.find(id))
+    pub fn update_deck(&self, obj: &Deck, upd: UpdateDeck) -> Result<Deck> {
+        Ok(diesel::update(obj)
             .set((&upd, decks::dsl::updated_at.eq(Utc::now())))
-            .execute(&self.pg)
-            .chain_err(|| "failed to update deck record in database")?;
-
-        match decks::dsl::decks.find(id).get_result::<Deck>(&self.pg) {
-            Ok(deck) => Ok(Some(deck)),
-            Err(diesel::NotFound) => Ok(None),
-            Err(e) => Err(Error::with_chain(
-                e,
-                "failed to udpate deck record in database",
-            )),
-        }
+            .get_result(&self.pg)
+            .chain_err(|| "failed to update deck record in database")?)
     }
 
     pub fn delete_deck(&self, id: Uuid) -> Result<()> {
