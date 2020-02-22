@@ -4,7 +4,7 @@ use router::Router;
 use serde_json::json;
 use std::env;
 
-use vault_of_cardboard::api::API;
+use vault_of_cardboard::api::{Object, API};
 use vault_of_cardboard::db::Database;
 
 fn boot() -> API {
@@ -42,7 +42,10 @@ macro_rules! done {
     };
 
     (200 => $o: expr) => {
-        Ok(Response::with((status::Ok, format!("{}\n", json!($o).to_string()))))
+        Ok(Response::with((
+            status::Ok,
+            format!("{}\n", json!($o).to_string()),
+        )))
     };
 
     (400 => $s: expr) => {
@@ -53,10 +56,27 @@ macro_rules! done {
         Ok(Response::with((status::Forbidden, format!("{}\n", $s))))
     };
 
+    (500 => $s: expr) => {
+        Ok(Response::with((
+            status::InternalServerError,
+            format!("{}\n", $s),
+        )))
+    };
+
     (??? => $s: expr) => {
         Ok(Response::with((
             status::InternalServerError,
             format!("{}: unimplemented.\n", $s),
+        )))
+    };
+
+    ($object: expr) => {
+        Ok(Response::with((
+            match &$object {
+                Object::NotFound(_) => status::NotFound,
+                _ => status::Ok,
+            },
+            format!("{}\n", json!(&$object).to_string()),
         )))
     };
 }
@@ -74,7 +94,7 @@ fn main() {
                     done!(400 => "bad request")
                 }
                 Ok(attempt) => match api.authenticate(attempt) {
-                    Ok(res) => done!(200 => res),
+                    Ok(res) => done!(res),
                     Err(e) => {
                         println!("authn fail: {}", e);
                         done!(403 => "authentication failed")
@@ -95,7 +115,7 @@ fn main() {
                     done!(400 => "bad request")
                 }
                 Ok(attempt) => match api.signup(attempt) {
-                    Ok(res) => done!(200 => res),
+                    Ok(res) => done!(res),
                     Err(e) => {
                         println!("authn fail: {}", e);
                         done!(403 => "authentication failed")
@@ -124,7 +144,7 @@ fn main() {
                     done!(400 => "bad request")
                 }
                 Ok(attempt) => match api.post_transaction(&uid, attempt) {
-                    Ok(res) => done!(200 => res),
+                    Ok(res) => done!(res),
                     Err(e) => {
                         println!("transaction fail: {}", e);
                         done!(403 => "transaction creation failed")
@@ -170,11 +190,11 @@ fn main() {
                     println!("error: {}", e);
                     done!(400 => "bad request")
                 }
-                Ok(attempt) => match api.post_deck(&uid, attempt) {
-                    Ok(res) => done!(200 => res),
+                Ok(attempt) => match api.create_deck(&uid, attempt) {
+                    Ok(res) => done!(res),
                     Err(e) => {
                         println!("deck fail: {}", e);
-                        done!(403 => "deck creation failed")
+                        done!(500 => "deck creation failed")
                     }
                 },
             }
@@ -184,7 +204,19 @@ fn main() {
 
     router.get(
         "/v1/collectors/:uid/decks/:did",
-        |_r: &mut Request| done!(??? => "deck retreival"),
+        |r: &mut Request| {
+            let api = boot();
+            let uid = param!(r, "uid");
+            let did = param!(r, "did");
+
+            match api.retrieve_deck(&uid, &did) {
+                Ok(res) => done!(res),
+                Err(e) => {
+                    println!("deck retrieval fail: {}", e);
+                    done!(500 => "deck retrieval failed")
+                }
+            }
+        },
         "v1_get_single_deck_handler",
     );
 

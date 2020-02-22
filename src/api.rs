@@ -13,11 +13,30 @@ use errors::*;
 #[derive(Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Object {
+    NotFound(NotFound),
     Response(Response),
     Authenticated(Authenticated),
     Deck(Deck),
     Transaction(Transaction),
 }
+#[derive(Serialize)]
+pub struct NotFound {
+    kind: String,
+    identity: String,
+    message: String,
+}
+
+fn not_found(kind: &str, id: &str, msg: Option<&str>) -> Object {
+    Object::NotFound(NotFound {
+        kind: kind.to_string(),
+        identity: id.to_string(),
+        message: match msg {
+            None => format!("no-such-{}", kind),
+            Some(v) => v.to_string(),
+        },
+    })
+}
+
 #[derive(Serialize)]
 pub struct Response {
     ok: bool,
@@ -170,19 +189,15 @@ impl API {
     }
 
     pub fn post_transaction(&self, cid: &str, new: TransactionCreationAttempt) -> Result<Object> {
-        let cid = Uuid::parse_str(cid).chain_err(|| "unable to parse collection uuid")?;
         let collection = match self
             .db
-            .find_collection_by_uuid(cid)
+            .find_collection_by_uuid(
+                Uuid::parse_str(cid).chain_err(|| "unable to parse collection uuid")?,
+            )
             .chain_err(|| "unable to find collection to post transaction to")?
         {
             Some(collection) => collection,
-            None => {
-                return Ok(Object::Response(Response {
-                    ok: false,
-                    message: "no-such-collection".to_string(),
-                }))
-            }
+            None => return Ok(not_found("collection", cid, None)),
         };
 
         match self.db.create_transaction(
@@ -202,20 +217,16 @@ impl API {
         }
     }
 
-    pub fn post_deck(&self, uid: &str, new: DeckCreationAttempt) -> Result<Object> {
-        let uid = Uuid::parse_str(uid).chain_err(|| "unable to parse collector uuid")?;
+    pub fn create_deck(&self, uid: &str, new: DeckCreationAttempt) -> Result<Object> {
         let collector = match self
             .db
-            .find_collector_by_uuid(uid)
+            .find_collector_by_uuid(
+                Uuid::parse_str(uid).chain_err(|| "unable to parse collector uuid")?,
+            )
             .chain_err(|| "unable to find collector to post deck to")?
         {
             Some(collector) => collector,
-            None => {
-                return Ok(Object::Response(Response {
-                    ok: false,
-                    message: "no-such-collector".to_string(),
-                }))
-            }
+            None => return Ok(not_found("collector", uid, None)),
         };
 
         match self.db.create_deck(
@@ -234,6 +245,31 @@ impl API {
                 ok: false,
                 message: "deck-creation-failed".to_string(),
             })),
+        }
+    }
+
+    pub fn retrieve_deck(&self, uid: &str, did: &str) -> Result<Object> {
+        let collector = match self
+            .db
+            .find_collector_by_uuid(
+                Uuid::parse_str(uid).chain_err(|| "unable to parse collector uuid")?,
+            )
+            .chain_err(|| "unable to find collector to post deck to")?
+        {
+            Some(collector) => collector,
+            None => return Ok(not_found("collector", uid, None)),
+        };
+
+        match self
+            .db
+            .find_deck_by_uuid(
+                collector.id,
+                Uuid::parse_str(did).chain_err(|| "unable to parse deck uuid")?,
+            )
+            .chain_err(|| "unable to find deck by uuid")?
+        {
+            Some(deck) => Ok(Object::Deck(Deck::from(deck))),
+            None => Ok(not_found("deck", did, None)),
         }
     }
 }

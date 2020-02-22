@@ -300,12 +300,17 @@ impl Database {
 
     // Find a Collector by their UUID.
     pub fn find_collector_by_uuid(&self, id: Uuid) -> Result<Option<Collector>> {
-        Ok(Some(
-            collectors::dsl::collectors
-                .find(id)
-                .get_result::<Collector>(&self.pg)
-                .chain_err(|| "failed to retrieve collector record from database")?,
-        ))
+        match collectors::dsl::collectors
+            .find(id)
+            .get_result::<Collector>(&self.pg)
+        {
+            Ok(collector) => Ok(Some(collector)),
+            Err(diesel::NotFound) => Ok(None),
+            Err(e) => Err(Error::with_chain(
+                e,
+                "failed to retrieve collector from database",
+            )),
+        }
     }
 
     // Update a Collector with a blanket patch
@@ -324,12 +329,17 @@ impl Database {
 
     // Find a Collection by its UUID.
     pub fn find_collection_by_uuid(&self, id: Uuid) -> Result<Option<Collection>> {
-        Ok(Some(
-            collections::dsl::collections
-                .find(id)
-                .get_result::<Collection>(&self.pg)
-                .chain_err(|| "failed to retrieve collection from database")?,
-        ))
+        match collections::dsl::collections
+            .find(id)
+            .get_result::<Collection>(&self.pg)
+        {
+            Ok(collection) => Ok(Some(collection)),
+            Err(diesel::NotFound) => Ok(None),
+            Err(e) => Err(Error::with_chain(
+                e,
+                "failed to retrieve collection from database",
+            )),
+        }
     }
 
     // Create a new Transaction.
@@ -342,6 +352,21 @@ impl Database {
 
     //pub fn update_transaction
     //pub fn delete_transaction
+
+    pub fn find_deck_by_uuid(&self, uid: Uuid, id: Uuid) -> Result<Option<Deck>> {
+        match decks::dsl::decks
+            .find(id)
+            .filter(decks::dsl::collector.eq(uid))
+            .get_result::<Deck>(&self.pg)
+        {
+            Ok(deck) => Ok(Some(deck)),
+            Err(diesel::NotFound) => Ok(None),
+            Err(e) => Err(Error::with_chain(
+                e,
+                "failed to retrieve deck from database",
+            )),
+        }
+    }
 
     pub fn create_deck(&self, id: Option<Uuid>, new: NewDeck) -> Result<Deck> {
         let now = Utc::now();
