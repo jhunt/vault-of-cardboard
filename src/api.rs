@@ -23,12 +23,26 @@ pub enum Object {
 }
 
 impl Object {
+    fn ok(msg: &str) -> Self {
+        Self::Response(Response {
+            ok: true,
+            message: msg.to_string(),
+        })
+    }
+
+    fn fail(msg: &str) -> Self {
+        Self::Response(Response {
+            ok: false,
+            message: msg.to_string(),
+        })
+    }
+
     fn list_of_decks(other: Vec<db::Deck>) -> Self {
         let mut decks = vec![];
         for deck in other {
             decks.push(Deck::from(deck));
         }
-        Object::Decks(decks)
+        Self::Decks(decks)
     }
 
     fn list_of_transactions(other: Vec<db::Transaction>) -> Self {
@@ -36,7 +50,7 @@ impl Object {
         for txn in other {
             transactions.push(Transaction::from(txn));
         }
-        Object::Transactions(transactions)
+        Self::Transactions(transactions)
     }
 }
 
@@ -185,16 +199,10 @@ impl API {
                     Ok(session) => Ok(Object::Authenticated(Authenticated {
                         session: session.id.to_string(),
                     })),
-                    _ => Ok(Object::Response(Response {
-                        ok: false,
-                        message: "session-failed".to_string(),
-                    })),
+                    _ => Ok(Object::fail("session-failed")),
                 }
             }
-            _ => Ok(Object::Response(Response {
-                ok: false,
-                message: "authentication-failed".to_string(),
-            })),
+            _ => Ok(Object::fail("authentication-failed")),
         }
     }
 
@@ -218,10 +226,7 @@ impl API {
             Ok(session) => Ok(Object::Authenticated(Authenticated {
                 session: session.id.to_string(),
             })),
-            _ => Ok(Object::Response(Response {
-                ok: false,
-                message: "signup-failed".to_string(),
-            })),
+            _ => Ok(Object::fail("signup-failed")),
         }
     }
 
@@ -237,9 +242,11 @@ impl API {
             None => return Ok(not_found("collection", cid, None)),
         };
 
-        Ok(Object::list_of_transactions(self.db
-            .find_transactions_for_collection(collection.id)
-            .chain_err(|| "unable to find transactions by collection uuid")?))
+        Ok(Object::list_of_transactions(
+            self.db
+                .find_transactions_for_collection(collection.id)
+                .chain_err(|| "unable to find transactions by collection uuid")?,
+        ))
     }
 
     pub fn post_transaction(&self, cid: &str, new: TransactionCreationAttempt) -> Result<Object> {
@@ -264,10 +271,7 @@ impl API {
             },
         ) {
             Ok(txn) => Ok(Object::Transaction(Transaction::from(txn))),
-            _ => Ok(Object::Response(Response {
-                ok: false,
-                message: "transaction-creation-failed".to_string(),
-            })),
+            _ => Ok(Object::fail("transaction-creation-failed")),
         }
     }
 
@@ -296,7 +300,12 @@ impl API {
         }
     }
 
-    pub fn update_transaction(&self, cid: &str, tid: &str, upd: TransactionUpdateAttempt) -> Result<Object> {
+    pub fn update_transaction(
+        &self,
+        cid: &str,
+        tid: &str,
+        upd: TransactionUpdateAttempt,
+    ) -> Result<Object> {
         let collection = match self
             .db
             .find_collection_by_uuid(
@@ -308,10 +317,13 @@ impl API {
             None => return Ok(not_found("collection", cid, None)),
         };
 
-        let transaction = match self.db.find_transaction_by_uuid(
+        let transaction = match self
+            .db
+            .find_transaction_by_uuid(
                 collection.id,
                 Uuid::parse_str(tid).chain_err(|| "unable to parse transaction uuid")?,
-            ).chain_err(|| "unable to find transaction to update")?
+            )
+            .chain_err(|| "unable to find transaction to update")?
         {
             Some(transaction) => transaction,
             None => return Ok(not_found("transaction", tid, None)),
@@ -326,10 +338,7 @@ impl API {
             },
         ) {
             Ok(transaction) => Ok(Object::Transaction(Transaction::from(transaction))),
-            _ => Ok(Object::Response(Response {
-                ok: false,
-                message: "transaction-update-failed".to_string(),
-            })),
+            _ => Ok(Object::fail("transaction-update-failed")),
         }
     }
 
@@ -345,24 +354,21 @@ impl API {
             None => return Ok(not_found("collection", cid, None)),
         };
 
-        let transaction = match self.db.find_transaction_by_uuid(
+        let transaction = match self
+            .db
+            .find_transaction_by_uuid(
                 collection.id,
                 Uuid::parse_str(tid).chain_err(|| "unable to parse transaction uuid")?,
-            ).chain_err(|| "unable to find transaction to update")?
+            )
+            .chain_err(|| "unable to find transaction to update")?
         {
             Some(transaction) => transaction,
             None => return Ok(not_found("transaction", tid, None)),
         };
 
         match self.db.delete_transaction(transaction.id) {
-            Ok(_) => Ok(Object::Response(Response {
-                ok: true,
-                message: "transaction-removed".to_string(),
-            })),
-            _ => Ok(Object::Response(Response {
-                ok: false,
-                message: "transaction-removal-failed".to_string(),
-            })),
+            Ok(_) => Ok(Object::ok("transaction-removed")),
+            _ => Ok(Object::fail("transaction-removal-failed")),
         }
     }
 
@@ -390,10 +396,7 @@ impl API {
             },
         ) {
             Ok(deck) => Ok(Object::Deck(Deck::from(deck))),
-            _ => Ok(Object::Response(Response {
-                ok: false,
-                message: "deck-creation-failed".to_string(),
-            })),
+            _ => Ok(Object::fail("deck-creation-failed")),
         }
     }
 
@@ -409,10 +412,13 @@ impl API {
             None => return Ok(not_found("collector", uid, None)),
         };
 
-        let deck = match self.db.find_deck_by_uuid(
+        let deck = match self
+            .db
+            .find_deck_by_uuid(
                 collector.id,
                 Uuid::parse_str(did).chain_err(|| "unable to parse deck uuid")?,
-            ).chain_err(|| "unable to find deck to update")?
+            )
+            .chain_err(|| "unable to find deck to update")?
         {
             Some(deck) => deck,
             None => return Ok(not_found("deck", did, None)),
@@ -429,10 +435,7 @@ impl API {
             },
         ) {
             Ok(deck) => Ok(Object::Deck(Deck::from(deck))),
-            _ => Ok(Object::Response(Response {
-                ok: false,
-                message: "deck-update-failed".to_string(),
-            })),
+            _ => Ok(Object::fail("deck-update-failed")),
         }
     }
 
@@ -448,24 +451,21 @@ impl API {
             None => return Ok(not_found("collector", uid, None)),
         };
 
-        let deck = match self.db.find_deck_by_uuid(
+        let deck = match self
+            .db
+            .find_deck_by_uuid(
                 collector.id,
                 Uuid::parse_str(did).chain_err(|| "unable to parse deck uuid")?,
-            ).chain_err(|| "unable to find deck to update")?
+            )
+            .chain_err(|| "unable to find deck to update")?
         {
             Some(deck) => deck,
-            None => return Ok(not_found("deck", did, None)),
+            None => return Ok(Object::ok("deck-already-gone")),
         };
 
         match self.db.delete_deck(deck.id) {
-            Ok(_) => Ok(Object::Response(Response {
-                ok: true,
-                message: "deck-removed".to_string(),
-            })),
-            _ => Ok(Object::Response(Response {
-                ok: false,
-                message: "deck-removal-failed".to_string(),
-            })),
+            Ok(_) => Ok(Object::ok("deck-removed")),
+            _ => Ok(Object::fail("deck-removal-failed")),
         }
     }
 
@@ -481,9 +481,11 @@ impl API {
             None => return Ok(not_found("collector", uid, None)),
         };
 
-        Ok(Object::list_of_decks(self.db
-            .find_decks_for_collector(collector.id)
-            .chain_err(|| "unable to find decks by collector uuid")?))
+        Ok(Object::list_of_decks(
+            self.db
+                .find_decks_for_collector(collector.id)
+                .chain_err(|| "unable to find decks by collector uuid")?,
+        ))
     }
 
     pub fn retrieve_deck(&self, uid: &str, did: &str) -> Result<Object> {
