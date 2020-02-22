@@ -31,26 +31,8 @@ macro_rules! param {
     ($r: expr, $e: expr) => {
         match param($r, $e) {
             Some(v) => v,
-            None => return bad_request!("bad request"),
+            None => return done!(400 => "bad request"),
         }
-    };
-}
-
-macro_rules! bad_request {
-    ($s: expr) => {
-        Ok(Response::with((status::BadRequest, $s)))
-    };
-}
-
-macro_rules! okay {
-    ($o: expr) => {
-        Ok(Response::with((status::Ok, json!($o).to_string())))
-    };
-}
-
-macro_rules! forbidden {
-    ($s: expr) => {
-        Ok(Response::with((status::Forbidden, $s)))
     };
 }
 
@@ -60,6 +42,24 @@ macro_rules! unimpl {
             status::InternalServerError,
             format!("{}: unimplemented.", $s),
         )))
+    };
+}
+
+macro_rules! done {
+    (204) => {
+        Ok(Response::with(status::NoContent))
+    };
+
+    (200 => $o: expr) => {
+        Ok(Response::with((status::Ok, json!($o).to_string())))
+    };
+
+    (400 => $s: expr) => {
+        Ok(Response::with((status::BadRequest, $s)))
+    };
+
+    (403 => $s: expr) => {
+        Ok(Response::with((status::Forbidden, $s)))
     };
 }
 
@@ -73,13 +73,13 @@ fn main() {
             match serde_json::from_reader(&mut r.body) {
                 Err(e) => {
                     println!("error: {}", e);
-                    bad_request!("bad request")
+                    done!(400 => "bad request")
                 }
                 Ok(attempt) => match api.authenticate(attempt) {
-                    Ok(res) => okay!(res),
+                    Ok(res) => done!(200 => res),
                     Err(e) => {
                         println!("authn fail: {}", e);
-                        forbidden!("authentication failed")
+                        done!(403 => "authentication failed")
                     }
                 },
             }
@@ -94,13 +94,13 @@ fn main() {
             match serde_json::from_reader(&mut r.body) {
                 Err(e) => {
                     println!("error: {}", e);
-                    bad_request!("bad request")
+                    done!(400 => "bad request")
                 }
                 Ok(attempt) => match api.signup(attempt) {
-                    Ok(res) => okay!(res),
+                    Ok(res) => done!(200 => res),
                     Err(e) => {
                         println!("authn fail: {}", e);
-                        forbidden!("authentication failed")
+                        done!(403 => "authentication failed")
                     }
                 },
             }
@@ -119,16 +119,17 @@ fn main() {
         |r: &mut Request| {
             let api = boot();
             let uid = param!(r, "uid");
+
             match serde_json::from_reader(&mut r.body) {
                 Err(e) => {
                     println!("error: {}", e);
-                    bad_request!("bad request")
+                    done!(400 => "bad request")
                 }
                 Ok(attempt) => match api.post_transaction(&uid, attempt) {
-                    Ok(res) => okay!(res),
+                    Ok(res) => done!(200 => res),
                     Err(e) => {
                         println!("transaction fail: {}", e);
-                        forbidden!("transaction creation failed")
+                        done!(403 => "transaction creation failed")
                     }
                 },
             }
@@ -165,16 +166,17 @@ fn main() {
         |r: &mut Request| {
             let api = boot();
             let uid = param!(r, "uid");
+
             match serde_json::from_reader(&mut r.body) {
                 Err(e) => {
                     println!("error: {}", e);
-                    bad_request!("bad request")
+                    done!(400 => "bad request")
                 }
                 Ok(attempt) => match api.post_deck(&uid, attempt) {
-                    Ok(res) => okay!(res),
+                    Ok(res) => done!(200 => res),
                     Err(e) => {
                         println!("deck fail: {}", e);
-                        forbidden!("deck creation failed")
+                        done!(403 => "deck creation failed")
                     }
                 },
             }
@@ -184,7 +186,7 @@ fn main() {
 
     router.get(
         "/v1/collectors/:uid/decks/:did",
-        |_r: &mut Request| unimpl!("deck retrevial"),
+        |_r: &mut Request| unimpl!("deck retreival"),
         "v1_get_single_deck_handler",
     );
 
