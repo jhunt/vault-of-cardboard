@@ -402,7 +402,7 @@ impl Database {
     }
 
     pub fn update_deck(&self, id: Uuid, upd: UpdateDeck) -> Result<Option<Deck>> {
-        diesel::update(decks::table)
+        diesel::update(decks::dsl::decks.find(id))
             .set((&upd, decks::dsl::updated_at.eq(Utc::now())))
             .execute(&self.pg)
             .chain_err(|| "failed to update deck record in database")?;
