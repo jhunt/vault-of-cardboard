@@ -10,6 +10,11 @@ use std::collections::HashMap;
 pub struct Pool {
     pub sets: HashMap<String, Set>,
     pub cards: HashMap<String, OracleCard>,
+
+    #[serde(skip_serializing)]
+    pub lookup: HashMap<String, String>,
+    #[serde(skip_serializing)]
+    pub prices: HashMap<String, Option<String>>,
 }
 
 impl Pool {
@@ -17,18 +22,33 @@ impl Pool {
         Pool {
             sets: HashMap::new(),
             cards: HashMap::new(),
+
+            lookup: HashMap::new(),
+            prices: HashMap::new(),
         }
     }
 
     pub fn add_set(&mut self, set: &raw::Set) {
         if !self.sets.contains_key(&set.code) {
-            self.sets.insert(set.code.to_string(), Set::from(set));
+            let code = set.code.to_uppercase();
+            self.sets.insert(code.to_string(), Set::from(set));
 
             for card in &set.cards {
                 if !self.cards.contains_key(&card.oracle_id) {
                     self.cards
                         .insert(card.oracle_id.to_string(), OracleCard::from(card));
                 }
+
+                let oracle = &self.cards[&card.oracle_id];
+                self.lookup.insert(format!("{} {}", &code, oracle.name), card.id.to_string());
+
+                self.prices.insert(card.id.to_string(), match &card.prices {
+                    None => None,
+                    Some(prices) => match &prices.usd {
+                        None => None,
+                        Some(usd) => Some(usd.to_string()),
+                    },
+                });
             }
         }
     }

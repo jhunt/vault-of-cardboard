@@ -8,6 +8,8 @@ edition = "2018"
 
 [dependencies]
 error-chain = "0.12"
+clap = "2.33"
+
 uuid = { version = "0.7", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 diesel = { version = "1.0.0", features = ["postgres", "uuidv07", "chrono"] }
