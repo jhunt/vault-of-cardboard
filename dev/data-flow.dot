@@ -1,0 +1,41 @@
+digraph flow {
+   rankdir = LR;
+   edge [color="#888888"]
+
+   { node [shape=none] scryfall cache lookup_json old_cdif new_cdif }
+
+   { node [shape=rect,fillcolor=lightblue,style=filled] ingest diff reconcile rescry }
+   { node [shape=note,fillcolor=lightgreen,style=filled] cards_json prices_json deck_d collect_d }
+
+   cache [label="fs: cache/*.set"]
+
+   cards_json  [label="GET /cards.json"]
+   prices_json [label="GET /prices.json"]
+   lookup_json [label="fs: lookups.json"]
+
+   deck_d    [label="GET /$deck.json"]
+   collect_d [label="GET /$collection.json"]
+
+   old_cdif [label="db: old.cdif"]
+   new_cdif [label="new.cdif"]
+
+   { rank=same rescry diff lookup_json }
+   { rank=same cache old_cdif new_cdif }
+   { rank=same cards_json prices_json deck_d collect_d }
+
+   scryfall -> ingest -> cache -> rescry;
+   rescry -> cards_json;
+   rescry -> prices_json;
+   rescry -> lookup_json;
+
+   old_cdif -> diff;
+   new_cdif -> diff;
+
+   lookup_json -> diff;
+   diff -> deck_d;
+   diff -> collect_d;
+
+   { edge [dir=both,arrowhead=normal,arrowtail=normal]
+     deck_d    -> reconcile
+     collect_d -> reconcile }
+}
