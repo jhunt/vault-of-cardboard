@@ -1,7 +1,10 @@
+pub mod cdif;
+pub mod map;
+pub mod pile;
+pub mod raw;
+
 use serde::{Serialize, Serializer};
 use std::collections::HashMap;
-
-use super::scryfall;
 
 #[derive(Serialize)]
 pub struct Pool {
@@ -17,7 +20,7 @@ impl Pool {
         }
     }
 
-    pub fn add_set(&mut self, set: &scryfall::Set) {
+    pub fn add_set(&mut self, set: &raw::Set) {
         if !self.sets.contains_key(&set.code) {
             self.sets.insert(set.code.to_string(), Set::from(set));
 
@@ -40,8 +43,8 @@ pub struct Set {
     pub cards: Vec<PrintCard>,
 }
 
-impl std::convert::From<&scryfall::Set> for Set {
-    fn from(set: &scryfall::Set) -> Self {
+impl std::convert::From<&raw::Set> for Set {
+    fn from(set: &raw::Set) -> Self {
         Set {
             code: set.code.to_string().to_uppercase(),
             name: set.name.to_string(),
@@ -130,8 +133,8 @@ pub struct OracleCard {
     pub colors: Vec<String>,
 }
 
-impl std::convert::From<&scryfall::Card> for OracleCard {
-    fn from(card: &scryfall::Card) -> Self {
+impl std::convert::From<&raw::Card> for OracleCard {
+    fn from(card: &raw::Card) -> Self {
         OracleCard {
             id: card.oracle_id.to_string(),
             name: card.name.to_string(),
@@ -256,8 +259,8 @@ fn maybe_legal(s: &Option<String>) -> bool {
     }
 }
 
-impl std::convert::From<&scryfall::Card> for PrintCard {
-    fn from(card: &scryfall::Card) -> Self {
+impl std::convert::From<&raw::Card> for PrintCard {
+    fn from(card: &raw::Card) -> Self {
         PrintCard {
             id: card.id.to_string(),
             oid: card.oracle_id.to_string(),

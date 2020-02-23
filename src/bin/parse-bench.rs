@@ -2,7 +2,7 @@ use std::io;
 use std::io::prelude::*;
 use std::time::Instant;
 
-use vault_of_cardboard::parser;
+use vault_of_cardboard::data::cdif;
 
 fn main() {
     let mut n = 0;
@@ -13,7 +13,7 @@ fn main() {
         n = n + 1;
         match line {
             Ok(line) => {
-                match parser::parse_line(&line) {
+                match cdif::parse_line(&line) {
                     Some(_) => (),
                     None => println!("{}: syntax error!", line),
                 };

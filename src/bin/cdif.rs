@@ -2,10 +2,10 @@ use std::io;
 use std::io::prelude::*;
 use std::collections::HashMap;
 
-use vault_of_cardboard::parser;
+use vault_of_cardboard::data::cdif;
 
 pub struct Collector {
-    map: HashMap<String, parser::Line>
+    map: HashMap<String, cdif::Line>
 }
 
 impl Collector {
@@ -15,7 +15,7 @@ impl Collector {
         }
     }
 
-    pub fn track(&mut self, line: parser::Line) {
+    pub fn track(&mut self, line: cdif::Line) {
         match self.map.get_mut(&line.id()) {
             Some(l) => { l.quantity += line.quantity; }
             None => { self.map.insert(line.id(), line); }
@@ -38,7 +38,7 @@ fn main() {
         n = n + 1;
         match line {
             Ok(line) => {
-                match parser::parse_line(&line) {
+                match cdif::parse_line(&line) {
                     Some(l) => {
                         c.track(l);
                     },

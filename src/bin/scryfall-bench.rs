@@ -1,10 +1,10 @@
 use std::time::Instant;
 
-use vault_of_cardboard::scryfall;
+use vault_of_cardboard::data::raw;
 
 fn main() {
     let now = Instant::now();
-    let sets = scryfall::sets("data/cache");
+    let sets = raw::sets("data/cache");
     let elapsed = now.elapsed().as_millis();
 
     let mut n = 0;

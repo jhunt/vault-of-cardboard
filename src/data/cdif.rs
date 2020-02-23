@@ -1,7 +1,7 @@
 // parser: parse vif
 
 pub struct Line {
-    pub quantity: u32,
+    pub quantity: i32,
     pub set: String,
     pub oracle: String,
     pub gvars: Vec<String>,
@@ -47,12 +47,12 @@ pub fn parse_line(line: &str) -> Option<Line> {
             (0, ' ') => (),
             (0, '0'..='9') => {
                 state = 1;
-                data.quantity = c.to_digit(10)?;
+                data.quantity = c.to_digit(10)? as i32;
             }
             (0, '#') => state = 14, // 0 -> 14 [label="'#']
 
             (1, '0'..='9') => {
-                data.quantity = data.quantity * 10 + c.to_digit(10)?;
+                data.quantity = data.quantity * 10 + c.to_digit(10)? as i32;
             }
             (1, 'x') => state = 2, // 1 -> 2 [label="'x'"]
             (1, ' ') => state = 3, // 1 -> 3 [label="WS"]

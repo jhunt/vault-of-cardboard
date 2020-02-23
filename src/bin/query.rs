@@ -1,5 +1,5 @@
 use std::fmt::Display;
-use vault_of_cardboard::scryfall;
+use vault_of_cardboard::data::raw;
 
 fn or<T: Display>(pri: &Option<T>, sec: &str) -> String {
     match pri {
@@ -17,7 +17,7 @@ fn yn(maybe: &Option<bool>) -> String {
 }
 
 fn main() {
-    let set = scryfall::Set::from_stdin().unwrap();
+    let set = raw::Set::from_stdin().unwrap();
 
     println!(
         "----[ {} {}: {} ]-------------------",
