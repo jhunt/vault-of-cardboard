@@ -1,6 +1,5 @@
 use serde::Serialize;
-use super::super::data;
-use super::{cdif, map::Map};
+use super::super::data::{pool, cdif};
 
 #[derive(Serialize)]
 pub struct Card {
@@ -16,7 +15,7 @@ pub struct Pile {
 }
 
 impl Pile {
-    pub fn resolve(lines: Vec<cdif::Line>, lookup: Map) -> Self {
+    pub fn resolve(lines: Vec<cdif::Line>, lookup: pool::Map) -> Self {
         let mut cards = vec![];
 
         for line in lines {

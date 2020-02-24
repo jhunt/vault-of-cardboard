@@ -1,6 +1,5 @@
 use serde::{Serialize, Serializer};
 use std::collections::HashMap;
-use super::map::Map;
 
 mod errors {
     error_chain! {}
@@ -9,6 +8,8 @@ pub use errors::Error;
 use errors::*;
 
 use super::raw;
+
+pub type Map = HashMap<String, String>;
 
 #[derive(Serialize)]
 pub struct Pool {
