@@ -337,17 +337,50 @@ pub type Collection = Vec<OwnedCard>;
 mod test {
     #[test]
     fn a_collection_should_serialize_as_json() {
-        use super::{Collection, Card};
+        use super::{Card, Collection};
         use serde_json::json;
 
         let mut c = Collection::new();
-        c.push((22, Card{pid:"mir-plains".to_string(), var: vec![]}));
-        c.push((26, Card{pid:"mir-island".to_string(), var: vec![]}));
-        c.push((21, Card{pid:"mir-swamp".to_string(), var: vec![]}));
-        c.push((24, Card{pid:"mir-mountain".to_string(), var: vec![]}));
-        c.push((23, Card{pid:"mir-forest".to_string(), var: vec![]}));
+        c.push((
+            22,
+            Card {
+                pid: "mir-plains".to_string(),
+                var: vec![],
+            },
+        ));
+        c.push((
+            26,
+            Card {
+                pid: "mir-island".to_string(),
+                var: vec![],
+            },
+        ));
+        c.push((
+            21,
+            Card {
+                pid: "mir-swamp".to_string(),
+                var: vec![],
+            },
+        ));
+        c.push((
+            24,
+            Card {
+                pid: "mir-mountain".to_string(),
+                var: vec![],
+            },
+        ));
+        c.push((
+            23,
+            Card {
+                pid: "mir-forest".to_string(),
+                var: vec![],
+            },
+        ));
 
         let s = json!(c).to_string();
-        assert_eq!(s, r#"[[22,{"pid":"mir-plains","var":[]}],[26,{"pid":"mir-island","var":[]}],[21,{"pid":"mir-swamp","var":[]}],[24,{"pid":"mir-mountain","var":[]}],[23,{"pid":"mir-forest","var":[]}]]"#);
+        assert_eq!(
+            s,
+            r#"[[22,{"pid":"mir-plains","var":[]}],[26,{"pid":"mir-island","var":[]}],[21,{"pid":"mir-swamp","var":[]}],[24,{"pid":"mir-mountain","var":[]}],[23,{"pid":"mir-forest","var":[]}]]"#
+        );
     }
 }
