@@ -275,6 +275,7 @@ mod test {
         );
     }
 
+    #[cfg(test)]
     macro_rules! assert_parses {
         ($line:expr, $qty:expr, $set:expr, $ora:expr) => {
             let c = Line::parse($line);
@@ -386,11 +387,17 @@ mod test {
     fn should_be_able_to_parse_a_blank_line() {
         assert!(Line::parse("").is_some());
         assert!(Line::parse("                   ").is_some());
+        assert_parses!("", 0, "", "");
+        assert_parses!("    ", 0, "", "");
     }
 
     #[test]
     fn should_be_able_to_parse_a_full_line_comment() {
         assert!(Line::parse("# this is a test comment").is_some());
+        assert_parses!("# this is a test comment", 0, "", "");
+
+        assert!(Line::parse("  # this is a test comment").is_some());
+        assert_parses!("       # this is a test comment", 0, "", "");
     }
 
     #[test]
