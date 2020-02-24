@@ -1,5 +1,6 @@
 use serde::{Serialize, Serializer};
 use std::collections::HashMap;
+use std::io;
 
 mod errors {
     error_chain! {}
@@ -7,9 +8,17 @@ mod errors {
 pub use errors::Error;
 use errors::*;
 
-use super::raw;
+use super::{raw, Persistable};
 
 pub type Map = HashMap<String, String>;
+
+impl Persistable for Map {
+    fn from_reader<T: io::Read>(src: &mut T) -> std::result::Result<Self, io::Error> {
+        let mut s = String::new();
+        src.read_to_string(&mut s)?;
+        Ok(serde_json::from_str(&s)?)
+    }
+}
 
 #[derive(Serialize)]
 pub struct Pool {
@@ -61,15 +70,19 @@ impl Pool {
                 }
 
                 let oracle = &self.cards[&card.oracle_id];
-                self.lookup.insert(format!("{} {}", &code, oracle.name), card.id.to_string());
+                self.lookup
+                    .insert(format!("{} {}", &code, oracle.name), card.id.to_string());
 
-                self.prices.insert(card.id.to_string(), match &card.prices {
-                    None => None,
-                    Some(prices) => match &prices.usd {
+                self.prices.insert(
+                    card.id.to_string(),
+                    match &card.prices {
                         None => None,
-                        Some(usd) => Some(usd.to_string()),
+                        Some(prices) => match &prices.usd {
+                            None => None,
+                            Some(usd) => Some(usd.to_string()),
+                        },
                     },
-                });
+                );
             }
         }
     }
@@ -335,6 +348,26 @@ pub type Collection = Vec<OwnedCard>;
 
 #[cfg(test)]
 mod test {
+    use super::super::Persistable;
+    use super::Map;
+
+    #[test]
+    fn it_should_be_able_to_read_a_lookup_json() {
+        let map = Map::from_file("test/lookup.json").expect("reading lookup map");
+        assert_eq!(
+            map.get("MIR Barbed-Back Wurm"),
+            Some(&"1b96810d-72d3-4dee-a29f-cdf85ea5ce6f".to_string())
+        );
+        assert_eq!(
+            map.get("MIR Femeref Scouts"),
+            Some(&"60192ded-689b-4cc5-9293-bff52924089b".to_string())
+        );
+        assert_eq!(
+            map.get("VIS Tin-Wing Chimera"),
+            Some(&"3375dcc6-9399-48eb-9aa4-7b40c3686cc5".to_string())
+        );
+    }
+
     #[test]
     fn a_collection_should_serialize_as_json() {
         use super::{Card, Collection};

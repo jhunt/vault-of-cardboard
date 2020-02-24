@@ -1,5 +1,5 @@
 use std::fmt::Display;
-use vault_of_cardboard::data::raw;
+use vault_of_cardboard::data::{raw, Persistable};
 
 fn or<T: Display>(pri: &Option<T>, sec: &str) -> String {
     match pri {

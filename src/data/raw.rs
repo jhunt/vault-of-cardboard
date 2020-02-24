@@ -1,8 +1,9 @@
-use std::fs::{self, File};
+use std::fs;
 use std::io;
-use std::io::prelude::*;
 use std::collections::HashMap;
+use serde_json;
 
+use super::Persistable;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -234,17 +235,11 @@ pub struct Set {
     pub cards: Vec<Card>,
 }
 
-impl Set {
-    pub fn from<T: Read>(src: &mut T) -> Result<Set, io::Error> {
+impl Persistable for Set {
+    fn from_reader<T: io::Read>(src: &mut T) -> Result<Self, io::Error> {
         let mut s = String::new();
         src.read_to_string(&mut s)?;
         Ok(serde_json::from_str(&s)?)
-    }
-    pub fn from_file(file: &str) -> Result<Set, io::Error> {
-        Set::from(&mut File::open(file)?)
-    }
-    pub fn from_stdin() -> Result<Set, io::Error> {
-        Set::from(&mut io::stdin().lock())
     }
 }
 

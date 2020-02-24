@@ -1,5 +1,7 @@
 use std::collections::HashMap;
-use std::io::BufRead;
+use std::io::{self, BufRead, BufReader};
+
+use super::Persistable;
 
 pub struct Line {
     pub quantity: i32,
@@ -151,34 +153,16 @@ pub struct File {
 
 impl File {
     fn track(&mut self, line: Line) {
-        match self.lines.get_mut(&line.id()) {
-            Some(l) => {
-                l.quantity += line.quantity;
-            }
-            None => {
-                self.lines.insert(line.id(), line);
-            }
-        };
-    }
-
-    pub fn read<T: BufRead>(src: T) -> Self {
-        let mut file = Self {
-            lines: HashMap::new(),
-        };
-        for line in src.lines() {
-            match line {
-                Ok(line) => {
-                    match Line::parse(&line) {
-                        Some(l) => {
-                            file.track(l);
-                        }
-                        None => panic!("syntax error!"),
-                    };
+        if line.quantity != 0 {
+            match self.lines.get_mut(&line.id()) {
+                Some(l) => {
+                    l.quantity += line.quantity;
                 }
-                Err(e) => panic!("read failed!"),
-            }
+                None => {
+                    self.lines.insert(line.id(), line);
+                }
+            };
         }
-        file
     }
 
     pub fn diff(a: &Self, b: &Self) -> Self {
@@ -215,6 +199,29 @@ impl File {
         }
 
         diff
+    }
+}
+
+impl Persistable for File {
+    fn from_reader<T: io::Read>(src: &mut T) -> Result<Self, io::Error> {
+        let src = BufReader::new(src);
+        let mut file = Self {
+            lines: HashMap::new(),
+        };
+        for line in src.lines() {
+            match line {
+                Ok(line) => {
+                    match Line::parse(&line) {
+                        Some(l) => {
+                            file.track(l);
+                        }
+                        None => panic!("syntax error!"),
+                    };
+                }
+                Err(e) => return Err(e),
+            }
+        }
+        Ok(file)
     }
 }
 

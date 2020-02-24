@@ -1,0 +1,7 @@
+# This CDIF file is meant to test resolution, through the
+# test/lookup.json (set,oracle) => print-id map.
+#
+# See it_should_be_able_to_convert_cdif_to_a_pile() in src/data/pile.rs
+#
+
+4x MIR Barbed-Back Wurm

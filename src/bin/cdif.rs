@@ -1,14 +1,12 @@
 #[macro_use]
 extern crate clap;
-use std::io::{self, BufReader};
-use std::fs::File;
-use std::process::exit;
 
-use vault_of_cardboard::data::cdif;
+use vault_of_cardboard::data::{Persistable, cdif};
 
 fn main() {
     let app = clap_app!(cdifdiff =>
         (version: "1.0")
+        (about: "Parse, inspect, and reformat CDIF data.")
         (author: "James Hunt <bugs@vaultofcardboard.com>")
         (@subcommand fmt =>
             (about: "Reformat and consolidate a CDIF on standard input to standard output."))
@@ -20,21 +18,16 @@ fn main() {
     .get_matches();
 
     if let Some(_) = app.subcommand_matches("fmt") {
-        let file = cdif::File::read(io::stdin().lock());
+        let file = cdif::File::from_stdin().unwrap();
         for (_, l) in &file.lines {
             println!("{}", l.as_cdif_string());
         }
-        exit(0);
+        std::process::exit(0);
     }
 
     if let Some(sub) = app.subcommand_matches("diff") {
-        let a_file = sub.value_of("OLD").unwrap();
-        let a = File::open(a_file).expect(&format!("{} should exist...", a_file));
-        let a = cdif::File::read(BufReader::new(a));
-
-        let b_file = sub.value_of("NEW").unwrap();
-        let b = File::open(b_file).expect(&format!("{} should exist...", b_file));
-        let b = cdif::File::read(BufReader::new(b));
+        let a = cdif::File::from_file(sub.value_of("OLD").unwrap()).unwrap();
+        let b = cdif::File::from_file(sub.value_of("NEW").unwrap()).unwrap();
 
         let diff = cdif::File::diff(&a, &b);
         for (_,line) in diff.lines {
