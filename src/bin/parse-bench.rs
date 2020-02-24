@@ -13,7 +13,7 @@ fn main() {
         n = n + 1;
         match line {
             Ok(line) => {
-                match cdif::parse_line(&line) {
+                match cdif::Line::parse(&line) {
                     Some(_) => (),
                     None => println!("{}: syntax error!", line),
                 };

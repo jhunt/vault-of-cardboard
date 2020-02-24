@@ -1,4 +1,5 @@
-// parser: parse vif
+use std::collections::HashMap;
+use std::io::BufRead;
 
 pub struct Line {
     pub quantity: i32,
@@ -27,120 +28,193 @@ impl Line {
     pub fn as_cdif_string(&self) -> String {
         String::from(&format!("{}x {}", self.quantity, self.id()))
     }
-}
 
-pub fn parse_line(line: &str) -> Option<Line> {
-    let mut state = 0;
-    let mut data = Line {
-        quantity: 0,
-        set: String::new(),
-        oracle: String::new(),
-        lvars: Vec::new(),
-        gvars: Vec::new(),
-    };
-    let mut gvar = String::new();
-    let mut lkey = String::new();
-    let mut lval = String::new();
+    pub fn parse(line: &str) -> Option<Self> {
+        let mut state = 0;
+        let mut data = Self {
+            quantity: 0,
+            set: String::new(),
+            oracle: String::new(),
+            lvars: Vec::new(),
+            gvars: Vec::new(),
+        };
+        let mut gvar = String::new();
+        let mut lkey = String::new();
+        let mut lval = String::new();
 
-    for c in line.chars() {
-        match (state, c) {
-            (0, ' ') => (),
-            (0, '0'..='9') => {
-                state = 1;
-                data.quantity = c.to_digit(10)? as i32;
+        for c in line.chars() {
+            match (state, c) {
+                (0, ' ') => (),
+                (0, '0'..='9') => {
+                    state = 1;
+                    data.quantity = c.to_digit(10)? as i32;
+                }
+                (0, '#') => state = 14, // 0 -> 14 [label="'#']
+
+                (1, '0'..='9') => {
+                    data.quantity = data.quantity * 10 + c.to_digit(10)? as i32;
+                }
+                (1, 'x') => state = 2, // 1 -> 2 [label="'x'"]
+                (1, ' ') => state = 3, // 1 -> 3 [label="WS"]
+
+                (2, ' ') => state = 3, // 2 -> 3 [label="WS"]
+
+                (3, ' ') => (), // 3 -> 3 [label="WS"]
+                (3, 'a'..='z') | (3, 'A'..='Z') | (3, '0'..='9') => {
+                    data.set.push(c);
+                    state = 4;
+                }
+
+                (4, 'a'..='z') | (4, 'A'..='Z') | (4, '0'..='9') => {
+                    data.set.push(c);
+                }
+                (4, ' ') => state = 5, // 4 -> 5 [label="WS"]
+
+                (5, ' ') => (), // 5 -> 5 [label="WS"]
+                (5, 'a'..='z') | (5, 'A'..='Z') | (5, '0'..='9') => {
+                    data.oracle.push(c);
+                    state = 6;
+                } // 5 -> 6 [label="LETTER"]
+
+                (6, '#') => state = 14,        // 6 -> 14 [label="'#'"]
+                (6, '|') => state = 7,         // 6 -> 7 [label="'|'"]
+                (6, _) => data.oracle.push(c), // 6 -> 6 [label="*"]
+
+                (7, ' ') => (), // 7 -> 7 [label="WS"]
+                (7, 'a'..='z') | (7, 'A'..='Z') | (7, '0'..='9') => {
+                    gvar.push(c);
+                    state = 8;
+                } // 7 -> 8 [label="LETTER"]
+                (7, '(') => state = 9, // 7 -> 9 [label="'('"]
+                (7, '#') => state = 14, // 7 -> 14 [label="'#'"]
+
+                (8, ' ') => {
+                    data.gvars.push(gvar);
+                    gvar = String::new();
+                    state = 7;
+                } // 8 -> 7 [label="WS"]
+                (8, 'a'..='z') | (8, 'A'..='Z') | (8, '0'..='9') => {
+                    gvar.push(c);
+                } // 8 -> 8 [label="LETTER"]
+
+                (9, 'a'..='z') | (9, 'A'..='Z') | (9, '0'..='9') => {
+                    lkey = String::new();
+                    lkey.push(c);
+                    state = 10;
+                } // 9 -> 10 [label="LETTER"]
+
+                (10, 'a'..='z') | (10, 'A'..='Z') | (10, '0'..='9') => {
+                    lkey.push(c);
+                } // 10 -> 10 [label="LETTER"]
+                (10, ':') => {
+                    state = 11;
+                } // 10 -> 11 [label="':'"]
+
+                (11, ' ') => (), // 11 -> 11 [label="WS"]
+                (11, 'a'..='z') | (11, 'A'..='Z') | (11, '0'..='9') => {
+                    lval = String::new();
+                    lval.push(c);
+                    state = 12;
+                } // 11 -> 12 [label="LETTER"]
+
+                (12, ')') => {
+                    data.lvars.push((lkey.to_string(), lval.to_string()));
+                    state = 13;
+                } // 12 -> 13 [label="')'"]
+                (12, _) => {
+                    lval.push(c);
+                }
+
+                (13, ' ') => state = 7,  // 13 -> 7 [label="WS"]
+                (13, '#') => state = 14, // 13 -> 14 [label="'#'"]
+
+                (14, _) => (), // 14 -> 14 [label="*"]
+
+                (_, _) => return None, // syntax error
             }
-            (0, '#') => state = 14, // 0 -> 14 [label="'#']
-
-            (1, '0'..='9') => {
-                data.quantity = data.quantity * 10 + c.to_digit(10)? as i32;
-            }
-            (1, 'x') => state = 2, // 1 -> 2 [label="'x'"]
-            (1, ' ') => state = 3, // 1 -> 3 [label="WS"]
-
-            (2, ' ') => state = 3, // 2 -> 3 [label="WS"]
-
-            (3, ' ') => (), // 3 -> 3 [label="WS"]
-            (3, 'a'..='z') | (3, 'A'..='Z') | (3, '0'..='9') => {
-                data.set.push(c);
-                state = 4;
-            }
-
-            (4, 'a'..='z') | (4, 'A'..='Z') | (4, '0'..='9') => {
-                data.set.push(c);
-            }
-            (4, ' ') => state = 5, // 4 -> 5 [label="WS"]
-
-            (5, ' ') => (), // 5 -> 5 [label="WS"]
-            (5, 'a'..='z') | (5, 'A'..='Z') | (5, '0'..='9') => {
-                data.oracle.push(c);
-                state = 6;
-            } // 5 -> 6 [label="LETTER"]
-
-            (6, '#') => state = 14,        // 6 -> 14 [label="'#'"]
-            (6, '|') => state = 7,         // 6 -> 7 [label="'|'"]
-            (6, _) => data.oracle.push(c), // 6 -> 6 [label="*"]
-
-            (7, ' ') => (), // 7 -> 7 [label="WS"]
-            (7, 'a'..='z') | (7, 'A'..='Z') | (7, '0'..='9') => {
-                gvar.push(c);
-                state = 8;
-            } // 7 -> 8 [label="LETTER"]
-            (7, '(') => state = 9, // 7 -> 9 [label="'('"]
-            (7, '#') => state = 14, // 7 -> 14 [label="'#'"]
-
-            (8, ' ') => {
+        }
+        data.oracle = data.oracle.trim_end().to_string();
+        match state {
+            8 => {
                 data.gvars.push(gvar);
-                gvar = String::new();
-                state = 7;
-            } // 8 -> 7 [label="WS"]
-            (8, 'a'..='z') | (8, 'A'..='Z') | (8, '0'..='9') => {
-                gvar.push(c);
-            } // 8 -> 8 [label="LETTER"]
-
-            (9, 'a'..='z') | (9, 'A'..='Z') | (9, '0'..='9') => {
-                lkey = String::new();
-                lkey.push(c);
-                state = 10;
-            } // 9 -> 10 [label="LETTER"]
-
-            (10, 'a'..='z') | (10, 'A'..='Z') | (10, '0'..='9') => {
-                lkey.push(c);
-            } // 10 -> 10 [label="LETTER"]
-            (10, ':') => {
-                state = 11;
-            } // 10 -> 11 [label="':'"]
-
-            (11, ' ') => (), // 11 -> 11 [label="WS"]
-            (11, 'a'..='z') | (11, 'A'..='Z') | (11, '0'..='9') => {
-                lval = String::new();
-                lval.push(c);
-                state = 12;
-            } // 11 -> 12 [label="LETTER"]
-
-            (12, ')') => {
-                data.lvars.push((lkey.to_string(), lval.to_string()));
-                state = 13;
-            } // 12 -> 13 [label="')'"]
-            (12, _) => {
-                lval.push(c);
+                Some(data)
             }
-
-            (13, ' ') => state = 7,  // 13 -> 7 [label="WS"]
-            (13, '#') => state = 14, // 13 -> 14 [label="'#'"]
-
-            (14, _) => (), // 14 -> 14 [label="*"]
-
-            (_, _) => return None, // syntax error
+            0 | 6 | 7 | 13 | 14 => Some(data),
+            _ => None,
         }
     }
-    data.oracle = data.oracle.trim_end().to_string();
-    match state {
-        8 => {
-            data.gvars.push(gvar);
-            Some(data)
+}
+
+pub struct File {
+    pub lines: HashMap<String, Line>,
+}
+
+impl File {
+    fn track(&mut self, line: Line) {
+        match self.lines.get_mut(&line.id()) {
+            Some(l) => {
+                l.quantity += line.quantity;
+            }
+            None => {
+                self.lines.insert(line.id(), line);
+            }
+        };
+    }
+
+    pub fn read<T: BufRead>(src: T) -> Self {
+        let mut file = Self {
+            lines: HashMap::new(),
+        };
+        for line in src.lines() {
+            match line {
+                Ok(line) => {
+                    match Line::parse(&line) {
+                        Some(l) => {
+                            file.track(l);
+                        }
+                        None => panic!("syntax error!"),
+                    };
+                }
+                Err(e) => panic!("read failed!"),
+            }
         }
-        0 | 6 | 7 | 13 | 14 => Some(data),
-        _ => None,
+        file
+    }
+
+    pub fn diff(a: &Self, b: &Self) -> Self {
+        let mut diff = Self {
+            lines: HashMap::new(),
+        };
+
+        for (k, line) in &a.lines {
+            let quantity = line.quantity -  match b.lines.get(k) {
+                Some(l) => l.quantity,
+                None => 0,
+            };
+            if quantity != 0 {
+                diff.lines.insert(k.to_string(), Line {
+                    quantity: quantity,
+                    set: line.set.to_string(),
+                    oracle: line.oracle.to_string(),
+                    gvars: line.gvars.clone(),
+                    lvars: line.lvars.clone(),
+                });
+            }
+        }
+
+        for (k, line) in &b.lines {
+            if let None = a.lines.get(k) {
+                diff.lines.insert(k.to_string(), Line {
+                    quantity: line.quantity,
+                    set: line.set.to_string(),
+                    oracle: line.oracle.to_string(),
+                    gvars: line.gvars.clone(),
+                    lvars: line.lvars.clone(),
+                });
+            }
+        }
+
+        diff
     }
 }
 
@@ -203,7 +277,7 @@ mod test {
 
     macro_rules! assert_parses {
         ($line:expr, $qty:expr, $set:expr, $ora:expr) => {
-            let c = parse_line($line);
+            let c = Line::parse($line);
             assert!(c.is_some(), format!("The line '{}' should parse", $line));
 
             let c = c.unwrap();
@@ -224,7 +298,7 @@ mod test {
     #[cfg(test)]
     macro_rules! assert_no_local_variants {
         ($line:expr) => {
-            let c = parse_line($line);
+            let c = Line::parse($line);
             assert!(c.is_some(), format!("The line '{}' should parse", $line));
 
             let c = c.unwrap();
@@ -241,7 +315,7 @@ mod test {
     macro_rules! assert_local_variants {
         ($line:expr, $want:expr) => {
             let want = $want;
-            let c = parse_line($line);
+            let c = Line::parse($line);
             assert!(c.is_some(), format!("The line '{}' should parse", $line));
 
             let c = c.unwrap();
@@ -272,7 +346,7 @@ mod test {
     macro_rules! assert_global_variants {
         ($line:expr, $want:expr) => {
             let want = $want;
-            let c = parse_line($line);
+            let c = Line::parse($line);
             assert!(c.is_some(), format!("The line '{}' should parse", $line));
 
             let c = c.unwrap();
@@ -295,7 +369,7 @@ mod test {
     #[cfg(test)]
     macro_rules! assert_no_global_variants {
         ($line:expr) => {
-            let c = parse_line($line);
+            let c = Line::parse($line);
             assert!(c.is_some(), format!("The line '{}' should parse", $line));
 
             let c = c.unwrap();
@@ -310,13 +384,13 @@ mod test {
 
     #[test]
     fn should_be_able_to_parse_a_blank_line() {
-        assert!(parse_line("").is_some());
-        assert!(parse_line("                   ").is_some());
+        assert!(Line::parse("").is_some());
+        assert!(Line::parse("                   ").is_some());
     }
 
     #[test]
     fn should_be_able_to_parse_a_full_line_comment() {
-        assert!(parse_line("# this is a test comment").is_some());
+        assert!(Line::parse("# this is a test comment").is_some());
     }
 
     #[test]
@@ -419,18 +493,18 @@ mod test {
 
     #[test]
     fn should_be_unwilling_to_accept_eol_in_the_middle_of_a_local_variant() {
-        assert!(!parse_line("1 DOM Opt | (").is_some());
-        assert!(!parse_line("1 DOM Opt | (test").is_some());
-        assert!(!parse_line("1 DOM Opt | (test:").is_some());
-        assert!(!parse_line("1 DOM Opt | (test: ").is_some());
-        assert!(!parse_line("1 DOM Opt | (test: foo").is_some());
+        assert!(!Line::parse("1 DOM Opt | (").is_some());
+        assert!(!Line::parse("1 DOM Opt | (test").is_some());
+        assert!(!Line::parse("1 DOM Opt | (test:").is_some());
+        assert!(!Line::parse("1 DOM Opt | (test: ").is_some());
+        assert!(!Line::parse("1 DOM Opt | (test: foo").is_some());
     }
 
     #[test]
     fn should_handle_bad_fsm_transitions_as_syntax_errors() {
-        assert!(!parse_line("1xx DOM Opt").is_some());
-        assert!(!parse_line("1x DOM Opt ||").is_some());
-        assert!(!parse_line("1x DOM Opt | NM ((test:signed))").is_some());
-        assert!(!parse_line("1x DOM Opt | NM (test:signed))").is_some());
+        assert!(!Line::parse("1xx DOM Opt").is_some());
+        assert!(!Line::parse("1x DOM Opt ||").is_some());
+        assert!(!Line::parse("1x DOM Opt | NM ((test:signed))").is_some());
+        assert!(!Line::parse("1x DOM Opt | NM (test:signed))").is_some());
     }
 }

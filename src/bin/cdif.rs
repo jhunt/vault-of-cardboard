@@ -1,52 +1,44 @@
-use std::io;
-use std::io::prelude::*;
-use std::collections::HashMap;
+#[macro_use]
+extern crate clap;
+use std::io::{self, BufReader};
+use std::fs::File;
+use std::process::exit;
 
 use vault_of_cardboard::data::cdif;
 
-pub struct Collector {
-    map: HashMap<String, cdif::Line>
-}
+fn main() {
+    let app = clap_app!(cdifdiff =>
+        (version: "1.0")
+        (author: "James Hunt <bugs@vaultofcardboard.com>")
+        (@subcommand fmt =>
+            (about: "Reformat and consolidate a CDIF on standard input to standard output."))
+        (@subcommand diff =>
+            (about: "Compare to CDIF files and generates a logical CDIF patch.")
+            (@arg OLD: +required "The first (base) file to consider.")
+            (@arg NEW: +required "The second (changed) file to consider."))
+    )
+    .get_matches();
 
-impl Collector {
-    pub fn new() -> Collector {
-        Collector{
-            map: HashMap::new(),
-        }
-    }
-
-    pub fn track(&mut self, line: cdif::Line) {
-        match self.map.get_mut(&line.id()) {
-            Some(l) => { l.quantity += line.quantity; }
-            None => { self.map.insert(line.id(), line); }
-        };
-    }
-
-    pub fn print(&self) {
-        for (_, l) in &self.map {
+    if let Some(_) = app.subcommand_matches("fmt") {
+        let file = cdif::File::read(io::stdin().lock());
+        for (_, l) in &file.lines {
             println!("{}", l.as_cdif_string());
         }
+        exit(0);
     }
-}
 
-fn main() {
-    let mut n = 0;
-    let mut c = Collector::new();
-    let stdin = io::stdin();
+    if let Some(sub) = app.subcommand_matches("diff") {
+        let a_file = sub.value_of("OLD").unwrap();
+        let a = File::open(a_file).expect(&format!("{} should exist...", a_file));
+        let a = cdif::File::read(BufReader::new(a));
 
-    for line in stdin.lock().lines() {
-        n = n + 1;
-        match line {
-            Ok(line) => {
-                match cdif::parse_line(&line) {
-                    Some(l) => {
-                        c.track(l);
-                    },
-                    None => println!("{}: syntax error!", line),
-                };
-            },
-            Err(e) => println!("read failed at line {}: {}!", n, e),
+        let b_file = sub.value_of("NEW").unwrap();
+        let b = File::open(b_file).expect(&format!("{} should exist...", b_file));
+        let b = cdif::File::read(BufReader::new(b));
+
+        let diff = cdif::File::diff(&a, &b);
+        for (_,line) in diff.lines {
+            println!("{:+} {}", line.quantity, line.id());
         }
     }
-    c.print();
 }
