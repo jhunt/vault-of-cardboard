@@ -10,7 +10,7 @@ pub mod schema;
 #[cfg(test)]
 mod test {
     use super::data::raw;
-    use super::data::{Pool, Set};
+    use super::data::pool::{Pool, Set};
 
     #[test]
     pub fn it_should_parse_raw_scryfall_set_files() {

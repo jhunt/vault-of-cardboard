@@ -4,7 +4,7 @@ use serde_json::json;
 use std::fs::File;
 use std::io::prelude::*;
 use std::time::Instant;
-use vault_of_cardboard::data::{self, raw};
+use vault_of_cardboard::data::pool::Pool;
 
 fn main() {
     let matches = clap_app!(rescry =>
@@ -57,17 +57,11 @@ fn main() {
         ),
     };
 
-    let mut pool = data::Pool::new();
-    let mut nsets = 0;
-    let mut ncards = 0;
     let now = Instant::now();
-    for (_, set) in raw::sets(cache) {
-        pool.add_set(&set);
-        nsets += 1;
-        ncards += set.cards.len();
-    }
+    let pool = Pool::read(cache).unwrap();
     let elapsed = now.elapsed().as_millis();
-    println!("parsed raw scryfall data ({} cards / {} sets) in {}ms", ncards, nsets, elapsed);
+    let (no, ns, nc) = pool.enumerate();
+    println!("parsed raw scryfall data ({} oracle cards / {} sets / {} print cards) in {}ms", no, ns, nc, elapsed);
 
     let now = Instant::now();
     if let Err(e) = cards.write_all(json!(pool).to_string().as_bytes()) {

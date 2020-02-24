@@ -1,3 +1,5 @@
+#[macro_use]
+extern crate clap;
 use std::collections::HashMap;
 use std::io::{BufReader, BufRead};
 use std::fs::File;
@@ -31,26 +33,41 @@ impl Differ {
         Self::track_in(&mut self.b, line);
     }
 
-    pub fn diff(self) -> Vec<cdif::Line> {
+    pub fn diff(mut self) -> Vec<cdif::Line> {
         let mut diffs = vec![];
         for (k, mut l) in self.a {
-            l.quantity -= match self.b.get(&k) {
+            l.quantity = match &self.b.get(&k) {
                 None => 0,
-                Some(l) => l.quantity,
+                Some(b) => b.quantity - l.quantity,
             };
             if l.quantity != 0 {
                 diffs.push(l);
             }
+            self.b.remove(&k);
+        }
+        for (_, l) in self.b {
+            diffs.push(l);
         }
         diffs
     }
 }
 
 fn main() {
-    let a = File::open("a.vif").expect("a.vif should exist...");
+    let matches = clap_app!(cdifdiff =>
+        (version: "1.0")
+        (author: "James Hunt <bugs@vaultofcardboard.com>")
+        (about: "Compare to CDIF files and generates a logical CDIF patch.")
+        (@arg OLD: +required "The first (base) file to consider.")
+        (@arg NEW: +required "The second (changed) file to consider.")).get_matches();
+
+    let a_file = matches.value_of("OLD").unwrap();
+    let a = File::open(a_file).expect(&format!("{} should exist...", a_file));
     let a = BufReader::new(a);
-    let b = File::open("b.vif").expect("b.vif should exist...");
+
+    let b_file = matches.value_of("NEW").unwrap();
+    let b = File::open(b_file).expect(&format!("{} should exist...", b_file));
     let b = BufReader::new(b);
+
     let mut diff = Differ::new();
 
     let mut n = 0;
@@ -60,10 +77,10 @@ fn main() {
             Ok(line) => {
                 match cdif::parse_line(&line) {
                     Some(l) => diff.track_a(l),
-                    None => println!("a.vif:{}: syntax error!", line),
+                    None => println!("{}:{}: syntax error!", a_file, line),
                 };
             },
-            Err(e) => println!("read failed at a.vif:{}: {}!", n, e),
+            Err(e) => println!("read failed at {}:{}: {}!", a_file, n, e),
         }
     }
 
@@ -74,14 +91,16 @@ fn main() {
             Ok(line) => {
                 match cdif::parse_line(&line) {
                     Some(l) => diff.track_b(l),
-                    None => println!("b.vif:{}: syntax error!", line),
+                    None => println!("{}:{}: syntax error!", b_file, line),
                 };
             },
-            Err(e) => println!("read failed at b.vif:{}: {}!", n, e),
+            Err(e) => println!("read failed at {}:{}: {}!", b_file, n, e),
         }
     }
 
     for line in diff.diff() {
-        println!("{}", line.as_cdif_string());
+        if line.quantity != 0 { // workaround for a bug
+            println!("{:+} {}", line.quantity, line.id());
+        }
     }
 }
