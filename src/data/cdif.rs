@@ -171,30 +171,36 @@ impl File {
         };
 
         for (k, line) in &a.lines {
-            let quantity = line.quantity -  match b.lines.get(k) {
+            let quantity = match b.lines.get(k) {
                 Some(l) => l.quantity,
                 None => 0,
-            };
+            } - line.quantity;
             if quantity != 0 {
-                diff.lines.insert(k.to_string(), Line {
-                    quantity: quantity,
-                    set: line.set.to_string(),
-                    oracle: line.oracle.to_string(),
-                    gvars: line.gvars.clone(),
-                    lvars: line.lvars.clone(),
-                });
+                diff.lines.insert(
+                    k.to_string(),
+                    Line {
+                        quantity: quantity,
+                        set: line.set.to_string(),
+                        oracle: line.oracle.to_string(),
+                        gvars: line.gvars.clone(),
+                        lvars: line.lvars.clone(),
+                    },
+                );
             }
         }
 
         for (k, line) in &b.lines {
             if let None = a.lines.get(k) {
-                diff.lines.insert(k.to_string(), Line {
-                    quantity: line.quantity,
-                    set: line.set.to_string(),
-                    oracle: line.oracle.to_string(),
-                    gvars: line.gvars.clone(),
-                    lvars: line.lvars.clone(),
-                });
+                diff.lines.insert(
+                    k.to_string(),
+                    Line {
+                        quantity: line.quantity,
+                        set: line.set.to_string(),
+                        oracle: line.oracle.to_string(),
+                        gvars: line.gvars.clone(),
+                        lvars: line.lvars.clone(),
+                    },
+                );
             }
         }
 
@@ -215,7 +221,9 @@ impl Persistable for File {
                         Some(l) => {
                             file.track(l);
                         }
-                        None => panic!("syntax error!"),
+                        None => {
+                            return Err(io::Error::new(io::ErrorKind::Other, "CDIF syntax error"))
+                        }
                     };
                 }
                 Err(e) => return Err(e),
@@ -416,6 +424,21 @@ mod test {
     }
 
     #[test]
+    fn should_not_parse_syntactically_incorrect_lines() {
+        assert!(Line::parse("1").is_none());
+        assert!(Line::parse("1 ").is_none());
+        assert!(Line::parse("1x").is_none());
+        assert!(Line::parse("1x ").is_none());
+        assert!(Line::parse("one LEA Black Lotus").is_none());
+        assert!(Line::parse("1 LEA").is_none());
+        assert!(Line::parse("1x LEA").is_none());
+        assert!(Line::parse("1x LEA ").is_none());
+        assert!(Line::parse("1x LEA | NM").is_none());
+        assert!(Line::parse("1x LEA | (signed: by artist)").is_none());
+        assert!(Line::parse("1x LEA Clone | (signed:").is_none());
+    }
+
+    #[test]
     fn should_be_able_to_parse_multidigit_quantities() {
         assert_parses!("23 DOM Opt", 23, "DOM", "Opt");
         assert_parses!("23x DOM Opt", 23, "DOM", "Opt");
@@ -520,5 +543,178 @@ mod test {
         assert!(!Line::parse("1x DOM Opt ||").is_some());
         assert!(!Line::parse("1x DOM Opt | NM ((test:signed))").is_some());
         assert!(!Line::parse("1x DOM Opt | NM (test:signed))").is_some());
+    }
+
+    #[test]
+    fn should_parse_cdif_files() {
+        let test_dot_cdif = r#"
+# simple multi-line CDIF file
+# (with embedded comments)
+
+2x DOM Mox Amber
+3x DOM Teferi, Hero of Dominaria
+"#;
+
+        let file = File::from_reader(&mut test_dot_cdif.as_bytes()).unwrap();
+        assert_eq!(file.lines.len(), 2);
+
+        let line = file.lines.get("DOM Mox Amber");
+        assert!(line.is_some());
+        let line = line.unwrap();
+        assert_eq!(line.quantity, 2);
+        assert_eq!(line.set, "DOM");
+        assert_eq!(line.oracle, "Mox Amber");
+
+        let line = file.lines.get("DOM Teferi, Hero of Dominaria");
+        assert!(line.is_some());
+        let line = line.unwrap();
+        assert_eq!(line.quantity, 3);
+        assert_eq!(line.set, "DOM");
+        assert_eq!(line.oracle, "Teferi, Hero of Dominaria");
+    }
+
+    #[test]
+    fn should_refuse_to_parse_bad_cdif_files() {
+        let bad_dot_cdif = r#"
+# a bad cdif file
+
+# one of everything, please
+1x GRN
+"#;
+
+        let file = File::from_reader(&mut bad_dot_cdif.as_bytes());
+        assert!(file.is_err());
+    }
+
+    #[test]
+    fn should_aggregate_repeated_cards_by_summing_their_quantities() {
+        let test_dot_cdif = r#"
+2x DOM Mox Amber
+
+# oh!  one more!
+1x DOM Mox Amber
+"#;
+
+        let file = File::from_reader(&mut test_dot_cdif.as_bytes()).unwrap();
+        assert_eq!(file.lines.len(), 1);
+
+        let line = file.lines.get("DOM Mox Amber");
+        assert!(line.is_some());
+        let line = line.unwrap();
+        assert_eq!(line.quantity, 3);
+        assert_eq!(line.set, "DOM");
+        assert_eq!(line.oracle, "Mox Amber");
+    }
+
+    #[test]
+    fn should_handle_strictly_additive_cdif_file_diffs() {
+        let a_dot_cdif = r#"
+# a.cdif
+
+4x DOM Opt
+4x GRN Radical Idea
+"#;
+
+        let b_dot_cdif = r#"
+# b.cdif
+
+4x DOM Opt
+4x GRN Radical Idea
+3x RIX Secrets of the Golden City
+"#;
+
+        let a = File::from_reader(&mut a_dot_cdif.as_bytes()).unwrap();
+        let b = File::from_reader(&mut b_dot_cdif.as_bytes()).unwrap();
+
+        let diff = File::diff(&a, &b);
+        assert_eq!(diff.lines.len(), 1);
+
+        let line = diff.lines.values().next().unwrap();
+        assert_eq!(line.quantity, 3);
+        assert_eq!(line.set, "RIX");
+        assert_eq!(line.oracle, "Secrets of the Golden City");
+    }
+
+    #[test]
+    fn should_handle_partially_additive_cdif_file_diffs() {
+        let a_dot_cdif = r#"
+# a.cdif
+
+4x DOM Opt
+4x GRN Radical Idea
+"#;
+
+        let b_dot_cdif = r#"
+# b.cdif
+
+4x DOM Opt
+8x GRN Radical Idea
+"#;
+
+        let a = File::from_reader(&mut a_dot_cdif.as_bytes()).unwrap();
+        let b = File::from_reader(&mut b_dot_cdif.as_bytes()).unwrap();
+
+        let diff = File::diff(&a, &b);
+        assert_eq!(diff.lines.len(), 1);
+
+        let line = diff.lines.values().next().unwrap();
+        assert_eq!(line.quantity, 4);
+        assert_eq!(line.set, "GRN");
+        assert_eq!(line.oracle, "Radical Idea");
+    }
+
+    #[test]
+    fn should_handle_strictly_subtractive_cdif_file_diffs() {
+        let a_dot_cdif = r#"
+# a.cdif
+
+4x DOM Opt
+4x GRN Radical Idea
+"#;
+
+        let b_dot_cdif = r#"
+# b.cdif
+
+4x GRN Radical Idea
+"#;
+
+        let a = File::from_reader(&mut a_dot_cdif.as_bytes()).unwrap();
+        let b = File::from_reader(&mut b_dot_cdif.as_bytes()).unwrap();
+
+        let diff = File::diff(&a, &b);
+        assert_eq!(diff.lines.len(), 1);
+
+        let line = diff.lines.values().next().unwrap();
+        assert_eq!(line.quantity, -4);
+        assert_eq!(line.set, "DOM");
+        assert_eq!(line.oracle, "Opt");
+    }
+
+    #[test]
+    fn should_handle_partially_subtractive_cdif_file_diffs() {
+        let a_dot_cdif = r#"
+# a.cdif
+
+4x DOM Opt
+4x GRN Radical Idea
+"#;
+
+        let b_dot_cdif = r#"
+# b.cdif
+
+2x DOM Opt
+4x GRN Radical Idea
+"#;
+
+        let a = File::from_reader(&mut a_dot_cdif.as_bytes()).unwrap();
+        let b = File::from_reader(&mut b_dot_cdif.as_bytes()).unwrap();
+
+        let diff = File::diff(&a, &b);
+        assert_eq!(diff.lines.len(), 1);
+
+        let line = diff.lines.values().next().unwrap();
+        assert_eq!(line.quantity, -2);
+        assert_eq!(line.set, "DOM");
+        assert_eq!(line.oracle, "Opt");
     }
 }
