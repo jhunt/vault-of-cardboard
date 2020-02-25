@@ -42,7 +42,7 @@ mod test {
     use super::Pile;
 
     #[test]
-    pub fn should_be_able_to_convert_cdif_to_a_pile() {
+    fn should_be_able_to_convert_cdif_to_a_pile() {
         let map = pool::Map::from_file("test/lookup.json").expect("reading lookup map");
         assert_eq!(
             map.get("MIR Barbed-Back Wurm"),
