@@ -352,7 +352,7 @@ mod test {
     use super::Map;
 
     #[test]
-    fn it_should_be_able_to_read_a_lookup_json() {
+    fn should_be_able_to_read_a_lookup_json() {
         let map = Map::from_file("test/lookup.json").expect("reading lookup map");
         assert_eq!(
             map.get("MIR Barbed-Back Wurm"),
@@ -369,7 +369,7 @@ mod test {
     }
 
     #[test]
-    fn a_collection_should_serialize_as_json() {
+    fn should_serialize_a_collection_into_json() {
         use super::{Card, Collection};
         use serde_json::json;
 

@@ -230,7 +230,7 @@ mod test {
     use super::*;
 
     #[test]
-    pub fn it_should_format_line_ids_properly() {
+    pub fn should_format_line_ids_properly() {
         let mut line = Line {
             quantity: 2,
             set: "MIR".to_string(),
