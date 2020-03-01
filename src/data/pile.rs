@@ -1,7 +1,7 @@
 use super::{cdif, pool};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Card {
     pub quantity: i32,
     pub id: String,
@@ -9,7 +9,7 @@ pub struct Card {
     pub lvars: Vec<(String, String)>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Pile {
     pub cards: Vec<Card>,
 }

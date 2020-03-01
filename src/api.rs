@@ -191,6 +191,10 @@ impl API {
         API { db: dat }
     }
 
+    pub fn file(&self, rel: &str) -> Result<std::fs::File> {
+        Ok(self.db.get_file(rel).chain_err(|| "unable to get file")?)
+    }
+
     pub fn authenticate(&self, a: AuthenticationAttempt) -> Result<Object> {
         match self.db.authenticate_collector(&a.username, &a.password) {
             Ok(Some(who)) => {
@@ -332,6 +336,7 @@ impl API {
             None => return Ok(not_found("transaction", tid, None)),
         };
 
+        // update the transaction details, selectively
         match self.db.update_transaction(
             &transaction,
             db::UpdateTransaction {
@@ -340,7 +345,7 @@ impl API {
                 loss: upd.loss,
             },
         ) {
-            Ok(transaction) => Ok(Object::Transaction(Transaction::from(transaction))),
+            Ok(txn) => Ok(Object::Transaction(Transaction::from(txn))),
             _ => Ok(Object::fail("transaction-update-failed")),
         }
     }

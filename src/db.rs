@@ -1,9 +1,11 @@
+use super::data::{Persistable, fs, cdif, pile, pool};
 use super::schema::{collections, collectors, decks, transactions};
 use bcrypt;
 use chrono::{naive::NaiveDate, DateTime, Utc};
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use redis;
+use std::path::Path;
 use uuid::Uuid;
 
 mod errors {
@@ -143,6 +145,7 @@ impl Session {
 pub struct Database {
     pg: PgConnection,
     rd: redis::Client,
+    fs: fs::Store,
 }
 
 embed_migrations!("migrations/");
@@ -157,10 +160,11 @@ fn gen_uuid(id: Option<Uuid>) -> Uuid {
 
 impl Database {
     // Connect to a DSN (must be PostgreSQL) and run migrations.
-    pub fn connect(pg: &str, rd: &str) -> Result<Database> {
+    pub fn connect(pg: &str, rd: &str, fsroot: &Path) -> Result<Database> {
         let db = Database {
             pg: PgConnection::establish(pg).chain_err(|| "unable to connect to database")?,
             rd: redis::Client::open(rd).chain_err(|| "unable to connect to session store")?,
+            fs: fs::Store::new(fsroot),
         };
 
         embedded_migrations::run(&db.pg).chain_err(|| "failed to run database migrations")?;
@@ -179,6 +183,11 @@ impl Database {
             .begin_test_transaction()
             .chain_err(|| "unable to initiate test transaction")?;
         Ok(())
+    }
+
+    pub fn get_file(&self, rel: &str) -> Result<std::fs::File> {
+        Ok(self.fs.get_as_reader(rel)
+            .chain_err(|| "unable to retrieve file from filesystem")?)
     }
 
     // Persist a Session object to Redis.
@@ -289,6 +298,9 @@ impl Database {
             .get_result::<Collection>(&self.pg)
             .chain_err(|| "failed to insert collection record for new collector into database")?;
 
+        self.fs.create(&format!("c/{}/_/collection.json", id.to_string()), r#"[[],[[]]]"#)
+            .chain_err(|| "failed to create initial collection cache file")?;
+
         Ok(collector)
     }
 
@@ -386,17 +398,61 @@ impl Database {
 
     // Create a new Transaction.
     pub fn create_transaction(&self, id: Option<Uuid>, new: NewTransaction) -> Result<Transaction> {
-        Ok(diesel::insert_into(transactions::table)
+        let txn = diesel::insert_into(transactions::table)
             .values((&new, transactions::dsl::id.eq(gen_uuid(id))))
             .get_result(&self.pg)
-            .chain_err(|| "failed to insert transaction record into database")?)
+            .chain_err(|| "failed to insert transaction record into database")?;
+
+        // update the collection with new, resolved CDIF
+        let gain = cdif::File::from_string(&new.gain)
+            .chain_err(|| "unable to parse gained cards from transaction")?;
+        self.apply_collection_credit(new.collection, gain)
+            .chain_err(|| "unable to apply new gains from transaction")?;
+
+        // update the collection again for any losses
+        let loss = cdif::File::from_string(&new.loss)
+            .chain_err(|| "unable to parse lost cards from transaction")?;
+        self.apply_collection_debit(new.collection, loss)
+            .chain_err(|| "unable to apply new losses from transaction")?;
+
+        Ok(txn)
     }
 
-    pub fn update_transaction(&self, obj: &Transaction, upd: UpdateTransaction) -> Result<Transaction> {
-        Ok(diesel::update(obj)
+    pub fn update_transaction(
+        &self,
+        obj: &Transaction,
+        upd: UpdateTransaction,
+    ) -> Result<Transaction> {
+        let txn = diesel::update(obj)
             .set((&upd, transactions::dsl::updated_at.eq(Utc::now())))
             .get_result(&self.pg)
-            .chain_err(|| "failed to update transaction record in database")?)
+            .chain_err(|| "failed to update transaction record in database")?;
+
+        match upd.gain {
+            None => (),
+            Some(gain) => {
+                let then = cdif::File::from_string(&obj.gain)
+                    .chain_err(|| "failed to parse previous gains during transaction update")?;
+                let now = cdif::File::from_string(&gain)
+                    .chain_err(|| "failed to parse new gains during transaction update")?;
+
+                self.apply_collection_credit(obj.collection, cdif::File::diff(&then, &now))?;
+            },
+        };
+
+        match upd.loss {
+            None => (),
+            Some(loss) => {
+                let then = cdif::File::from_string(&obj.loss)
+                    .chain_err(|| "failed to parse previous losses during transaction update")?;
+                let now = cdif::File::from_string(&loss)
+                    .chain_err(|| "failed to parse new losses during transaction update")?;
+
+                self.apply_collection_debit(obj.collection, cdif::File::diff(&then, &now))?;
+            },
+        };
+
+        Ok(txn)
     }
 
     pub fn delete_transaction(&self, id: Uuid) -> Result<()> {
@@ -404,6 +460,31 @@ impl Database {
             .execute(&self.pg)
             .chain_err(|| "failed to delete transaction record from database")?;
         Ok(())
+    }
+
+    fn apply_collection_diff(&self, id: Uuid, cards: cdif::File, credit: bool) -> Result<()> {
+        let mut f = self.fs.get_as_reader("lookup.json")
+            .chain_err(|| "failed to retrieve card name -> print id lookup table")?;
+
+        let lookup = pool::Map::from_reader(&mut f)
+            .chain_err(|| "failed to retrieve card name -> print id lookup table")?;
+
+        let mut delta = pile::Pile::resolve(cards, lookup);
+        if !credit {
+            delta.invert();
+        }
+        self.fs.append_to_json_list(&format!("c/{}/_/collection.json", id.to_string()), delta.cards)
+            .chain_err(|| "failed to append json object to collection json file")?;
+
+        Ok(())
+    }
+
+    pub fn apply_collection_credit(&self, id: Uuid, credit: cdif::File) -> Result<()> {
+        self.apply_collection_diff(id, credit, true)
+    }
+
+    pub fn apply_collection_debit(&self, id: Uuid, debit: cdif::File) -> Result<()> {
+        self.apply_collection_diff(id, debit, false)
     }
 
     pub fn find_decks_for_collector(&self, uid: Uuid) -> Result<Vec<Deck>> {
@@ -464,27 +545,35 @@ impl Database {
 #[cfg(test)]
 mod test {
     use super::*;
+    use tempdir::TempDir;
     use uuid::Uuid;
 
-    fn connect() -> Database {
+    fn connect() -> (TempDir, Database) {
         use std::env;
 
         let pg = env::var("TEST_DATABASE_URL")
-            .or_else(|_| env::var("DATABASE_URL"))
-            .expect("Either TEST_DATABASE_URL or DATABASE_URL must be set in the environment.");
+            .or_else(|_| env::var("VCB_DATABASE_URL"))
+            .expect("Either TEST_DATABASE_URL or VCB_DATABASE_URL must be set in the environment.");
 
         let rd = env::var("TEST_REDIS_URL")
-            .or_else(|_| env::var("REDIS_URL"))
-            .expect("Either TEST_REDIS_URL or REDIS_URL must be set in the environment.");
+            .or_else(|_| env::var("VCB_REDIS_URL"))
+            .expect("Either TEST_REDIS_URL or VCB_REDIS_URL must be set in the environment.");
 
-        let db = Database::connect(&pg, &rd).unwrap();
+        let fs = TempDir::new("vcb-test").expect("Failed to create temp directory");
+
+        let db = Database::connect(&pg, &rd, &fs.path()).unwrap();
         db.testmode().unwrap();
-        db
+        db.fs.create("lookup.json", r#"
+{
+  "XLN Opt": "xln-opt-fake-id"
+}
+"#).unwrap();
+        (fs, db)
     }
 
     #[test]
-    pub fn it_should_be_able_to_create_a_session() {
-        let db = connect();
+    fn should_be_able_to_create_a_session() {
+        let (_tmp, db) = connect();
 
         let mut session = Session::new(None);
         session.set("foo", "bar");
@@ -501,8 +590,8 @@ mod test {
     }
 
     #[test]
-    pub fn it_should_be_able_to_create_a_collector() {
-        let db = connect();
+    fn should_be_able_to_create_a_collector() {
+        let (_tmp, db) = connect();
 
         let id = Uuid::parse_str("a026089c-90a2-4180-b41a-2082e7b2ebcc").unwrap();
         let jhunt = db.create_collector(
@@ -525,8 +614,8 @@ mod test {
     }
 
     #[test]
-    pub fn it_should_not_be_able_to_reuse_usernames() {
-        let db = connect();
+    fn should_not_be_able_to_reuse_usernames() {
+        let (_tmp, db) = connect();
 
         let jhunt = db.create_collector(
             None,
@@ -559,8 +648,8 @@ mod test {
     }
 
     #[test]
-    pub fn it_should_be_able_to_reuse_email_addresses() {
-        let db = connect();
+    fn should_be_able_to_reuse_email_addresses() {
+        let (_tmp, db) = connect();
 
         let jhunt = db.create_collector(
             None,
@@ -590,9 +679,9 @@ mod test {
         assert!(!other.is_err());
     }
 
-    #[test]
-    pub fn it_should_be_able_to_reuse_passwords() {
-        let db = connect();
+    #[test] #[ignore]
+    fn should_be_able_to_reuse_passwords() {
+        let (_tmp, db) = connect();
 
         let jhunt = db
             .create_collector(
@@ -618,8 +707,8 @@ mod test {
     }
 
     #[test]
-    pub fn it_should_be_able_to_update_a_collectors_username() {
-        let db = connect();
+    fn should_be_able_to_update_a_collectors_username() {
+        let (_tmp, db) = connect();
 
         let jhunt = db
             .create_collector(
@@ -660,8 +749,8 @@ mod test {
     }
 
     #[test]
-    pub fn it_should_not_be_able_to_reuse_usernames_via_update() {
-        let db = connect();
+    fn should_not_be_able_to_reuse_usernames_via_update() {
+        let (_tmp, db) = connect();
 
         let jhunt = db
             .create_collector(
@@ -699,8 +788,8 @@ mod test {
     }
 
     #[test]
-    pub fn it_should_be_able_to_update_a_collectors_email() {
-        let db = connect();
+    fn should_be_able_to_update_a_collectors_email() {
+        let (_tmp, db) = connect();
 
         let jhunt = db
             .create_collector(
@@ -741,8 +830,8 @@ mod test {
     }
 
     #[test]
-    pub fn it_should_be_able_to_reuse_email_addresses_via_update() {
-        let db = connect();
+    fn should_be_able_to_reuse_email_addresses_via_update() {
+        let (_tmp, db) = connect();
 
         let jhunt = db
             .create_collector(
@@ -796,8 +885,8 @@ mod test {
     }
 
     #[test]
-    pub fn it_should_create_a_collection_for_a_new_collector() {
-        let db = connect();
+    fn should_create_a_collection_for_a_new_collector() {
+        let (_tmp, db) = connect();
 
         let jhunt = db.create_collector(
             None,
@@ -817,8 +906,8 @@ mod test {
     }
 
     #[test]
-    pub fn it_can_create_a_transaction() {
-        let db = connect();
+    pub fn can_create_a_transaction() {
+        let (_tmp, db) = connect();
 
         let jhunt = db
             .create_collector(
@@ -850,8 +939,8 @@ mod test {
     }
 
     #[test]
-    pub fn it_can_create_a_deck() {
-        let db = connect();
+    pub fn can_create_a_deck() {
+        let (_tmp, db) = connect();
 
         let jhunt = db
             .create_collector(
@@ -888,9 +977,9 @@ mod test {
         assert_eq!(deck.ordinal, 0);
     }
 
-    #[test]
-    pub fn it_can_authenticate_a_collector() {
-        let db = connect();
+    #[test] #[ignore]
+    pub fn can_authenticate_a_collector() {
+        let (_tmp, db) = connect();
 
         db.create_collector(
             None,
