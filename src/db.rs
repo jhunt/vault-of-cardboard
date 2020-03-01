@@ -1,11 +1,15 @@
-use super::data::{fs, cdif};
-use super::schema::{collections, collectors, decks, transactions};
 use bcrypt;
 use chrono::{naive::NaiveDate, DateTime, Utc};
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use redis;
-use std::path::Path;
+use serde::Serialize;
+use serde_json::json;
+use std::fs::{self, File};
+use std::io::{self, Read, Write, Seek};
+use std::path::{Path, PathBuf};
+use super::data::cdif;
+use super::schema::{collections, collectors, decks, transactions};
 use uuid::Uuid;
 
 use crate::prelude::*;
@@ -18,6 +22,77 @@ pub use errors::Error;
 use errors::*;
 
 const PWHASH_COST: u32 = 10;
+
+pub struct FStore {
+    root: PathBuf,
+}
+
+impl FStore {
+    pub fn new(root: &Path) -> Self {
+        Self {
+            root: PathBuf::from(root),
+        }
+    }
+
+    fn path_to(&self, filename: &str) -> PathBuf {
+        let mut pb = self.root.clone();
+        pb.push(filename);
+        pb
+    }
+
+    pub fn create(&self, filename: &str, contents: &str) -> Result<()> {
+        let pb = self.path_to(filename);
+
+        fs::create_dir_all(
+            pb.parent()
+                .chain_err(|| "failed to construct path for file storage")?,
+        )
+        .chain_err(|| "failed to create parent directories for file storage")?;
+
+        let mut file = File::create(
+            pb.to_str()
+                .chain_err(|| "failed to construct a path for file storage")?,
+        )
+        .chain_err(|| "failed to create file")?;
+        write!(file, "{}", contents).chain_err(|| "failed to write to file")?;
+
+        Ok(())
+    }
+
+    pub fn get_as_reader(&self, filename: &str) -> Result<File> {
+        let pb = self.path_to(filename);
+        Ok(File::open(
+            pb.to_str()
+                .chain_err(|| "failed to construct a path for file retrieval")?,
+        )
+        .chain_err(|| "failed to open file")?)
+    }
+
+    pub fn get_as_string(&self, filename: &str) -> Result<String> {
+        let mut file = self.get_as_reader(filename)?;
+
+        let mut s = String::new();
+        file.read_to_string(&mut s)
+            .chain_err(|| "failed to read from file")?;
+        Ok(s)
+    }
+
+    pub fn append_to_json_list<T: Serialize>(&self, filename: &str, item: T) -> Result<()> {
+        let pb = self.path_to(filename);
+        let mut file = fs::OpenOptions::new().read(true).write(true).open(
+            pb.to_str()
+                .chain_err(|| "failed to construct a path for file modifucation")?,
+        )
+        .chain_err(|| "failed to open file")?;
+
+        file.seek(io::SeekFrom::End(-2))
+            .chain_err(|| "failed to seek to end of json list file")?;
+
+        write!(file, ",{}]]", json!(item)).chain_err(|| "failed to append to json list file")?;
+
+        Ok(())
+    }
+}
 
 #[derive(Identifiable, Queryable)]
 pub struct Collector {
@@ -148,7 +223,7 @@ impl Session {
 pub struct Database {
     pg: PgConnection,
     rd: redis::Client,
-    fs: fs::Store,
+    fs: FStore,
 }
 
 embed_migrations!("migrations/");
@@ -167,7 +242,7 @@ impl Database {
         let db = Database {
             pg: PgConnection::establish(pg).chain_err(|| "unable to connect to database")?,
             rd: redis::Client::open(rd).chain_err(|| "unable to connect to session store")?,
-            fs: fs::Store::new(fsroot),
+            fs: FStore::new(fsroot),
         };
 
         embedded_migrations::run(&db.pg).chain_err(|| "failed to run database migrations")?;
@@ -1032,5 +1107,46 @@ mod test {
             .authenticate_collector("james", "sekrit")
             .expect("no error should occur while authenticating with incorrect credentials");
         assert!(who.is_none());
+    }
+
+    #[test]
+    fn should_be_able_to_create_files() {
+        let fs = TempDir::new("data-fs-test").expect("failed to create tempdir");
+        let store = FStore::new(fs.path());
+
+        let s = store.get_as_string("test");
+        assert!(s.is_err());
+
+        assert!(store.create("test", r#"[[""]]"#).is_ok());
+        let s = store.get_as_string("test");
+        assert!(s.is_ok());
+        let s = s.unwrap();
+        assert_eq!(s, r#"[[""]]"#);
+    }
+
+    #[test]
+    fn should_create_intervening_parent_directories() {
+        let fs = TempDir::new("data-fs-test").expect("failed to create tempdir");
+        let store = FStore::new(fs.path());
+
+        let key = "a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/q/r/s/t/u/v/w/x/y/z.json";
+        assert!(store.create(key, "FOO").is_ok());
+        let s = store.get_as_string(key);
+        assert!(s.is_ok());
+        let s = s.unwrap();
+        assert_eq!(s, "FOO");
+    }
+
+    #[test]
+    fn should_be_able_to_append_new_json() {
+        let fs = TempDir::new("data-fs-test").expect("failed to create tempdir");
+        let store = FStore::new(fs.path());
+
+        assert!(store.create("something.json", r#"[["initial"],[[]]]"#).is_ok());
+        assert!(store.append_to_json_list("something.json", vec!["new", "things"]).is_ok());
+        let s = store.get_as_string("something.json");
+        assert!(s.is_ok());
+        let s = s.unwrap();
+        assert_eq!(s, r#"[["initial"],[[],["new","things"]]]"#);
     }
 }
