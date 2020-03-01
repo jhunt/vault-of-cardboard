@@ -555,7 +555,7 @@ mod test {
 3x DOM Teferi, Hero of Dominaria
 "#;
 
-        let file = File::from_reader(&mut test_dot_cdif.as_bytes()).unwrap();
+        let file = File::from_string(&test_dot_cdif).unwrap();
         assert_eq!(file.lines.len(), 2);
 
         let line = file.lines.get("DOM Mox Amber");
@@ -582,7 +582,7 @@ mod test {
 1x GRN
 "#;
 
-        let file = File::from_reader(&mut bad_dot_cdif.as_bytes());
+        let file = File::from_string(&bad_dot_cdif);
         assert!(file.is_err());
     }
 
@@ -595,7 +595,7 @@ mod test {
 1x DOM Mox Amber
 "#;
 
-        let file = File::from_reader(&mut test_dot_cdif.as_bytes()).unwrap();
+        let file = File::from_string(&test_dot_cdif).unwrap();
         assert_eq!(file.lines.len(), 1);
 
         let line = file.lines.get("DOM Mox Amber");
@@ -623,8 +623,8 @@ mod test {
 3x RIX Secrets of the Golden City
 "#;
 
-        let a = File::from_reader(&mut a_dot_cdif.as_bytes()).unwrap();
-        let b = File::from_reader(&mut b_dot_cdif.as_bytes()).unwrap();
+        let a = File::from_string(&a_dot_cdif).unwrap();
+        let b = File::from_string(&b_dot_cdif).unwrap();
 
         let diff = File::diff(&a, &b);
         assert_eq!(diff.lines.len(), 1);
@@ -651,8 +651,8 @@ mod test {
 8x GRN Radical Idea
 "#;
 
-        let a = File::from_reader(&mut a_dot_cdif.as_bytes()).unwrap();
-        let b = File::from_reader(&mut b_dot_cdif.as_bytes()).unwrap();
+        let a = File::from_string(&a_dot_cdif).unwrap();
+        let b = File::from_string(&b_dot_cdif).unwrap();
 
         let diff = File::diff(&a, &b);
         assert_eq!(diff.lines.len(), 1);
@@ -678,8 +678,8 @@ mod test {
 4x GRN Radical Idea
 "#;
 
-        let a = File::from_reader(&mut a_dot_cdif.as_bytes()).unwrap();
-        let b = File::from_reader(&mut b_dot_cdif.as_bytes()).unwrap();
+        let a = File::from_string(&a_dot_cdif).unwrap();
+        let b = File::from_string(&b_dot_cdif).unwrap();
 
         let diff = File::diff(&a, &b);
         assert_eq!(diff.lines.len(), 1);
@@ -706,8 +706,8 @@ mod test {
 4x GRN Radical Idea
 "#;
 
-        let a = File::from_reader(&mut a_dot_cdif.as_bytes()).unwrap();
-        let b = File::from_reader(&mut b_dot_cdif.as_bytes()).unwrap();
+        let a = File::from_string(&a_dot_cdif).unwrap();
+        let b = File::from_string(&b_dot_cdif).unwrap();
 
         let diff = File::diff(&a, &b);
         assert_eq!(diff.lines.len(), 1);

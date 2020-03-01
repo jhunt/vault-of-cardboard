@@ -15,4 +15,8 @@ pub trait Persistable : Sized {
     fn from_stdin() -> Result<Self, io::Error> {
         Self::from_reader(&mut io::stdin().lock())
     }
+
+    fn from_string(s: &str) -> Result<Self, io::Error> {
+        Self::from_reader(&mut s.as_bytes())
+    }
 }
