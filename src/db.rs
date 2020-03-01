@@ -1,4 +1,4 @@
-use super::data::{Persistable, fs, cdif, pile, pool};
+use super::data::{fs, cdif, pile, pool};
 use super::schema::{collections, collectors, decks, transactions};
 use bcrypt;
 use chrono::{naive::NaiveDate, DateTime, Utc};
@@ -7,6 +7,7 @@ use diesel::prelude::*;
 use redis;
 use std::path::Path;
 use uuid::Uuid;
+use crate::prelude::*;
 
 mod errors {
     error_chain! {}

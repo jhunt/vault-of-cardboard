@@ -1,7 +1,8 @@
 #[macro_use]
 extern crate clap;
 
-use vault_of_cardboard::data::{Persistable, cdif};
+use vault_of_cardboard::prelude::*;
+use vault_of_cardboard::data::cdif;
 
 fn main() {
     let app = clap_app!(cdifdiff =>

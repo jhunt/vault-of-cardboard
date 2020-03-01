@@ -2,9 +2,9 @@ use std::fs;
 use std::io;
 use std::collections::HashMap;
 use serde_json;
-
-use super::Persistable;
 use serde::Deserialize;
+
+use crate::prelude::*;
 
 #[derive(Deserialize)]
 pub struct Legality {

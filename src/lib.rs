@@ -6,15 +6,17 @@ pub mod api;
 pub mod data;
 pub mod db;
 pub mod schema;
+pub mod scryfall;
+pub mod prelude;
 
 #[cfg(test)]
 mod test {
-    use super::data::raw;
+    use super::scryfall;
     use super::data::pool::{Pool, Set};
 
     #[test]
     pub fn it_should_parse_raw_scryfall_set_files() {
-        let sets = raw::sets("test/scryfall/sets");
+        let sets = scryfall::sets("test/scryfall/sets");
         assert!(sets.contains_key("5f06acf3-8123-4a78-b2e7-089b0b775a4a"));
 
         let mir = &sets["5f06acf3-8123-4a78-b2e7-089b0b775a4a"];
@@ -39,7 +41,7 @@ mod test {
     #[test]
     pub fn it_should_parse_oracle_cards_into_a_pool() {
         let mut pool = Pool::new();
-        for (_, set) in raw::sets("test/scryfall/sets") {
+        for (_, set) in scryfall::sets("test/scryfall/sets") {
             pool.add_set(&set);
         }
         assert!(pool.cards.contains_key("4c13e2b5-961a-4031-84b1-15bd19b94286"));

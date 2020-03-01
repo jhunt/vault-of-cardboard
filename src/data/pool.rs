@@ -8,7 +8,8 @@ mod errors {
 pub use errors::Error;
 use errors::*;
 
-use super::{raw, Persistable};
+use crate::prelude::*;
+use crate::scryfall;
 
 pub type Map = HashMap<String, String>;
 
@@ -44,7 +45,7 @@ impl Pool {
 
     pub fn read(root: &str) -> Result<Pool> {
         let mut pool = Self::new();
-        for (_, set) in raw::sets(root) {
+        for (_, set) in scryfall::sets(root) {
             pool.add_set(&set);
         }
         Ok(pool)
@@ -58,7 +59,7 @@ impl Pool {
         (self.cards.len(), self.sets.len(), prints)
     }
 
-    pub fn add_set(&mut self, set: &raw::Set) {
+    pub fn add_set(&mut self, set: &scryfall::Set) {
         if !self.sets.contains_key(&set.code) {
             let code = set.code.to_uppercase();
             self.sets.insert(code.to_string(), Set::from(set));
@@ -97,8 +98,8 @@ pub struct Set {
     pub cards: Vec<PrintCard>,
 }
 
-impl std::convert::From<&raw::Set> for Set {
-    fn from(set: &raw::Set) -> Self {
+impl std::convert::From<&scryfall::Set> for Set {
+    fn from(set: &scryfall::Set) -> Self {
         Set {
             code: set.code.to_string().to_uppercase(),
             name: set.name.to_string(),
@@ -187,8 +188,8 @@ pub struct OracleCard {
     pub colors: Vec<String>,
 }
 
-impl std::convert::From<&raw::Card> for OracleCard {
-    fn from(card: &raw::Card) -> Self {
+impl std::convert::From<&scryfall::Card> for OracleCard {
+    fn from(card: &scryfall::Card) -> Self {
         OracleCard {
             id: card.oracle_id.to_string(),
             name: card.name.to_string(),
@@ -313,8 +314,8 @@ fn maybe_legal(s: &Option<String>) -> bool {
     }
 }
 
-impl std::convert::From<&raw::Card> for PrintCard {
-    fn from(card: &raw::Card) -> Self {
+impl std::convert::From<&scryfall::Card> for PrintCard {
+    fn from(card: &scryfall::Card) -> Self {
         PrintCard {
             id: card.id.to_string(),
             oid: card.oracle_id.to_string(),
@@ -339,7 +340,7 @@ impl std::convert::From<&raw::Card> for PrintCard {
 
 #[cfg(test)]
 mod test {
-    use super::super::Persistable;
+    use crate::prelude::*;
     use super::Map;
 
     #[test]

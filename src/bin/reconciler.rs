@@ -7,7 +7,9 @@ use std::io::prelude::*;
 use std::io;
 use std::time::Instant;
 use serde::{Serialize, Deserialize};
-use vault_of_cardboard::data::{collection, pile, Persistable};
+
+use vault_of_cardboard::prelude::*;
+use vault_of_cardboard::data::{collection, pile};
 
 #[derive(Serialize, Deserialize)]
 pub struct Aggregate(Vec<collection::OwnedCard>, Vec<Vec<pile::Card>>);

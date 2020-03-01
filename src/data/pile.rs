@@ -1,4 +1,5 @@
 use super::{cdif, pool};
+
 use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize)]
@@ -42,9 +43,8 @@ impl Pile {
 
 #[cfg(test)]
 mod test {
+    use crate::prelude::*;
     use super::super::{pool, cdif};
-    use super::super::Persistable;
-
     use super::Pile;
 
     #[test]

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io::{self, BufRead, BufReader};
 
-use super::Persistable;
+use crate::prelude::*;
 
 pub struct Line {
     pub quantity: i32,
