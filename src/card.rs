@@ -2,9 +2,8 @@ use serde::{Serialize, Deserialize, Serializer};
 use std::collections::HashMap;
 use std::io;
 
-use crate::data::cdif;
 use crate::prelude::*;
-use crate::scryfall;
+use crate::{cdif, scryfall};
 
 mod errors {
     error_chain! {}
@@ -426,7 +425,7 @@ impl std::convert::From<&scryfall::Card> for PrintCard {
 mod test {
     use serde_json::json;
     use crate::prelude::*;
-    use crate::data::cdif;
+    use crate::cdif;
     use super::*;
 
     #[test]

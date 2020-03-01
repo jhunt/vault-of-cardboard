@@ -2,7 +2,7 @@
 extern crate clap;
 
 use vault_of_cardboard::prelude::*;
-use vault_of_cardboard::data::cdif;
+use vault_of_cardboard::cdif;
 
 fn main() {
     let app = clap_app!(cdifdiff =>

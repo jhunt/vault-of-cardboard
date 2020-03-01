@@ -4,7 +4,7 @@
 
 pub mod api;
 pub mod card;
-pub mod data;
+pub mod cdif;
 pub mod db;
 pub mod schema;
 pub mod scryfall;

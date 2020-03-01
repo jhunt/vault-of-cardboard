@@ -2,7 +2,7 @@ use std::io;
 use std::io::prelude::*;
 use std::time::Instant;
 
-use vault_of_cardboard::data::cdif;
+use vault_of_cardboard::cdif;
 
 fn main() {
     let mut n = 0;

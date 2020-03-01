@@ -8,12 +8,11 @@ use serde_json::json;
 use std::fs::{self, File};
 use std::io::{self, Read, Write, Seek};
 use std::path::{Path, PathBuf};
-use super::data::cdif;
 use super::schema::{collections, collectors, decks, transactions};
 use uuid::Uuid;
 
 use crate::prelude::*;
-use crate::card;
+use crate::{card, cdif};
 
 mod errors {
     error_chain! {}
