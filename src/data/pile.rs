@@ -32,6 +32,12 @@ impl Pile {
 
         Self { cards: cards }
     }
+
+    pub fn invert(&mut self) {
+        for card in &mut self.cards {
+            card.quantity *= -1;
+        }
+    }
 }
 
 #[cfg(test)]
@@ -55,6 +61,26 @@ mod test {
 
         let card = &pile.cards[0];
         assert_eq!(card.quantity, 4);
+        assert_eq!(card.id, "1b96810d-72d3-4dee-a29f-cdf85ea5ce6f");
+        assert_eq!(card.gvars.len(), 0);
+        assert_eq!(card.lvars.len(), 0);
+    }
+
+    #[test]
+    fn should_be_able_to_invert_a_cdif_pile() {
+        let map = pool::Map::from_file("test/lookup.json").expect("reading lookup map");
+        assert_eq!(
+            map.get("MIR Barbed-Back Wurm"),
+            Some(&"1b96810d-72d3-4dee-a29f-cdf85ea5ce6f".to_string())
+        );
+
+        let f = cdif::File::from_file("test/cdif/mirage-wurm.cdif").unwrap();
+        let mut pile = Pile::resolve(f, map);
+        pile.invert();
+        assert_eq!(pile.cards.len(), 1);
+
+        let card = &pile.cards[0];
+        assert_eq!(card.quantity, -4);
         assert_eq!(card.id, "1b96810d-72d3-4dee-a29f-cdf85ea5ce6f");
         assert_eq!(card.gvars.len(), 0);
         assert_eq!(card.lvars.len(), 0);
