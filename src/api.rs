@@ -79,6 +79,7 @@ pub struct Response {
 }
 #[derive(Serialize)]
 pub struct Authenticated {
+    pub uid: String,
     pub session: String,
 }
 
@@ -197,6 +198,7 @@ impl API {
                 session.set("user-id", &who.id.to_string());
                 match self.db.set_session(session) {
                     Ok(session) => Ok(Object::Authenticated(Authenticated {
+                        uid: who.id.to_string(),
                         session: session.id.to_string(),
                     })),
                     _ => Ok(Object::fail("session-failed")),
@@ -224,6 +226,7 @@ impl API {
         session.set("user-id", &who.id.to_string());
         match self.db.set_session(session) {
             Ok(session) => Ok(Object::Authenticated(Authenticated {
+                uid: who.id.to_string(),
                 session: session.id.to_string(),
             })),
             _ => Ok(Object::fail("signup-failed")),
