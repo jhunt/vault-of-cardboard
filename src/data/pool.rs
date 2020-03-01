@@ -337,15 +337,6 @@ impl std::convert::From<&raw::Card> for PrintCard {
     }
 }
 
-#[derive(Serialize)]
-pub struct Card {
-    pub pid: String,
-    pub var: Vec<String>,
-}
-
-pub type OwnedCard = (u32, Card);
-pub type Collection = Vec<OwnedCard>;
-
 #[cfg(test)]
 mod test {
     use super::super::Persistable;
@@ -365,55 +356,6 @@ mod test {
         assert_eq!(
             map.get("VIS Tin-Wing Chimera"),
             Some(&"3375dcc6-9399-48eb-9aa4-7b40c3686cc5".to_string())
-        );
-    }
-
-    #[test]
-    fn should_serialize_a_collection_into_json() {
-        use super::{Card, Collection};
-        use serde_json::json;
-
-        let mut c = Collection::new();
-        c.push((
-            22,
-            Card {
-                pid: "mir-plains".to_string(),
-                var: vec![],
-            },
-        ));
-        c.push((
-            26,
-            Card {
-                pid: "mir-island".to_string(),
-                var: vec![],
-            },
-        ));
-        c.push((
-            21,
-            Card {
-                pid: "mir-swamp".to_string(),
-                var: vec![],
-            },
-        ));
-        c.push((
-            24,
-            Card {
-                pid: "mir-mountain".to_string(),
-                var: vec![],
-            },
-        ));
-        c.push((
-            23,
-            Card {
-                pid: "mir-forest".to_string(),
-                var: vec![],
-            },
-        ));
-
-        let s = json!(c).to_string();
-        assert_eq!(
-            s,
-            r#"[[22,{"pid":"mir-plains","var":[]}],[26,{"pid":"mir-island","var":[]}],[21,{"pid":"mir-swamp","var":[]}],[24,{"pid":"mir-mountain","var":[]}],[23,{"pid":"mir-forest","var":[]}]]"#
         );
     }
 }

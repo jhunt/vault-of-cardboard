@@ -1,4 +1,5 @@
 pub mod cdif;
+pub mod collection;
 pub mod pile;
 pub mod pool;
 pub mod raw;
