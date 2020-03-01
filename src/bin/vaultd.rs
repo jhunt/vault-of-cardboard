@@ -1,9 +1,12 @@
+#[macro_use] extern crate hyper;
 use iron::prelude::*;
 use iron::status;
 use router::Router;
 use serde_json::json;
 use std::env;
 use std::path::Path;
+
+header! { (WwwAuthenticate, "WWW-Authenticate") => [String] }
 
 use vault_of_cardboard::api::{Object, API};
 use vault_of_cardboard::db::Database;
@@ -17,6 +20,15 @@ fn boot() -> API {
         )
         .unwrap(),
     )
+}
+
+fn auth(r: &Request) -> Option<String> {
+    use iron::headers::{Authorization, Basic};
+
+    match r.headers.get::<Authorization<Basic>>() {
+        Some(v) => Some(v.username.to_string()),
+        None => None,
+    }
 }
 
 fn param(r: &Request, name: &str) -> Option<String> {
@@ -38,6 +50,16 @@ macro_rules! param {
     };
 }
 
+macro_rules! auth {
+    ($api: expr, $r: expr, $uid: expr) => {
+        match $api.guard(auth($r), &$uid) {
+            Some(401) => return done!(401 => "authentication required"),
+            Some(403) => return done!(403 => "forbidden"),
+            _ => (),
+        };
+    };
+}
+
 macro_rules! done {
     (204) => {
         Ok(Response::with(status::NoContent))
@@ -53,6 +75,12 @@ macro_rules! done {
     (400 => $s: expr) => {
         Ok(Response::with((status::BadRequest, format!("{}\n", $s))))
     };
+
+    (401 => $s: expr) => {{
+        let mut r = Response::with((status::Unauthorized, format!("{}\n", $s)));
+        r.headers.set(WwwAuthenticate(r#"Basic realm="vaultofcardboard.com""#.to_owned()));
+        Ok(r)
+    }};
 
     (403 => $s: expr) => {
         Ok(Response::with((status::Forbidden, format!("{}\n", $s))))
@@ -95,7 +123,7 @@ fn main() {
                 Err(e) => {
                     println!("error: {}", e);
                     done!(500 => "internal server error")
-                },
+                }
             }
         },
         "cards_json_file",
@@ -110,7 +138,7 @@ fn main() {
                 Err(e) => {
                     println!("error: {}", e);
                     done!(500 => "internal server error")
-                },
+                }
             }
         },
         "prices_json_file",
@@ -126,7 +154,7 @@ fn main() {
                 Err(e) => {
                     println!("error: {}", e);
                     done!(500 => "internal server error")
-                },
+                }
             }
         },
         "default_collection_json_file",
@@ -140,7 +168,7 @@ fn main() {
                 Err(e) => {
                     println!("error: {}", e);
                     done!(400 => "bad request")
-                },
+                }
                 Ok(attempt) => match api.authenticate(attempt) {
                     Ok(res) => done!(res),
                     Err(e) => {
@@ -196,6 +224,7 @@ fn main() {
         |r: &mut Request| {
             let api = boot();
             let uid = param!(r, "uid");
+            auth!(api, r, &uid);
 
             match serde_json::from_reader(&mut r.body) {
                 Err(e) => {
@@ -238,6 +267,7 @@ fn main() {
             let api = boot();
             let uid = param!(r, "uid");
             let tid = param!(r, "tid");
+            auth!(api, r, &uid);
 
             match serde_json::from_reader(&mut r.body) {
                 Err(e) => {
@@ -262,6 +292,7 @@ fn main() {
             let api = boot();
             let uid = param!(r, "uid");
             let tid = param!(r, "tid");
+            auth!(api, r, &uid);
 
             match api.delete_transaction(&uid, &tid) {
                 Ok(res) => done!(res),
@@ -296,6 +327,7 @@ fn main() {
         |r: &mut Request| {
             let api = boot();
             let uid = param!(r, "uid");
+            auth!(api, r, &uid);
 
             match serde_json::from_reader(&mut r.body) {
                 Err(e) => {
@@ -338,6 +370,7 @@ fn main() {
             let api = boot();
             let uid = param!(r, "uid");
             let did = param!(r, "did");
+            auth!(api, r, &uid);
 
             match serde_json::from_reader(&mut r.body) {
                 Err(e) => {
@@ -362,6 +395,7 @@ fn main() {
             let api = boot();
             let uid = param!(r, "uid");
             let did = param!(r, "did");
+            auth!(api, r, &uid);
 
             match api.delete_deck(&uid, &did) {
                 Ok(res) => done!(res),

@@ -3,6 +3,7 @@ use Test::More;
 use Test::Deep;
 
 use LWP::UserAgent;
+use MIME::Base64 qw/encode_base64/;
 use JSON qw/to_json from_json/;
 use Data::Dumper;
 
@@ -29,18 +30,32 @@ sub is_uuid {
 	re(qr/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
 }
 
-sub json {
-	my ($thing) = @_;
-	(
+my ($UA, $URL);
+sub get {
+	my ($reluri, %opts) = @_;
+	my $req = HTTP::Request->new(GET => "$URL$reluri", [
 		Accept => 'application/json',
-		($thing ? (ContentType => 'application/json',
-		           Content     => to_json($thing))
-		        : ()),
-	);
+		($opts{as} ? (Authorization => "Basic ".encode_base64("$opts{as}:")) : ()),
+	]);
+	diag $req->as_string if $ENV{TRACE};
+	$UA->request($req);
 }
 
-my $UA = LWP::UserAgent->new(agent => "vcb-integration-tests/1.0");
-my $URL = $ENV{TEST_VAULTD_URL};
+sub post {
+	my ($reluri, %opts) = @_;
+	my $req = HTTP::Request->new(POST => "$URL$reluri", [
+			Accept => 'application/json',
+			ContentType => 'application/json',
+			($opts{as} ? (Authorization => "Basic ".encode_base64("$opts{as}:")) : ()),
+		],
+		to_json($opts{payload}),
+	);
+	diag $req->as_string if $ENV{TRACE};
+	$UA->request($req);
+}
+
+$UA = LWP::UserAgent->new(agent => "vcb-integration-tests/1.0");
+$URL = $ENV{TEST_VAULTD_URL};
 ok($URL, "should have a TEST_VAULTD_URL in the environment...");
 
 ######################################################################
@@ -56,10 +71,10 @@ ok($URL, "should have a TEST_VAULTD_URL in the environment...");
 my $username = "jhunt";
 my $password = "its-a-sekrit";
 
-my $res = $UA->post("$URL/v1/authenticate", json({
+my $res = post("/v1/authenticate", payload => {
 	username => $username,
 	password => $password
-}));
+});
 ok($res->is_success, "authentication message should succeed");
 cmp_deeply(from_json($res->content), {
 	response => {
@@ -68,11 +83,11 @@ cmp_deeply(from_json($res->content), {
 	}
 }, "bad authentication should reflect status in response payload");
 
-my $res = $UA->post("$URL/v1/signup", json({
+my $res = post("/v1/signup", payload => {
 	username => $username,
 	email    => "$username\@example.com",
 	password => $password
-}));
+});
 ok($res->is_success, "signup should succeed");
 $res = from_json($res->content);
 cmp_deeply($res, {
@@ -82,6 +97,7 @@ cmp_deeply($res, {
 	}
 }, "successful signup should return enough information for future authentication");
 my $UID = $res->{authenticated}{uid};
+my $SID = $res->{authenticated}{session};
 
 ######################################################################
 ###
@@ -92,7 +108,7 @@ my $UID = $res->{authenticated}{uid};
 ###   the structure and content of the database of all cards.
 ###
 
-my $res = $UA->get("$URL/cards.json");
+my $res = get("/cards.json");
 ok($res->is_success, "should be able to retrieve all cards, as JSON")
 	or diag $res->as_string;
 
@@ -122,7 +138,7 @@ cmp_deeply(
 ###   RETRIEVE PRICING DATA
 ###
 
-my $res = $UA->get("$URL/prices.json");
+my $res = get("/prices.json");
 ok($res->is_success, "should be able to retrieve pricing data, as JSON")
 	or diag $res->as_string;
 
@@ -139,7 +155,7 @@ ok(!exists $prices->{'01fc5bb3-ebd7-4ab4-8aef-2ece1e1d9b7c'}, "pricing should no
 ###   has, to verify that it is completely empty.
 ###
 
-my $res = $UA->get("$URL/collectors/$UID/collections/_/collection.json");
+my $res = get("/collectors/$UID/collections/_/collection.json");
 ok($res->is_success, "should be able to retrieve users default collection, as JSON")
 	or diag $res->as_string;
 cmp_deeply(
@@ -155,18 +171,18 @@ cmp_deeply(
 ###   it's time to import cards in via our first transaction.
 ###
 
-my $res = $UA->post("$URL/v1/collectors/$UID/collections/_/transactions", json({
+my $res = post("/v1/collectors/$UID/collections/_/transactions", as => $SID, payload => {
 	dated => '2020-01-25',
 	gain => '# initial import of collection
 1x MIR Enlightened Tutor
 1x MIR Mystical Tutor
 1x MIR Worldly Tutor',
 	loss => '',
-}));
+});
 ok($res->is_success, "should be able to post an import transaction, as JSON")
 	or diag $res->as_string;
 
-my $res = $UA->get("$URL/collectors/$UID/collections/_/collection.json");
+my $res = get("/collectors/$UID/collections/_/collection.json");
 ok($res->is_success, "should be able to retrieve the updated collection, as JSON")
 	or diag $res->as_string;
 cmp_deeply(
@@ -199,18 +215,18 @@ cmp_deeply(
 ###   UPDATING THE COLLECTION
 ###
 
-my $res = $UA->post("$URL/v1/collectors/$UID/collections/_/transactions", json({
+my $res = post("/v1/collectors/$UID/collections/_/transactions", as => $SID, payload => {
 	dated => '2020-01-26',
 	gain => '# decided to buy a bunch more
 10x MIR Enlightened Tutor
 20x MIR Mystical Tutor
 30x MIR Worldly Tutor',
 	loss => '',
-}));
+});
 ok($res->is_success, "should be able to post an update transaction, as JSON")
 	or diag $res->as_string;
 
-my $res = $UA->get("$URL/collectors/$UID/collections/_/collection.json");
+my $res = get("/collectors/$UID/collections/_/collection.json");
 ok($res->is_success, "should be able to retrieve the updated collection, as JSON")
 	or diag $res->as_string;
 cmp_deeply(
@@ -266,7 +282,7 @@ cmp_deeply(
 system("cargo run --bin reconciler test/integration/fs/c/$UID/_/collection.json");
 ok($? == 0, "reconciler process should run ok");
 
-my $res = $UA->get("$URL/collectors/$UID/collections/_/collection.json");
+my $res = get("/collectors/$UID/collections/_/collection.json");
 ok($res->is_success, "should be able to retrieve the reconciled collection, as JSON")
 	or diag $res->as_string;
 cmp_deeply(
@@ -289,6 +305,71 @@ cmp_deeply(
 		[[]], # no patches
 	],
 	"after reconciling the collection, there should be zero operations, and the collection should be non-empty");
+
+######################################################################
+###
+###   AUTHORIZATION
+###
+###   These tests validate that authenticated users can only access and
+###   modify their own data, and that anonymous users are mostly prohibited
+###   from all sorts of things.
+###
+###   These tests build on the data set created previously.
+###
+
+my $res = post("/v1/signup", payload => {
+	username => "not-$username",
+	email    => "not+$username\@example.com",
+	password => $password
+});
+ok($res->is_success, "signup should succeed")
+	or diag $res->as_string;
+$res = from_json($res->content);
+cmp_deeply($res, {
+	authenticated => {
+		session => is_uuid(),
+		uid     => is_uuid(),
+	}
+}, "successful signup should return enough information for future authentication");
+isnt($res->{authenticated}{uid}, $UID, "should get a different UID for the not-$username user");
+my $OTHER_SID = $res->{authenticated}{session};
+
+my $res = get("/collectors/$UID/collections/_/collection.json");
+ok($res->is_success, "should be able to retrieve $UID\'s collection, for forensics")
+	or diag $res->as_string;
+my $COLLECTION = from_json($res->content);
+
+my $res = post("/v1/collectors/$UID/collections/_/transactions", as => undef, payload => {
+	dated => '2020-01-26',
+	gain => '# mwuahahahaha',
+	loss => '# and now they are gone!
+99x MIR Enlightened Tutor
+99x MIR Mystical Tutor
+99x MIR Worldly Tutor',
+});
+is($res->code, 401, "should NOT be able to post an update transaction anonymously")
+	or diag $res->as_string;
+
+my $res = get("/collectors/$UID/collections/_/collection.json");
+ok($res->is_success, "should be able to retrieve $UID\'s collection, for forensic comparison")
+	or diag $res->as_string;
+cmp_deeply(from_json($res->content), $COLLECTION, "collection should remain untouched, having foiled anonymous' plan");
+
+my $res = post("/v1/collectors/$UID/collections/_/transactions", as => $OTHER_SID, payload => {
+	dated => '2020-01-26',
+	gain => '# mwuahahahaha',
+	loss => '# and now they are gone!
+99x MIR Enlightened Tutor
+99x MIR Mystical Tutor
+99x MIR Worldly Tutor',
+});
+is($res->code, 403, "should NOT be able to post an update transaction to another collector's collection")
+	or diag $res->as_string;
+
+my $res = get("/collectors/$UID/collections/_/collection.json");
+ok($res->is_success, "should be able to retrieve $UID\'s collection, for forensic comparison")
+	or diag $res->as_string;
+cmp_deeply(from_json($res->content), $COLLECTION, "collection should remain untouched, having foiled the other user's attempt to edit it");
 
 ######################################################################
 ###
