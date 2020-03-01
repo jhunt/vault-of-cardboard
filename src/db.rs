@@ -1,4 +1,4 @@
-use super::data::{fs, cdif, pool};
+use super::data::{fs, cdif};
 use super::schema::{collections, collectors, decks, transactions};
 use bcrypt;
 use chrono::{naive::NaiveDate, DateTime, Utc};
@@ -469,7 +469,7 @@ impl Database {
         let mut f = self.fs.get_as_reader("lookup.json")
             .chain_err(|| "failed to retrieve card name -> print id lookup table")?;
 
-        let lookup = pool::Map::from_reader(&mut f)
+        let lookup = card::Map::from_reader(&mut f)
             .chain_err(|| "failed to retrieve card name -> print id lookup table")?;
 
         let mut delta = card::Pile::resolve(cards, lookup);

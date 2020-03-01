@@ -12,8 +12,7 @@ pub mod prelude;
 
 #[cfg(test)]
 mod test {
-    use super::scryfall;
-    use super::data::pool::{Pool, Set};
+    use crate::{card, scryfall};
 
     #[test]
     pub fn it_should_parse_raw_scryfall_set_files() {
@@ -22,7 +21,7 @@ mod test {
 
         let mir = &sets["5f06acf3-8123-4a78-b2e7-089b0b775a4a"];
 
-        let set = Set::from(mir);
+        let set = card::Set::from(mir);
         assert_eq!(set.code, "MIR");
         assert_eq!(set.name, "Mirage");
         assert_eq!(set.released_at, "1996-10-08");
@@ -41,7 +40,7 @@ mod test {
 
     #[test]
     pub fn it_should_parse_oracle_cards_into_a_pool() {
-        let mut pool = Pool::new();
+        let mut pool = card::Pool::new();
         for (_, set) in scryfall::sets("test/scryfall/sets") {
             pool.add_set(&set);
         }
