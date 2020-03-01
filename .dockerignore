@@ -1,0 +1,14 @@
+/bench
+/data
+/dev
+/doc
+/target
+/test
+/tmp
+/TODO
+/Dockerfile*
+/Makefile
+/.dockerignore
+/.git
+/.gitignore
+.*.swp

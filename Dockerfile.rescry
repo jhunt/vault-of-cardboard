@@ -1,0 +1,7 @@
+FROM vault-of-cardboard-base:dev AS build
+FROM ubuntu:18.04
+RUN apt-get update \
+ && apt-get install -y libpq5 \
+ && rm -rf /var/lib/apt/lists/*
+COPY --from=build /bins/rescry /rescry
+ENTRYPOINT ["/rescry"]

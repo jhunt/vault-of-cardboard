@@ -3,6 +3,7 @@ use iron::status;
 use router::Router;
 use serde_json::json;
 use std::env;
+use std::path::Path;
 
 use vault_of_cardboard::api::{Object, API};
 use vault_of_cardboard::db::Database;
@@ -12,6 +13,7 @@ fn boot() -> API {
         Database::connect(
             &env::var("VCB_DATABASE_URL").expect("VCB_DATABASE_URL must be set in environment"),
             &env::var("VCB_REDIS_URL").expect("VCB_REDIS_URL must be set in environment"),
+            &Path::new(&env::var("VCB_FS_ROOT").expect("VCB_FS_ROOT must be set in environment")),
         )
         .unwrap(),
     )
@@ -84,6 +86,52 @@ macro_rules! done {
 fn main() {
     let mut router = Router::new();
 
+    router.get(
+        "/cards.json",
+        |_: &mut Request| {
+            let api = boot();
+            match api.file("cards.json") {
+                Ok(f) => Ok(Response::with((status::Ok, f))),
+                Err(e) => {
+                    println!("error: {}", e);
+                    done!(500 => "internal server error")
+                },
+            }
+        },
+        "cards_json_file",
+    );
+
+    router.get(
+        "/prices.json",
+        |_: &mut Request| {
+            let api = boot();
+            match api.file("prices.json") {
+                Ok(f) => Ok(Response::with((status::Ok, f))),
+                Err(e) => {
+                    println!("error: {}", e);
+                    done!(500 => "internal server error")
+                },
+            }
+        },
+        "prices_json_file",
+    );
+
+    router.get(
+        "/collectors/:uid/collections/_/collection.json",
+        |r: &mut Request| {
+            let api = boot();
+            let uid = param!(r, "uid");
+            match api.file(&format!("c/{}/_/collection.json", uid)) {
+                Ok(f) => Ok(Response::with((status::Ok, f))),
+                Err(e) => {
+                    println!("error: {}", e);
+                    done!(500 => "internal server error")
+                },
+            }
+        },
+        "default_collection_json_file",
+    );
+
     router.post(
         "/v1/authenticate",
         |r: &mut Request| {
@@ -92,7 +140,7 @@ fn main() {
                 Err(e) => {
                     println!("error: {}", e);
                     done!(400 => "bad request")
-                }
+                },
                 Ok(attempt) => match api.authenticate(attempt) {
                     Ok(res) => done!(res),
                     Err(e) => {
