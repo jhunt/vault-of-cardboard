@@ -10,10 +10,9 @@ use serde::{Serialize, Deserialize};
 
 use vault_of_cardboard::prelude::*;
 use vault_of_cardboard::card;
-use vault_of_cardboard::data::collection;
 
 #[derive(Serialize, Deserialize)]
-pub struct Aggregate(Vec<collection::OwnedCard>, Vec<Vec<card::Card>>);
+pub struct Aggregate(Vec<(u32, card::OwnedCard)>, Vec<Vec<card::Card>>);
 
 impl Persistable for Aggregate {
     fn from_reader<T: io::Read>(src: &mut T) -> std::result::Result<Self, io::Error> {
@@ -45,7 +44,7 @@ fn main() {
     let elapsed = now.elapsed().as_millis();
     println!("parsed aggregate collection JSON in {}ms", elapsed);
 
-    let mut collection = collection::Collection::new();
+    let mut collection = card::Collection::new();
     collection.cards = raw.0;
 
     let now = Instant::now();
