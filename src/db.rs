@@ -1,4 +1,4 @@
-use super::data::{fs, cdif, pile, pool};
+use super::data::{fs, cdif, pool};
 use super::schema::{collections, collectors, decks, transactions};
 use bcrypt;
 use chrono::{naive::NaiveDate, DateTime, Utc};
@@ -7,7 +7,9 @@ use diesel::prelude::*;
 use redis;
 use std::path::Path;
 use uuid::Uuid;
+
 use crate::prelude::*;
+use crate::card;
 
 mod errors {
     error_chain! {}
@@ -470,7 +472,7 @@ impl Database {
         let lookup = pool::Map::from_reader(&mut f)
             .chain_err(|| "failed to retrieve card name -> print id lookup table")?;
 
-        let mut delta = pile::Pile::resolve(cards, lookup);
+        let mut delta = card::Pile::resolve(cards, lookup);
         if !credit {
             delta.invert();
         }

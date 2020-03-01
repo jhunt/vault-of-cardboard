@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use super::pile;
+use crate::card;
 
 #[derive(Serialize, Deserialize)]
 pub struct Card {
@@ -17,7 +17,7 @@ impl Collection {
         Collection { cards: vec![] }
     }
 
-    pub fn merge(&mut self, patch: &pile::Pile) {
+    pub fn merge(&mut self, patch: &card::Pile) {
         for new in &patch.cards {
             let mut found = false;
             for (i, owned) in self.cards.iter().enumerate() {
@@ -50,6 +50,7 @@ impl Collection {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::card;
     use serde_json::json;
 
     #[test]
@@ -99,8 +100,6 @@ mod test {
 
     #[test]
     fn should_allow_merging_to_change_quantity_of_owned_cards() {
-        use super::pile;
-
         let mut c = Collection::new();
         c.cards.push((
             1,
@@ -110,8 +109,8 @@ mod test {
             },
         ));
 
-        c.merge(&pile::Pile {
-            cards: vec![pile::Card {
+        c.merge(&card::Pile {
+            cards: vec![card::Card {
                 id: "mir-plains".to_string(),
                 quantity: 2,
                 gvars: vec![],
@@ -124,8 +123,6 @@ mod test {
 
     #[test]
     fn should_allow_merging_to_introduce_new_owned_cards() {
-        use super::pile;
-
         let mut c = Collection::new();
         c.cards.push((
             1,
@@ -135,8 +132,8 @@ mod test {
             },
         ));
 
-        c.merge(&pile::Pile {
-            cards: vec![pile::Card {
+        c.merge(&card::Pile {
+            cards: vec![card::Card {
                 id: "mir-swamp".to_string(),
                 quantity: 2,
                 gvars: vec![],
@@ -152,8 +149,6 @@ mod test {
 
     #[test]
     fn should_allow_merging_to_remove_cards_no_longer_owned() {
-        use super::pile;
-
         let mut c = Collection::new();
         c.cards.push((
             1,
@@ -163,8 +158,8 @@ mod test {
             },
         ));
 
-        c.merge(&pile::Pile {
-            cards: vec![pile::Card {
+        c.merge(&card::Pile {
+            cards: vec![card::Card {
                 id: "mir-plains".to_string(),
                 quantity: -1,
                 gvars: vec![],
@@ -177,8 +172,6 @@ mod test {
 
     #[test]
     fn should_allow_merging_to_remove_cards_in_multiple_passes() {
-        use super::pile;
-
         let mut c = Collection::new();
         c.cards.push((
             5,
@@ -188,15 +181,15 @@ mod test {
             },
         ));
 
-        c.merge(&pile::Pile {
+        c.merge(&card::Pile {
             cards: vec![
-                pile::Card {
+                card::Card {
                     id: "mir-plains".to_string(),
                     quantity: -3,
                     gvars: vec![],
                     lvars: vec![],
                 },
-                pile::Card {
+                card::Card {
                     id: "mir-plains".to_string(),
                     quantity: -2,
                     gvars: vec![],
@@ -210,8 +203,6 @@ mod test {
 
     #[test]
     fn should_allow_merging_to_remove_cards_with_extreme_prejudice() {
-        use super::pile;
-
         let mut c = Collection::new();
         c.cards.push((
             1, // we're going to "lose" 5 of them...
@@ -221,15 +212,15 @@ mod test {
             },
         ));
 
-        c.merge(&pile::Pile {
+        c.merge(&card::Pile {
             cards: vec![
-                pile::Card {
+                card::Card {
                     id: "mir-plains".to_string(),
                     quantity: -3,
                     gvars: vec![],
                     lvars: vec![],
                 },
-                pile::Card {
+                card::Card {
                     id: "mir-plains".to_string(),
                     quantity: -2,
                     gvars: vec![],
@@ -243,8 +234,6 @@ mod test {
 
     #[test]
     fn should_merge_without_getting_tripped_up_by_mid_iter_removal() {
-        use super::pile;
-
         let mut c = Collection::new();
         c.cards.push((
             1,
@@ -261,15 +250,15 @@ mod test {
             },
         ));
 
-        c.merge(&pile::Pile {
+        c.merge(&card::Pile {
             cards: vec![
-                pile::Card {
+                card::Card {
                     id: "mir-plains".to_string(),
                     quantity: -1,
                     gvars: vec![],
                     lvars: vec![],
                 },
-                pile::Card {
+                card::Card {
                     id: "mir-swamp".to_string(),
                     quantity: -1,
                     gvars: vec![],

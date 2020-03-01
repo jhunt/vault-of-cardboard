@@ -3,6 +3,7 @@
 #[macro_use] extern crate error_chain;
 
 pub mod api;
+pub mod card;
 pub mod data;
 pub mod db;
 pub mod schema;

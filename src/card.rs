@@ -1,6 +1,6 @@
-use super::{cdif, pool};
-
 use serde::{Serialize, Deserialize};
+
+use crate::data::{cdif, pool};
 
 #[derive(Serialize, Deserialize)]
 pub struct Card {
@@ -44,8 +44,8 @@ impl Pile {
 #[cfg(test)]
 mod test {
     use crate::prelude::*;
-    use super::super::{pool, cdif};
     use super::Pile;
+    use crate::data::{pool, cdif};
 
     #[test]
     fn should_be_able_to_convert_cdif_to_a_pile() {

@@ -9,10 +9,11 @@ use std::time::Instant;
 use serde::{Serialize, Deserialize};
 
 use vault_of_cardboard::prelude::*;
-use vault_of_cardboard::data::{collection, pile};
+use vault_of_cardboard::card;
+use vault_of_cardboard::data::collection;
 
 #[derive(Serialize, Deserialize)]
-pub struct Aggregate(Vec<collection::OwnedCard>, Vec<Vec<pile::Card>>);
+pub struct Aggregate(Vec<collection::OwnedCard>, Vec<Vec<card::Card>>);
 
 impl Persistable for Aggregate {
     fn from_reader<T: io::Read>(src: &mut T) -> std::result::Result<Self, io::Error> {
@@ -51,7 +52,7 @@ fn main() {
     let mut n = 0;
     for cards in raw.1 {
         n += 1;
-        collection.merge(&pile::Pile{ cards: cards });
+        collection.merge(&card::Pile{ cards: cards });
     }
     let elapsed = now.elapsed().as_millis();
     println!("reconciled collection (applying {} patches) in {}ms", n, elapsed);
