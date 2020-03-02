@@ -2,3 +2,4 @@
 **/*.rs.bk
 /test/integration/fs
 /local
+/nginx.conf

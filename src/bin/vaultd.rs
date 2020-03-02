@@ -1,6 +1,8 @@
 #[macro_use] extern crate hyper;
 use iron::prelude::*;
 use iron::status;
+use iron::mime::{Mime,TopLevel, SubLevel};
+use iron::headers::ContentType;
 use router::Router;
 use serde_json::json;
 use std::env;
@@ -119,7 +121,14 @@ fn main() {
         |_: &mut Request| {
             let api = boot();
             match api.file("cards.json") {
-                Ok(f) => Ok(Response::with((status::Ok, f))),
+                Ok(f) => {
+                    let mut r = Response::with((status::Ok, f));
+                    r.headers.set(ContentType(Mime(
+                                TopLevel::Application,
+                                SubLevel::Json,
+                                vec![])));
+                    Ok(r)
+                }
                 Err(e) => {
                     println!("error: {}", e);
                     done!(500 => "internal server error")

@@ -1,0 +1,2338 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,intial-scale=1">
+<title>Vault of Cardboard</title>
+<link rel="stylesheet" type="text/css" href="/css/keyrune.min.css" />
+<link rel="stylesheet" type="text/css" href="/css/mana.min.css" />
+<link rel="stylesheet" type="text/css" href="/css/vcb.css" />
+</head>
+<body class="signed-in">
+<header>
+  <h1>Vault of Cardboard</h1>
+  <input name="q" placeholder="i.e.: Ral color:RU +draw" autocomplete="off">
+  <nav>
+    <li><a>Search</a>
+        <nav>
+          <li><a href="#!/docs">How do I search?</a></li>
+          <li><a href="#!/sets">What sets are there?</a></li>
+          <li class="separator"></li>
+          <li class="if-authed"><a href="#!/q/owned">My Collection</a></li>
+          <li class="if-authed"><a href="#!/q/own:2+">My Duplicates</a></li>
+          <li class="if-authed"><a href="#!/q/own:4+">My Playsets</a></li>
+          <li class="if-authed separator"></li>
+          <li><a href="#!/q/type:planeswalker">Planeswalkers</a></li>
+          <li><a href="#!/q/=mythic">Mythics</a></li>
+          <li><a href="#!/q/+gains? and +loses?">Life Gain + Loss</a></li>
+          <li><a href="#!/q/type:land and +damage">Pain Lands</a></li>
+          <li><a href="#!/q/usd:10+ and usd:400-">Expensive Cards</a></li>
+        </nav></li>
+    <li class="if-not-authed"><a href="#!/login" rel="login">Sign in</a></li>
+    <li class="if-authed"><a class="-username">Member</a>
+        <nav>
+          <li><a href="#!/timeline">My Collection</a></li>
+          <li class="cohort-preview"><a href="#!/decks">Decks</a></li>
+          <li><a href="#!/logout" rel="logout">Sign out</a></li>
+        </nav></li>
+  </nav>
+</header>
+<div class="colors"></div>
+
+<div id="main">
+  <div class="landing">
+    <div><img src="/img/front.png"></div>
+    <div>
+      <p>Whether you're putting together <a href="#!/q/type:sliver">that Sliver deck,</a>
+      seeking out <a href="#!/q/type:legendary and type:creature">your next Commander,</a>
+      or <a href="#!/q/Didgeridoo or type:Minotaur">just looking for some jank</a>,
+      <em>Vault of Cardboard</em> has got you covered.</p>
+
+      <p>With a <strong>powerful and flexible query language</strong> that lets you refine
+      queries until you find <em>exactly</em> what you're looking for, and a
+      <strong>buy / sell / trade</strong> model of <strong>collection management</strong>,
+      you'll never again wonder what you have or what you need.</p>
+
+      <footer>
+        Magic: The Gathering is a Trademark of Wizards of the Coast, Inc. and Hasbro, Inc.<br/>
+        Vault of Cardboard is Copyright &copy; 2020 <a href="https://jameshunt.us">James Hunt</a>
+      </footer>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-bg"></div>
+<div class="modal-fg"></div>
+
+<script type="text/html" id="template:loading"><!-- {{{ -->
+  <div class="loading">
+    <h1>Loading...</h1>
+    <p class="marquee"></p>
+  </div>
+</script><!-- }}} -->
+<script type="text/html" id="template:login"><!-- {{{ -->
+  <div class="landing login">
+    <div><img src="/img/front.png"></div>
+    <div>
+      <p>Whether you're putting together <a href="#!/q/type:sliver">that Sliver deck,</a>
+      seeking out <a href="#!/q/type:legendary and type:creature">your next Commander,</a>
+      or <a href="#!/q/Didgeridoo or type:Minotaur">just looking for some jank</a>,
+      <em>Vault of Cardboard</em> has got you covered.</p>
+
+      <form id="login">
+        <div class="oops"></div>
+        <div>
+          <label>Username</label>[[# <a href="#">need an account?</a> ]]
+          <input type="text" name="username" autocomplete="off">
+        </div>
+        <div>
+          <label>Password</label>[[# <a href="#">forgot your password?</a> ]]
+          <input type="password" name="password">
+        </div>
+        <div>
+          <button class="default safe">Sign in</button>
+        </div>
+      </form>
+      <footer>Copyright &copy; 2019 <a href="https://jameshunt.us">James Hunt</a></footer>
+    </div>
+  </div>
+</script><!-- }}} -->
+
+<script type="text/html" id="template:play-card"><!-- {{{ -->
+  <img class="c" id="[[= _.id ]]" src="[[= $CONFIG.imgroot ]]/cards/[[= _.card.image ]]"
+       [[ if (_.card.layout == 'transform') { ]]data-flip-src="[[= $CONFIG.imgroot ]]/cards/[[= _.card.back ]]"[[ } ]]
+       draggable="true"
+       alt="[[= _.card.name ]]" title="[[= _.card.name ]]">
+</script><!-- }}} -->
+<script type="text/html" id="template:play"><!-- {{{ -->
+  <div class="play">
+    <div class="wash"></div>
+    <div class="draw strip"><div class="cards"></div></div>
+    <div class="board">
+      <div class="zones">
+        <div class="empty command zone"  ><img class="placeholder" src="/play/command-zone.png"></div>
+        <div class="empty exile zone"    ><img class="placeholder" src="/play/exile.png"><ul><li><a href="#" rel="search">search</a></li><li></ul></div>
+        <div class="library"><img class="placeholder" src="/play/library.png"><img class="back" src="/img/mtgback.jpg"><ul><li><a href="#" rel="draw">draw</a></li><li><a href="#" rel="search">search</a></li><li><a href="#" rel="exile">exile</a></li></ul></div>
+        <div class="empty graveyard zone"><img class="placeholder" src="/play/graveyard.png"><ul><li><a href="#" rel="search">search</a></li><li><a href="#" rel="exile">exile</a></li></ul></div>
+      </div>
+      <div class="battlefield"></div>
+      <div class="inspect">
+        <img>
+        <div class="h2h">
+          <div class="p ap">
+            <h2>
+              K-A-A-L-I-A Kaaaaaaaalia!
+              <span class="active">AP</span>
+            </h2>
+            <div class="stats">
+              <div class="details">
+                <p>Ima throw down some angels and demons, mmkay?</p>
+                <span class="colors">[[= colorize('WUB') ]]</span>
+
+                <div class="poison gauge">
+                  <span class="n">9</span>
+                  <div class="fill"></div>
+                  <label>poison<label>
+                </div>
+
+                <div class="commander-damage gauge">
+                  <span class="n">19</span>
+                  <div class="fill"></div>
+                  <label>Silver Queen<label>
+                </div>
+                <div class="commander-damage gauge">
+                  <span class="n">4</span>
+                  <div class="fill"></div>
+                  <label>Muldrotha<label>
+                </div>
+                <div class="commander-damage gauge">
+                  <span class="n">2</span>
+                  <div class="fill"></div>
+                  <label>Niv-Mizzet<label>
+                </div>
+              </div>
+              <div class="side">
+                <div class="life total">
+                  <span>20</span>
+                  <label>Life</label>
+                </div>
+
+                <div class="energy counters">
+                  <span>5</span>
+                  <label>energy</label>
+                </div>
+
+                <div class="xp counters">
+                  <span>1</span>
+                  <label>xp</label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!--
+          <div class="sep"><span>vs</span></div>
+          <div class="p nap">
+            <h2>
+              <span class="ap">AP</span>
+              <span class="nap">NAP</span>
+              What Even Are Slivers, Anyway?
+              <span class="colors">[[= colorize('C') ]]</span>
+            </h2>
+            <ul class="stats">
+              <li class="life">20</li>
+            </ul>
+          </div>
+          -->
+        </div>
+      </div>
+    </div>
+    <div class="hand"></div>
+  </div>
+</script><!-- }}} -->
+<script type="text/html" id="template:play-draw"><!-- {{{ -->
+  <div class="cards">
+    [[ for (var i = 0; i < _.cards.length; i++) { ]]
+      [[ include('play-card', _.cards[i]); ]]
+    [[ } ]]
+    [[ if (_.mode == 'draw') { ]]
+      <img src="/img/mtgback.jpg">
+    [[ } ]]
+    <ul class="button">
+      [[ if (_.mode == 'draw') { ]]
+      <li><a href="#" rel="put-in-hand">ok</a></li>
+      [[ } ]]
+    </ul>
+  </div>
+</script><!-- }}} -->
+
+<script type="text/html" id="template:unseal-pack"><!-- {{{ -->
+  <div class="cards">
+    [[ for (var i = 0; i < _.cards.length; i++) { ]]
+      [[ include('play-card', _.cards[i]); ]]
+    [[ } ]]
+    [[ if (_.mode == 'draw') { ]]
+      <img src="/img/mtgback.jpg">
+    [[ } ]]
+    <ul class="button">
+      [[ if (_.mode == 'draw') { ]]
+      <li><a href="#" rel="put-in-hand">ok</a></li>
+      [[ } ]]
+    </ul>
+  </div>
+</script><!-- }}} -->
+
+<script type="text/html" id="template:cardface"><!-- {{{ -->
+  [[ var alt = _.card.name + ' [' + _.card.set.code + ']'; ]]
+  <span data-own="[[= _.owned ]]">
+    [[ if (!_.noback) { ]]<span class="card back"><img src="/img/mtgback.jpg"></span>[[ } ]]
+    <span class="card face [[= _.card.layout]]">
+      [[ if (_.card.layout == 'transform') { ]]<a href="#" rel="flip"></a>[[ } ]]
+      <img data-id="[[= _.card.id ]]" src="[[= $CONFIG.imgroot ]]/cards/[[= _.card.image ]]"
+           [[ if (_.card.layout == 'transform') { ]]data-flip-src="[[= $CONFIG.imgroot ]]/cards/[[= _.card.back ]]"[[ } ]]
+           alt="[[= alt ]]" title="[[= alt ]]">
+    </span>
+  </span>
+</script><!-- }}} -->
+<script type="text/html" id="template:card-detail"><!-- {{{ -->
+  [[ var alt = _.card.name + ' [' + _.card.set.code + ']'; ]]
+  <div class="cardable" data-own="[[= _.owned ]]"><div>
+    <span class="card back"><img src="/img/mtgback.jpg"></span>
+    <span class="card face [[= _.card.layout]]">
+      [[ if (_.card.layout == 'transform') { ]]<a href="#" rel="flip"></a>[[ } ]]
+      <img data-id="[[= _.card.id ]]" alt="[[= alt ]]" title="[[= alt ]]">
+    </span>
+  </div></div>
+  [[# include('cardface', { card: _.card, noback: 1 }); ]]
+  <div class="detail">
+    <a class="close" href="#">X</a>
+    [[# <ul class="tags"><li>tag</li><li>control</li></ul> ]]
+    <ul class="info">
+      <li><strong>[[= _.card.name ]]</strong></li>
+      <li><em>[[= clean(_.card.type) ]]</em></li>
+      <li>[[= _.card.set.name ]] ([[= _.card.set.code ]])</li>
+      <li>#[[= _.card.number ]]/[[= _.card.set.total ]]</li>
+      <li>[[= colorize(_.card.color) ]]</li>
+      <li><strong>CMC:</strong> [[= _.card.cmc ]]</li>
+      <li>[[= _.card.rarity ]]</li>
+    </ul>
+    <textarea style="display: none">[[= quotify(_.card.name, _.card.set, _.card.flavor) ]]</textarea>
+    <ul class="owned">
+      <li><strong>Owned:</strong> [[= _.card.owned.toString() ]]</li>
+      [[# <li><strong>Proxied:</strong> 1</li> ]]
+    </ul>
+    [[# <ul class="where">
+          <li>1 in <a href="#">Niv-Mizzet →</a></li>
+          <li>1 in <a href="#">ctl60 →</a></li>
+          <li>1 in <a href="#">Collection →</a></li>
+        </ul> ]]
+    <ul>
+      <li class="oracle"><p>[[= symbolize(clean(_.card.oracle)).replace(/\n/g, '</p><p>') ]]</p></li>
+    </ul>
+    [[ if (typeof(_.card.price) !== 'undefined') { ]]<p class="price">[[= price(_.card.price) ]]
+       [[= (_.card.price > 999 ? '<span class="w1">remember kids, M:tG is <strong>NOT</strong> an investment...</span>' :
+            _.card.price >  99 ? '<span class="w2">oof</span>' :
+            _.card.price >   9 ? '<span class="w3">that\'s a tad much, don\'t you think?</span>' : '') ]]
+    </p>[[ } ]]
+  </div>
+</script><!-- }}} -->
+<script type="text/html" id="template:results"><!-- {{{ -->
+  [[#
+      {results} - Main View Search Results
+  ]]
+<div class="search">
+  [[ if (_.oops) { ]]
+  <div class="oops">[[= _.q ]]: [[= _.oops ]]</div>
+  [[ } else { ]]
+  <div class="meta-results">found <span class="count">[[= _.results.length ]]</span> card[[= _.results.length == 1 ? '' : 's' ]].</div>
+  <div class="results grid">
+    [[
+      for (var i = 0; i < _.results.length && i < _.max; i++) {
+        include('cardface', { owned: _.results[i].owned,
+                              card:  _.results[i] });
+      }
+    ]]
+  </div>
+  [[ } ]]
+</div>
+</script><!-- }}} -->
+<script type="text/html" id="template:sets"><!-- {{{ -->
+  <div class="sets prose">
+    <h1>Currently Known Magic: the Gathering Sets</h1>
+    <p>These are all the M:tG sets that Vault of Cardboard knows about.
+    Most of these should have images.  If a set is missing, or missing its images,
+    please let us know!</p>
+    <table class="sets sortable listing">
+      <thead><tr>
+        <th></th>
+        <th class="sortable">Code</th>
+        <th class="sortable">Name</th>
+        <th class="sortable" data-sort-as="number">Release Date</th>
+        <th class="sortable" data-sort-as="number">Size</th>
+      </tr></thead>
+      <tbody>
+      [[ $.each(_.sets, function (i, set) { ]]
+        <tr>
+          <td><span class="ss ss-[[= set.code.toLowerCase() ]]"></span></td>
+          <td>[[= set.code ]]</td>
+          <td>[[= set.name ]]</td>
+          <td data-sort="[[= set.release ]]">[[= strftime("%B %Oe, %Y", dated(set.release)) ]]</td>
+          <td data-sort="[[= set.size ]]"><a href="#!/q/set:[[= set.code ]]">[[= set.size ]]</a></td>
+        </tr>
+      [[ }); ]]
+      </tbody>
+    </table>
+  </div>
+</script><!-- }}} -->
+<script type="text/html" id="template:docs"><!-- {{{ -->
+  <div class="docs prose">
+    <h1>Vault of Cardboard Query Language</h1>
+    <p>This section describes how to write queries against the Vault.</p>
+
+    <p>The simplest of Vault queries consist of single unquoted words
+    (i.e.: <kbd>counterspell</kbd>), and quoted strings (i.e.: <kbd>"Blur Sliver"</kbd>).
+    These queries match cards based on their names.  The unquoted
+    variety is case-insensitive, but matches whole words &mdash; <kbd>ral</kbd>
+    would match <em>Ral, Caller of Storms</em>, but not <em>Baral, Chief of
+    Compliance</em>.</p>
+
+    <p>More advanced expressions exist for matching against other parts
+    of the card.  For example, <kbd>color:W</kbd> is an expression that matches
+    cards whose color identity includes white.</p>
+
+    <p>Here's a list of all the expression types currently supported by
+    the Vault interpreter.  Feel free to skim this list upon first
+    encountering it, and then return once you get to see how
+    expressions can be combined!</p>
+
+    <table class="keywords">
+      <thead><tr>
+        <th>Expression</th>
+        <th>How it works</th>
+        <th>Example</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td>activate</td>
+          <td>Match cards based on the text of their activated abilities.</td>
+          <td>activate:gains flying</td>
+        </tr>
+        <tr>
+          <td>artist</td>
+          <td>Match cards based on the name of the artist.  Art matters.</td>
+          <td>artist:Poole</td>
+        </tr>
+        <tr>
+          <td>cmc</td>
+          <td>Match cards based on their converted mana cost.</td>
+          <td>cmc:2+</td>
+        </tr>
+        <tr>
+          <td>color</td>
+          <td>Match cards based on their color identity.  Color names (<strong>blue</strong>, <strong>red</strong>, etc.) will match cards with only that color identity.  WUBRG combinations perform partial matches (<strong>UR</strong> matches a card in blue, red, <em>and</em> green, for example).  You can also use color pair / triple names, like <strong>Izzet</strong> or <strong>Bant</strong>, for exact matching.</td>
+          <td>color:red<br>color:UR<br>color:izzet</td>
+        </tr>
+        <tr>
+          <td>cpt</td>
+          <td>Match (creature) cards based on their combined power + toughness values.</td>
+          <td>cpt:&lt;4</td>
+        </tr>
+        <tr>
+          <td>discard</td>
+          <td>Match cards based on their activated abilities that you pay for by discarding cards.</td>
+          <td>discard:draw</td>
+        </tr>
+        <tr>
+          <td>equip</td>
+          <td>Match (equipment artifact) cards based on their cost to equip.</td>
+          <td>equip:2+</td>
+        </tr>
+        <tr>
+          <td>exile</td>
+          <td>Match cards based on their activated abilities that you pay for by exiling cards or permanents.</td>
+          <td>exile:life</td>
+        </tr>
+        <tr>
+          <td>flavor</td>
+          <td>Match cards based on the contents of their flavor text.</td>
+          <td>flavor:Niv</td>
+        </tr>
+        <tr>
+          <td>layout</td>
+          <td>Match cards based on their form factor (i.e. <tt>normal</tt>, or <tt>transforms</tt>).</td>
+          <td>layout:transform</td>
+        </tr>
+        <tr>
+          <td>legal</td>
+          <td>Match cards that are legal in the given format.<br><br>Valid values are:
+          <ul>
+            <li><strong>1v1</strong> (2-player EDH)</li>
+            <li><strong>edh</strong> or <strong>commander</strong> (multiplayer EDH)</li>
+            <li><strong>legacy</strong> (Legacy)</li>
+            <li><strong>modern</strong> (8th ed + Mirrodin onward)</li>
+            <li><strong>standard</strong> (formerly Type 2).</li>
+            <li><strong>vintage</strong> (formerly Type 1).</li>
+          </ul></td>
+          <td>legal:standard</td>
+        </tr>
+        <tr>
+          <td>name</td>
+          <td>Match cards based on their name.</td>
+          <td>name:Bolt</td>
+        </tr>
+        <tr>
+          <td>oracle</td>
+          <td>Match cards based on the contents of their oracle text.</td>
+          <td>oracle:draw</td>
+        </tr>
+        <tr>
+          <td>own</td>
+          <td>Match cards based on how many you have in your collection.</td>
+          <td>own:4+</td>
+        </tr>
+        <tr>
+          <td>power</td>
+          <td>Match (creature) cards based on their power / attack value.</td>
+          <td>power:2+</td>
+        </tr>
+        <tr>
+          <td>pt</td>
+          <td>Match (creature) cards based on their literal power/toughness.</td>
+          <td>pt:2/3</td>
+        </tr>
+        <tr>
+          <td>ptr</td>
+          <td>Match (creature) cards based on the ratio of power:toughness.</td>
+          <td>ptr:1.5+</td>
+        </tr>
+        <tr>
+          <td>rarity</td>
+          <td>Match cards based on their commonality / rarity.</td>
+          <td>rarity:mythic</td>
+        </tr>
+        <tr>
+          <td>set</td>
+          <td>Match cards based on the expansion set(s) they were printed in.</td>
+          <td>set:XLN</td>
+        </tr>
+        <tr>
+          <td>spotlight</td>
+          <td>Matches cards that are <strong>Story Spotlight</strong> cards.</td>
+          <td>spotlight:y</td>
+        </tr>
+        <tr>
+          <td>tap</td>
+          <td>Match cards based on their activated abilities that require a tap.</td>
+          <td>tap:destroy</td>
+        </tr>
+        <tr>
+          <td>toughness</td>
+          <td>Match (creature) cards based on their toughness / defense value.</td>
+          <td>toughness:&lt;5</td>
+        </tr>
+        <tr>
+          <td>type</td>
+          <td>Match cards based on their card type.</td>
+          <td>type:land</td>
+        </tr>
+        <tr>
+          <td>unique</td>
+          <td>Filter results based on card text or art uniqueness.
+              See below for more information and some caveats.</td>
+          <td>unique:card<br>unique:art</td>
+        </tr>
+        <tr>
+          <td>untap</td>
+          <td>Match cards based on their activated abilities that require an untap.</td>
+          <td>untap:add</td>
+        </tr>
+        <tr>
+          <td>usd</td>
+          <td>Match cards based on their current value/price (per Scryfall)</td>
+          <td>usd:&lt;5.25</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>Several of these typed expressions are so common that VCB has
+    either a shorthand or keyword notation for them.</p>
+
+    <table class="shorthand">
+      <thead><tr>
+        <th>Shorthand</th>
+        <th>Equivalent to</th>
+        <th>Example</th>
+      </tr></thead>
+
+      <tbody>
+        <tr>
+          <td>=X</td>
+          <td>rarity:X</td>
+          <td><kbd>=mythic</kbd> will find all Mythic Rares.</td>
+        </tr>
+        <tr>
+          <td>@X</td>
+          <td>color:X</td>
+          <td><kbd>@WB</kbd> will find dual white/black cards.</td>
+        </tr>
+        <tr>
+          <td>+X</td>
+          <td>oracle:X</td>
+          <td><kbd>+draw</kbd> finds cards that have the word "draw" in their rules text.</td>
+        </tr>
+        <tr>
+          <td>owned</td>
+          <td>own:1+</td>
+          <td><kbd>owned</kbd> finds all of your cards.</td>
+        </tr>
+        <tr>
+          <td>have</td>
+          <td>own:1+</td>
+          <td><kbd>have</kbd> is an alias for <kbd>owned</kbd>.</td>
+        </tr>
+        <tr>
+          <td>need</td>
+          <td>own:0</td>
+          <td><kbd>need</kbd> finds all of the cards you don't own (which you clearly <strong>need</strong>).</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="note"><span>Note:</span>
+    if you want to match keywords as a name, for instance if you were
+    looking for <em>Hour of Need</em>, you can use the <kbd>name:</kbd> expression, as in
+    <kbd>name:"Need"</kbd>.  (Due to a technical limitation that should be fixed soon,
+    you do have to quote the value, which means capitalization matters!)</p>
+
+    <p>For anything but the simplest queries, you're going to want to
+    combine these expressions into larger aggregate expressions.  For these, you
+    need the <em>logical operators</em>: <kbd>and</kbd>, <kbd>or</kbd>, and <kbd>not</kbd>.</p>
+
+    <p><kbd>and</kbd> works by checking both sub-expressions; if those both match, the
+    expression as a whole is a match.  <kbd>or</kbd> considers the whole expression a
+    match if <em>either</em> sub-expression is a match.  This mirrors how we use the
+    words "and" / "or" in English.</p>
+
+    <p>For example, there are a lot of legendary creatures.  To build a blue / black
+    commander (EDH) deck,  I need to find an interesting legendary creature who
+    is both blue and black.  That's two expressions, stitched together with an
+    <kbd>and</kbd>:</p>
+
+    <pre><code class="query">type:legendary and color:UB</code></pre>
+
+    <p>The <kbd>not</kbd> operator lets you negate an assertion.  Commander doesn't
+    generally allow Planeswalkers to serve as Commanders, and since most walkers
+    are listed as "Legendary Planeswalkers", I need to amend my query to
+    exclude all mention of the sub-type:</p>
+
+    <pre><code class="query">type:legendary and color:UB and not type:planeswalker</code></pre>
+
+    <p>Much better.</p>
+
+    <p>In the interest of reducing keystrokes, <kbd>!</kbd> is an alias of <kbd>not</kbd>; forgive
+    me, this is my programmer roots showing.  A nice compact query that takes
+    advantage of all this terseness is:</p>
+
+    <pre><code class="query">owned and !=common</code></pre>
+
+    <p>... which finds all of the uncommons, rares, and mythic rares in your
+    collection.</p>
+
+    <h2>Uniqueness</h2>
+    <p>By default, Vault of Cardboard will return all prints and editions of a <em>card</em>.
+    For example, if you search for <kbd>counterspell</kbd>, you'll get a bunch of them, mostly
+    reprints.  If you don't care about specific editions, and are just looking for the general
+    counterspell card, you can add <kbd>and unique</kbd> to the end of your search query.</p>
+
+    <p>There are two modes for the <kbd>unique</kbd> predicate: oracle text and art.</p>
+
+    <p>For <strong>oracle text</strong>, use <kbd>unique:card</kbd>, or the briefer shortcut
+    <kbd>unique</kbd>.  As it compiles the search results, Vault of Cardboard will omit duplicates
+    of reprinted cards.  Note that this may not always return the <em>original</em> printing.</p>
+
+    <p>Sometimes cards get a reprint with new art.  To find all unique illustrations, you can use
+    the <strong>card art</strong> mode: <kbd>unique:art</kbd>.</p>
+
+    <p>This type of filtering is different from all of the other query predicates, since it
+    has to take into account all of the cards seen so far.  As such, you will probably see some
+    strange behavior if you try to nest the uniqueness predicate inside of a subquery.</p>
+
+    <p>For 99% of use cases, you'll want to just tack on a <kbd>and unique</kbd> to the end of
+    your query.</p>
+
+    <h2>A Note About Precedence</h2>
+    <p>Finally, we need to talk about precedence.  Whenever you chain multiple
+    <kbd>and</kbd>'s and <kbd>or</kbd>'s together, you need to consider what you actually mean.
+    For example:</p>
+
+    <pre><code class="query">owned and =rare or =mythic</code></pre>
+
+    <p>The <em>intent</em> behind this query was to find all my rares.  Unfortunately, the
+    precedence rules of the query language <em>bind</em> the <kbd>owned</kbd> and <kbd>=rare</kbd>
+    sub-expressions together, and then checks the <kbd>=mythic</kbd> status.  The upshot
+    is that what I actually get is all of my owned rares, and every mythic rare
+    ever printed.</p>
+
+    <p>I could reword the query to be:</p>
+
+    <pre><code class="query">=rare or =mythic and owned</code></pre>
+
+    <p>(in general, <kbd>and owned</kbd> on the end will almost always do what you want)</p>
+
+    <p>Luckily, you can use parentheses to enforce the precedence you want, without
+    having to reword:</p>
+
+    <pre><code class="query">owned and (=mythic or =rare)</code></pre>
+
+    <p>This causes the rarity expressions to be evaluated, and then checked against
+    ownership status.  Just like math class!</p>
+
+    <h2>A Query Cookbook</h2>
+
+    <p>If you prefer to learn by doing, or just want to try some things
+    out, this is the section for you.</p>
+
+    <p><strong>What do I own from <em>Dominaria</em>?</strong></p>
+
+    <pre><code class="query">set:DOM and owned</code></pre>
+
+    <p><strong>What red playsets do I own?</strong> (i.e. for standard deck
+    construction purposes)</p>
+
+    <pre><code class="query">@R and own:4+</code></pre>
+
+    <p><strong>What taplands exist?</strong></p>
+
+    <pre><code class="query">type:Land and +tapped</code></pre>
+
+    <p><strong>I would like to drool over Zendikar lands please</strong></p>
+
+    <pre><code class="query">set:ZEN or set:BFZ and type:land and type:basic</code></pre>
+
+    <p>or (if you like parentheticals (as I do)):</p>
+
+    <pre><code class="query">(set:ZEN or set:BFZ) and (type:land and type:basic)</code></pre>
+
+    <p><strong>Oh man do I love a good life transfer card!</strong></p>
+
+    <pre><code class="query">+gains? and +loses?</code></pre>
+
+    <p><strong>What white weenies have lifelink?</strong></p>
+
+    <pre><code class="query">@W and +lifelink and pt:1/1</code></pre>
+
+    <p><strong>What GRN creatures had more attack than defense?</strong></p>
+
+    <pre><code class="query">set:GRN and ptr:&gt;1</code></pre>
+  </div>
+</script><!-- }}} -->
+<script type="text/html" id="template:changelog"><!-- {{{ -->
+  <div class="docs changelog prose">
+    [[# commit 939c6a7 ]]
+    <h2 id="!/changelog/v20190703">
+    <img src="/h/v20190703.png">
+    Story Spotlights, Uniqueness, and Deck Imports
+    <a href="/#!/changelog/v20190703">(permalink)</a>
+    <span>July 3rd 2019</span></h2>
+
+    <p>We've made some adjustments to search.  For those of you who just can't get
+    enough of the deep lore of M:tG expansion sets, we have a new search predicate,
+    <kbd>spotlight</kbd> that finds <em>Story Spotlight</em> cards.</p>
+
+    <p>The biggest new feature for VQL, however, has got to be <em>uniqueness</em>
+    filtering.  There have been lots of cards printed over the years, and a sizable
+    chunk of those are reprints.  We've always had the <kbd>reprint</kbd> predicate,
+    but that doesn't work when you're trying to limit to recent sets.</p>
+
+    <p>Now, you can drop all those pesky duplicates by adding <kbd>and unique</kbd>
+    to the end of your search query.  Any additional prints of any given card will
+    be removed from the resultset, cleaning things up.  This is perfect for deck
+    brewing, where you care more about the oracle text than the print edition or
+    pricing.</p>
+
+    <p>If you love the art of Magic as much as we do, you'll also love the new
+    <em>art uniqueness</em> predicate too!  With <kbd>unique:art</kbd>, you'll get
+    rid of duplicate card art in your resultset.</p>
+
+    <p>This release also marks the introduction of <em>preview features</em>;
+    stuff we want to get into the hands of users, but that aren't ready for prime
+    time just yet.  The first of those is Deck Import.  You can export decks from
+    your favorite deck builder sites, and import them into the Vault.  Afterwards,
+    you can use the new <kbd>in:deck-name</kbd> predicate to filter based on
+    inclusion in a given deck.  Now you can find all those Ninja's that <em>aren't</em>
+    in your Yuriko deck.</p>
+
+    <p>Contact James if you want early access to preview features!</p>
+
+
+    [[# commit c3326b6 ]]
+    <h2 id="!/changelog/v20190503">
+    <img src="/h/v20190503.png">
+    Buy / Sell / Trade Collection Management (BETA)
+    <a href="/#!/changelog/v20190503">(permalink)</a>
+    <span>May 3rd 2019</span></h2>
+
+    <p>Okay, we've been working on this one for a long time, so bear with us...</p>
+
+    <p>Vault of Cardboard's collection management facilities just got a major boost.
+    No longer are you required to manage a single listing of all the cards in your
+    entire collection.  Instead, you can start with an initial import, and then use
+    <em>Buy</em> and <em>Sell</em> events to add cards to, and remove cards from your
+    collection.</p>
+
+    <p>I started doing this when I first got back into Magic, using spreadsheets and
+    some cobbled-together scripts to consolidate all the data.  I found it useful to
+    be able to go through and figure out when I got what cards, where they came from
+    (did I buy packs?  singles?  did someone gift them to me?), etc.</p>
+
+    <p>Now you can do that too!  Keep in mind, this is still in beta, and probably
+    has lots of bugs and corner cases that we haven't had a chance to suss out.</p>
+
+    <p>Oh, and if you need an account (we're still in closed registration), let us know!</p>
+
+
+    [[# not a commit; just data ]]
+    <h2 id="!/changelog/v20190427">
+    <img src="/h/v20190427.png">
+    War of the Spark Prerelease Weekend
+    <a href="/#!/changelog/v20190427">(permalink)</a>
+    <span>April 27th, 2019</span></h2>
+
+    <p>It's officially War of the Spark Prerelease Weekend, so we've added
+    <a href="#!/q/set:WAR">the <code>WAR</code> set</a> to Vault's database.
+    Have fun spelunking through all that new <em>amass</em> / <em>proliferate</em>
+    goodness, and drooling over those new walkers!</p>
+
+
+    [[# commits 0e3227e..f9da098 ]]
+    <h2 id="!/changelog/v20190305">
+    <img src="/h/v20190305.png">
+    Tokens, Flip Cards, and Color Splash!
+    <a href="/#!/changelog/v20190305">(permalink)</a>
+    <span>March 5th, 2019</span></h2>
+
+    <p>We now have card data on Tokens!  You can find tokens the same way
+    you find any other card, since the word "Token" shows up in their type
+    line: <code>type:token</code> works like a champ.  The Vault even supports
+    those pesky double-faced tokens from the Ravnica Guild Kits (GK1 / GK2).</p>
+
+    <p>Like flip cards?  Then you'll love the new <em>flippy</em> UI widget we've
+    added to the Kamigawa flip cards, and the Innistrad transform cards.  Click
+    the little rotate-y icon in the bottom right corner of a multi-faced card
+    and the other card face will be shown.  The modal card view even blows up
+    whatever face is shown in the grid!</p>
+
+    <p>Finally, the color breakdown of the entire search resultset is now encoded
+    in a 5-color bar at the top of the page.  Ever wonder who has the most draw-based
+    damage?  Just search for <a href="#!/q/+draw%20and+damage">+draw
+    and +damage</a> and you'll get immediate confirmation that it's mostly a
+    blue / red thing.</p>
+
+
+    [[# commits b0c4280..2b69dec ]]
+    <h2 id="!/changelog/v20190303">
+    <img src="/h/v20190303.png">
+    Even More Search Niceties
+    <a href="/#!/changelog/v20190303">(permalink)</a>
+    <span>March 3rd, 2019</span></h2>
+
+    <p>The <a href="#!/docs">Vault of Cardboard Query Language</a> now
+    handles adjacent <em>bare word</em> identifiers as parts of a card name.
+    That means you can now search <code>lady of scrolls</code> rather than
+    the (less specific) <code>lady AND of AND scrolls</code>.  We've caught
+    ourselves just typing card names into the search bar one too many times
+    to not just fix this.</p>
+
+    <p>Loading screens look prettier, but here's hoping you don't have to
+    spend enough time looking at them to notice...</p>
+
+
+    [[# commits fc4b0c9..6ebeb38 ]]
+    <h2 id="!/changelog/v20190302">
+    <img src="/h/v20190302.png">
+    My Pretties...
+    <a href="/#!/changelog/v20190302">(permalink)</a>
+    <span>March 2nd, 2019</span></h2>
+
+    <p>This update has a whole bunch of visual tweaks and improvements,
+    as well as a long-overdue addition to the querying capability.</p>
+
+    <p>The Vault now supports a <code>legal:...</code> predicate, allowing
+    you to refine your card search based on ban lists and pre-constructed
+    format rules.  It's never been easier to stay within the confines of
+    Modern, Vintage, Legacy, Standard, Brawl, and EDH/Commander.</p>
+
+    <p>Also, the <em>unusual</em> card formats are now queryable!  The Vault
+    now lets you search for cards based on their card layout, so you can finally
+    find all those splits, transform cards, melds, and flippies.</p>
+
+    <p>For prerelease and spoilers, Scryfall uses low-resolution digitals,
+    so our RNA card faces looked bad.  Those have been refreshed,
+    and the backend systems updated to avoid that in the future, as new
+    sets are released.</p>
+
+    <p>We now also have a "blank" card face which browsers will load before
+    attempting to fetch the actual card faces.  This makes the whole user
+    experience way nicer on slower links (i.e. conference / airport wifi).</p>
+
+
+    [[# commits 358f16d..d7d57a7 ]]
+    <h2 id="!/changelog/v20190125">
+    <img src="/h/v20190125.png">
+    Mobile Support, Ravnica Allegiance, and More
+    <a href="/#!/changelog/v20190125">(permalink)</a>
+    <span>January 25th, 2019</span></h2>
+
+    <p><a href="#!/q/set:RNA">Ravnica Allegiance is out!</a>
+    We've got all the cards and all the images for the newest set, where we get to
+    play as the other five Ravnican guilds: Orzhov, Rakdos, Simic, Gruul, and Azorius.</p>
+
+    <p>The Vault now supports mobile browsing, both on small screens (like my ancient
+    iPhone 5s) and tablet-sized displays (like my wife's iPad Pro).  Try it out and see
+    what you think!  Now you can check the prices, oracle text, errata, and other card
+    details, wherever you are.  We use it to settle disputes mid-game!</p>
+
+    <p>We've done a bunch of other various updates, tweaks and fixes as well:</p>
+
+    <ul>
+      <li><strong>Collection imports are now normalized</strong> to a single entry
+      per card+set, which can be helpful when you've got some last-minute additions
+      to the collection and don't want to bother with deduplication yourself.</li>
+
+      <li><strong>More Modal Card Detail.</strong>  When you click on a card to get
+      more information, you now get the title, card type, and oracle text, along
+      the right-hand side of the modal.  Useful for copying / pasting into your favorite
+      chat software, or M:tG forum.  We also integrated mana and tap symbols.</li>
+
+      <li><strong>Pricing is formatted more sanely now;</strong> <em>$120.0</em> is
+      just plain embarassing.  For ludicrously expensive cards (looking at you, Reserve
+      List), we now gently remind you that cardboard is a poor investment vehicle.</li>
+
+      <li><strong>All tables are now click-sortable.</strong>  Too many have suffered
+      with the inability to sort random tables by header columns.  No more!</li>
+    </ul>
+
+
+    [[# commits 5c202b0..7afcf1f ]]
+    <h2 id="!/changelog/v20190109">
+    <img src="/h/v20190109.png">
+    New Query Language Predicates / Set Listing Updates
+    <a href="/#!/changelog/v20190109">(permalink)</a>
+    <span>January 9th, 2019</span></h2>
+
+    <p>We have some new predicates in the query language that let you do some
+    pretty spicy stuff.  Use <code>artist:...</code> to find the prints by the
+    artists you love.  The new power / toughness predicates (<code>p/t/pt/cpt/ptr</code>)
+    will finally let us brew that killer <a href="#!/q/Wild Pair">Wild Pair</a>
+    deck for some sweet library-to-battlefield shenanigans.</p>
+
+    <p>Oh!  The <a href="#!/sets">Set Listing Page</a> got some love too; we now
+    track release dates (in a sortable table) so you can look through the sets
+    (reverse) chronologically, if you're into that sort of thing.  We also lined up
+    the set icons, so they look prettier.  Visuals matter!</p>
+
+
+    [[# commits 45111b6..eda7a07 ]]
+    <h2 id="!/changelog/v20190104">
+    <img src="/h/v20190104.png">
+    Missing Card Faces
+    <a href="/#!/changelog/v20190104">(permalink)</a>
+    <span>January 4th, 2019</span></h2>
+
+    <p>We were missing some images from random sets,  The ingestion process
+    now properly (and intelligently!) backfills missing images from Scryfall.
+    We have always hosted our own copies of the card images (front and back),
+    to ease load on Scryfalls bottom-line, now we're just better at it.</p>
+
+
+    [[# commits f68738b..71142ad ]]
+    <h2 id="!/changelog/v20190101">
+    <img src="/h/v20190101.png">
+    Docs, Fixes, and a UI Overhaul &mdash; Ooh! Shiny!!
+    <a href="/#!/changelog/v20190101">(permalink)</a>
+    <span>January 1st, 2019</span></h2>
+
+    <p>Vault of Cardboard gets a redesign!  The old full-art land login box is gone,
+    as is the annoying old front page.  We here at the Vault pride ourselves on the
+    visual, aesthetic nature of the site, so this is kind of a big deal for us.</p>
+
+    <p>We also finally sat down and wrote out how to use the <a href="#!/docs">Vault
+    of Cardboard Query Language</a> &mdash; it is definitely worth a read and may even
+    teach you a few tricks you didn't already know!</p>
+
+    <p>The <a href="#!/sets">Set Listing Page</a> is new, and it shows you what sets
+    the Vault knows about.  Did we miss a set?  Let us know!</p>
+
+
+    [[# commit ec64054 ]]
+    <h2 id="!/changelog/v20181227">
+    <img src="/h/v20181227.png">
+    Formats, Formats, Formats
+    <a href="/#!/changelog/v20181227">(permalink)</a>
+    <span>December 27th, 2018</span></h2>
+    <p><abbr title="Vault of Cardboard">VCB</abbr> now supports additional import
+    formats, including:</p>
+
+    <ul>
+      <li>TCGPlayer.com's <abbr title="comma-separated values">CSV</abbr> format</li>
+      <li><a href="https://archidekt.com">Archidekt's</a> deck export format</li>
+    </ul>
+
+    <p>The super neat thing about the TCGPlayer support is that the importer
+    will properly detect the fields it needs, in whatever order they appear in the
+    CSV output, provided you include the header row.  This makes it possible to
+    support other comma-separated formats natively!</p>
+
+
+    [[# all commits prior to ec64054 ]]
+    <h2 id="launch">
+    <img src="/h/launch.png">
+    Welcome to the Vault!
+    <a href="/#!/changelog/launch">(permalink)</a>
+    <span>December, 2018</span></h2>
+    <blockquote class="ed">I got back into Magic: the Gathering in the week
+    leading up to Thanksgiving, 2018.  By early December, I had realized that
+    I wanted a better search engine and collection management system.  I started
+    working on Vault of Cardboard December 13th, and I think it was deployed
+    to "production" sometime just after Christmas.
+    <cite>jhunt</cite></blockquote>
+
+    <p>This is it!  The historic (as in legendary!) initial public launch
+    of Vault of Cardboard.  You've got deck ideas, and we've got a search
+    engine for you, rivaling that of anything we've seen out there, and
+    fueled by the inimitable Scryfall data.</p>
+
+    <p>How does it work?  We regularly scrape card and pricing data from
+    Scryfall (pursuant to their terms of service) and make it available
+    in a visual, searchable database.  The <a href="#!/docs">Vault of
+    Cardboard Query Language</a> gives you unprecedented power in searching
+    the totality of printed Magic: the Gathering cards.</p>
+
+    <p>Right now, we're in a bit of a closed+open beta, publicly-ish.
+    The collection management aspects of the Vault are still under development,
+    and are subject to change, so we have not yet made the user account signup
+    process open to any or all.  However, you can still search the database
+    even without an account!</p>
+  </div>
+</script><!-- }}} -->
+
+<script type="text/html" id="template:clarify"><!-- {{{ -->
+  [[
+    $.each(_.problems, function (i, problem) {
+      include('problem', $.extend({ i: i }, problem));
+    });
+  ]]
+</script><!-- }}} -->
+<script type="text/html" id="template:problem"><!-- {{{ -->
+  <div class="problem" data-problem="[[= _.i ]]">
+    <p>line <span class="lineno">[[= _.wanted.lineno ]]</span>:
+            <span class="line">[[= _.wanted.card ]][[ if (_.wanted.set) { ]] (in [[= _.wanted.set ]])[[ } ]]</span>:
+            <span class="problem">[[= _.description ]]</span></p>
+    <div class="grid results">
+    [[ $.each(_.candidates, function (j, candidate) {
+         var card = $INDEX[candidate];
+         if (!card) {
+           console.log("unable to locate card id %s in $INDEX... skipping!", candidate);
+           return;
+         } ]]
+      <span data-vif="[[= card.set.code ]] [[= card.name ]]">
+        [[ include('cardface', { owned: 0, card: card }); ]]
+        <span class="clarif"><span class="band"><a href="#" rel="dec">◀</a> <span>0</span> <a href="#" rel="inc">▶</a></span></span>
+      </span>
+    [[ }); ]]
+    </div>
+    <ul class="changes"></ul>
+    [[ if (_.candidates.length > 0) { ]]<button rel="re-validate">Apply Changes</button>[[ } ]]
+  </div>
+</script><!-- }}} -->
+
+<script type="text/html" id="template:timeline"><!-- {{{ -->
+  <div class="prose">
+    [[ if (_.changes.length == 0) { ]]
+    <h1>Let's Get You A <em>Collection</em>...</h1>
+    <p>We don't have a clue what's in your collection.<br>
+    Why don't we fix that, and get to know one another better?</p>
+
+    <form id="buy" class="import">
+      <input type="hidden" name="summary" value="Initial import">
+      <input type="hidden" name="type"    value="import">
+      <div>
+        <label for="raw_gain">What Cards Do You Own?</label>
+        <textarea name="raw_gain" class="vif"
+                  data-validate="present;max=100k"># enter your list of cards here, i.e.:
+# 1x M19 Arcades, the Strategist
+
+</textarea>
+      </div>
+      <div class="clarify"></div>
+      <div>
+        <button class="default safe" data-in-progress="Saving..." type="submit">Save</button></form>
+      </div>
+    </form>
+    [[ } else { ]]
+    <h1>Your Magic Collection <em>Through Time!</em></h1>
+    <div class="timeline">
+      [[
+         var gainloss = function (n) {
+           return n < 0 ? 'loss' :
+                  n > 0 ? 'gain' :
+                          '';
+         };
+
+         var now = {
+           card:   0,
+           unique: 0,
+           sets:   {}
+         };
+
+         $.each(_.changes, function (i, change) {
+           now.card   += change.card_gain   - change.card_loss;
+           now.unique += change.unique_gain - change.unique_loss;
+
+           $.each(change.sets.split(/:/), function (j, set) {
+             now.sets[set] = 1;
+           });
+         });
+
+         var sets = [];
+         for (var k in now.sets) { sets.push(k); }
+         now.sets = sets;
+      ]]
+      <div class="now summary">
+        <h2>Today</h2>
+        <ul>
+          <li><em>[[= now.card ]]</em> cards (<em>[[= now.unique ]]</em> unique)</li>
+          <li>across <em>[[= now.sets.length ]]</em> sets</li>
+        </ul>
+
+        <div class="buttons">
+          <button class="buy"  rel="new-buy">Buy</button>
+          <button class="sell" rel="new-sell">Sell</button>
+        </div>
+      </div>
+
+      [[ var dates = {};
+         var totals = {};
+         for (var i = 0; i < _.changes.length; i++) {
+           var d = _.changes[i].occurred_at;
+           d = d ? (100 * parseInt(d / 100) + 5).toString() : '0';
+
+           if (!(d in dates)) {
+             dates[d] = [];
+             totals[d] = {
+               card_delta:   0,
+               unique_delta: 0,
+               sets:         {}
+             };
+           }
+           dates[d].push(_.changes[i]);
+           totals[d].card_delta += _.changes[i].card_gain;
+           totals[d].card_delta -= _.changes[i].card_loss;
+           totals[d].unique_delta += _.changes[i].unique_gain;
+           totals[d].unique_delta -= _.changes[i].unique_loss;
+           $.each(_.changes[i].sets.split(/:/), function (j, set) {
+             totals[d].sets[k] = 1;
+           });
+         }
+
+         var bands = [];
+         for (var d in dates) {
+           bands.push([d, dates[d].sort(function (a, b) { return b.occurred_at - a.occurred_at; })]);
+         }
+         dates = bands.sort(function (a, b) {
+           return b[0] - a[0];
+         });
+         bands = undefined;
+
+         for (var i = 0; i < dates.length; i++) {
+           var d = dates[i][0];
+      ]]
+      <div class="aggr">
+        <h2>[[= parseInt(d) ? strftime("%B %Y", dated(d)) : "The Beginning" ]] <span class="[[= gainloss(totals[d].card_delta) ]]">[[= sprintf("%+d", totals[d].card_delta) ]] cards <span class="[[= gainloss(totals[d].unique_delta) ]]">([[= sprintf("%+d", totals[d].unique_delta) ]] unique)</span></span></h2>
+        <ul>
+          [[ $.each(dates[i][1], function (j, change) { ]]
+          <li class="[[= change.type ]]"><em class="[[= gainloss(change.card_gain - change.card_loss) ]]">[[= sprintf("%+d", change.card_gain - change.card_loss) ]]</em> cards (<em>[[= change.sets.split(/:/).length ]]</em> sets) in [[= change.type ]] <strong>[[= change.summary ]]</strong> <span class="actions"><a href="#!/timeline/edit/[[= change.id ]]">edit</a>[[ if (change.type != 'import') { ]] | <a href="#!/timeline/delete/[[= change.id ]]">delete</a>[[ } ]]</span></li>
+          [[ }); ]]
+        </ul>
+      </div>
+      [[ } ]]
+    </div>
+    [[ } ]]
+  </div>
+</script><!-- }}} -->
+<script type="text/html" id="template:buy-sell"><!-- {{{ -->
+  <div class="prose">
+    <h1>[[= (_.type == 'buy') ? '<strong>Add</strong> Cards to the Collection'
+                              : '<strong>Remove</strong> Cards from the Collection' ]]</h1>
+    <div class="oops" style="display: none"></div>
+
+    <form id="[[= _.type ]]" class="import">
+      <input type="hidden" name="type" value="[[= _.type ]]">
+      [[ if (_.change) { ]]<input type="hidden" name="id" value="[[= _.change.id ]]">[[ } ]]
+      <div><label for="summary">Name</label>
+           [[ if (_.type != 'import') { ]]
+           <p class="advanced-options">
+             <a href="#" rel="toggle-extra" class="off"><span class="on">simplified form</span><span class="off">advanced options</span></a>
+           </p>
+           [[ } ]]
+
+           <input type="text" name="summary"
+                  class="autofocus"
+                  [[ if (_.change) { ]]value="[[= _.change.summary ]]"[[ } ]]
+                  placeholder="A (unique-ish) name for this [[= _.type ]] operation"
+                  data-validate="present;min=3;max=50"
+                  data-error-if-missing="Please provide a name, which will be displayed in the timeline."
+                  data-error-out-of-bounds="Names must be between 3 and 50 characters long."
+                  autocomplete="off">
+      </div>
+
+      [[ if (_.type != 'import') { ]]
+      <div class="extra">
+           <label for="occurred_at">Date</label>
+           <input type="date" name="occurred_at"
+                  [[ if (_.change) { ]]value="[[= datev(_.change.occurred_at) ]]"[[ } ]]
+                  data-validate="present;format=date;happened"
+                  autocomplete="off">
+      </div>
+      [[ } ]]
+
+      <div class="extra">
+           <label for="notes">Notes</label>
+           <textarea name="notes" placeholder="(notes, thoughts, context - only visible to you...)"
+                     data-validate="max=2000">[[ if (_.change) { ]][[= _.change.notes ]][[ } ]]</textarea>
+      </div>
+
+      [[ var raw = (_.type == 'sell') ? 'raw_loss' : 'raw_gain'; ]]
+      <div><label for="[[= raw ]]">Cards (in <a href="#">VIF format</a>)</label>
+           <textarea name="[[= raw ]]" class="vif"
+                     data-validate="present;max=100k"
+>[[ if (_.change) { ]][[= _.change[raw] ]][[ } else { ]]# enter your list of cards here, i.e.:
+# 1x M19 Arcades, the Strategist
+
+[[ } ]]</textarea>
+      </div>
+      <div class="oops" style="display: none"></div>
+
+      <div class="clarify"></div>
+      <div>
+        <button class="default safe" data-in-progress="Saving..." type="submit">Save</button></form>
+      </div>
+    </form>
+  </div>
+</script><!-- }}} -->
+
+<script type="text/html" id="template:decks"><!-- {{{ -->
+  <div class="decks prose">
+    <h1>Your Decks</h1>
+    [[ if (_.decks && _.decks.length > 0) { ]]
+      <button rel="new-deck">New Deck</button>
+      <table class="decks sortable listing">
+        <thead><tr>
+          <th class="sortable">Code</th>
+          <th class="sortable">Name</th>
+          <th class="sortable" data-sort-as="number">Created</th>
+          <th class="sortable" data-sort-as="number">Last Updated</th>
+        </tr></thead>
+        <tbody>
+        [[ $.each(_.decks, function (i, deck) { ]]
+          <tr>
+            <td><a href="#!/deck/[[= deck.code ]]">[[= deck.code ]]</a></td>
+            <td><a href="#!/deck/[[= deck.code ]]">[[= deck.name ]]</a></td>
+            <td data-sort="[[= deck.created_at ]]">[[= strftime("%B %Oe, %Y", dated(deck.created_at)) ]]</td>
+            <td data-sort="[[= deck.updated_at ]]">[[= strftime("%B %Oe, %Y", dated(deck.updated_at)) ]]</td>
+          </tr>
+        [[ }); ]]
+        </tbody>
+      </table>
+    [[ } else { ]]
+      <p>You have no decks!</p>
+
+      [[ include("import-deck"); ]]
+    [[ } ]]
+  </div>
+</script><!-- }}} -->
+<script type="text/html" id="template:import-deck"><!-- {{{ -->
+  <div class="prose">
+    <h1>Import a Deck</h1>
+    <form id="deck" class="import">
+      <div><label for="code">Internal Identifier</label>
+           <input type="text" name="code"
+                  class="autofocus"
+                  placeholder="A unique ID to use with 'in:...' queries"
+                  data-validate="present;min=2;max=40"
+                  data-error-if-missing="Please provide an internal identifier, for use in querying the contents of this deck."
+                  data-error-out-of-bounds="Identifiers must be between 2 and 40 characters long."
+                  autocomplete="off">
+      </div>
+
+      <div><label for="name">Deck Name</label>
+           <input type="text" name="name"
+                  class="autofocus"
+                  placeholder="A name for this deck, which will be displayed to others."
+                  data-validate="present;min=2"
+                  data-error-if-missing="Please provide a name for this deck."
+                  data-error-out-of-bounds="Deck names must be at least two characters long."
+                  autocomplete="off">
+
+      </div>
+
+      <div><label for="notes">Notes</label>
+           <textarea name="notes" placeholder="(feel free to expound on the premise and power of your deck...)"
+                     data-validate="max=2000"></textarea>
+      </div>
+      <div><label for="cardlist">Cards List</label>
+           <textarea name="cardlist" class="vif"
+                     data-validate="present;max=100k"
+># enter your deck list here, using the following format:
+# 4x NPH Darksteel Relic
+
+</textarea>
+      </div>
+      <div class="oops" style="display: none"></div>
+      <div class="clarify"></div>
+      <div>
+        <button class="default safe" data-in-progress="Importing..." type="submit">Import</button></form>
+      </div>
+    </form>
+  </div>
+</script><!-- }}} -->
+<script type="text/html" id="template:edit-deck"><!-- {{{ -->
+  <div class="prose">
+    <h1>Import a Deck</h1>
+    <form id="deck" class="import">
+      <input type="hidden" name="id" value="[[= _.deck.code ]]">
+      <div><label for="code">Internal Identifier</label>
+           <input type="text" name="code"
+                  value="[[= _.deck.code ]]"
+                  class="autofocus"
+                  placeholder="A unique ID to use with 'in:...' queries"
+                  data-validate="present;min=2;max=40"
+                  data-error-if-missing="Please provide an internal identifier, for use in querying the contents of this deck."
+                  data-error-out-of-bounds="Identifiers must be between 2 and 40 characters long."
+                  autocomplete="off">
+      </div>
+
+      <div><label for="name">Deck Name</label>
+           <input type="text" name="name"
+                  value="[[= _.deck.name ]]"
+                  class="autofocus"
+                  placeholder="A name for this deck, which will be displayed to others."
+                  data-validate="present;min=2"
+                  data-error-if-missing="Please provide a name for this deck."
+                  data-error-out-of-bounds="Deck names must be at least two characters long."
+                  autocomplete="off">
+
+      </div>
+
+      <div><label for="notes">Notes</label>
+           <textarea name="notes" placeholder="(feel free to expound on the premise and power of your deck...)"
+                     data-validate="max=2000">[[= _.deck.notes ]]</textarea>
+      </div>
+      <div><label for="cardlist">Cards List</label>
+           <textarea name="cardlist" class="vif"
+                     data-validate="present;max=100k">[[= _.deck.cardlist ]]</textarea>
+      </div>
+      <div class="oops" style="display: none"></div>
+      <div class="clarify"></div>
+      <div>
+        <button class="default safe" data-in-progress="Saving..." type="submit">Save</button></form>
+      </div>
+    </form>
+  </div>
+</script><!-- }}} -->
+<script type="text/html" id="template:deck"><!-- {{{ -->
+  <div class="deck prose" data-uuid="[[= _.deck.id ]]" data-id="[[= _.deck.code ]]">
+    <div class="title">
+      <span>in:[[= _.deck.code ]]</span>
+      <h1>[[= _.deck.name ]]</h1>
+    </div>
+    <div class="buttons">
+      <button rel="playtest">Play!</button>
+      <button rel="edit-deck">Edit</button>
+      <button class="danger" rel="delete-deck">Delete</button>
+    </div>
+
+    [[ if (_.deck.notes.replace(/(^\s+|\s+$)/, '') != "") { ]]
+    <h2>Notes</h2>
+    <div>[[= _.deck.notes ]]</div>
+    [[ } ]]
+
+    <h2>Mana Curve</h2>
+    [[ var curve = [];
+       var max = 0,
+           min = undefined;
+       for (var i = 0; i < _.deck.cards.cards.length; i++) {
+         var card = _.deck.cards.oracle[_.deck.cards.cards[i].replace(/\/.*/,'' )];
+         if (card.type.match(/\bLand\b/)) {
+           continue;
+         }
+         if (!(card.cmc in curve)) {
+           curve[card.cmc] = [];
+         }
+         curve[card.cmc].push(card);
+         if (card.cmc > max) {
+           max = card.cmc;
+         }
+         if (typeof min === 'undefined' || card.cmc < min) {
+           min = card.cmc;
+         }
+       }
+
+       for (var i = 0; i <= max; i++) {
+         if (!curve[i]) {
+           curve[i] = [];
+         }
+       }
+    ]]
+    <div class="curve">
+      [[ for (var i = min; i < curve.length; i++) { ]]
+      <div>
+        <ul>
+        [[ for (var j = 0; j < curve[i].length; j++) {
+             var c = curve[i][j];
+             var alt = c.name + ' [' + c.set.code + ']'; ]]
+          <li><img data-id="[[= c.id ]]"
+                   src="[[= $CONFIG.imgroot ]]/cards/[[= c.image ]]"
+                   alt="[[= alt ]]" title="[[= alt ]]"></li>
+        [[ } ]]
+        </ul>
+        <p>[[= i ]]</p>
+      </div>
+      [[ } ]]
+    </div>
+
+    <h2>Sample Hand</h2>
+    <button rel="mulligan">Mulligan!</button>
+    [[ var lib = [];
+       for (var i = 0; i < _.deck.cards.cards.length; i++) {
+         lib.push(_.deck.cards.oracle[_.deck.cards.cards[i].replace(/\/.*/,'' )]);
+       }
+    ]]
+    [[ for (var cards = 7; cards > 2; cards--) { ]]
+      [[ lib = window.shuffle(lib); ]]
+    <div class="hand">[[ include('deck-hand', { n: 14, hand: cards, lib: lib }); ]]</div>
+    [[ } ]]
+
+    <h2>What's In It?</h2>
+    <pre class="rawlist"><code>[[= _.deck.cardlist ]]</code></pre>
+
+  </div>
+</script><!-- }}} -->
+<script type="text/html" id="template:deck-hand"><!-- {{{ -->
+  [[ var lib = window.shuffle(_.lib); ]]
+  <ul>
+    [[ for (var i = 0; i < Math.min(_.n, lib.length); i++) { ]]
+      [[ if (i % 7 == 0) { ]]</ul><ul>[[ } ]]
+      [[ var alt = lib[i].name + ' [' + lib[i].set.code + ']'; ]]
+      <li class="[[= i >= _.hand ? 'draw' : 'open' ]]">
+        <img data-id="[[= lib[i].id ]]"
+             src="[[= $CONFIG.imgroot ]]/cards/[[= lib[i].image ]]"
+             alt="[[= alt ]]" title="[[= alt ]]"></li>
+    [[ } ]]
+  </ul>
+</script><!-- }}} -->
+
+<script type="text/javascript">
+  var $CONFIG = {
+    imgroot: "//vault-of-cardboard.s3.amazonaws.com"
+  };
+</script>
+<script type="text/javascript" src="js/jquery.js"></script>
+<script type="text/javascript" src="js/lang.js"></script>
+<script type="text/javascript" src="js/util.js"></script>
+<script type="text/javascript" src="js/table.js"></script>
+<script type="text/javascript" src="js/lens.js"></script>
+<script type="text/javascript" src="js/forms.js"></script>
+<script type="text/javascript" src="js/diff.js"></script>
+<script type="text/javascript" src="js/clarify.js"></script>
+<script type="text/javascript" src="js/play.js"></script>
+<script type="text/javascript" src="js/draft.js"></script>
+<script type="text/javascript" src="config.js"></script>
+<script type="text/javascript">
+
+String.prototype.reline = function (n,s) {
+  var l = this.split(/\n/);
+  if (s instanceof Array) { s = s.join("\n"); }
+  l.splice(n-1,1,s);
+  return l.join("\n");
+}
+
+function tparse(d) { // {{{
+  if (typeof d == "string") {
+    // because we insist on doing bad things with date formatting in the API...
+    m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/.exec(d);
+    if (!m) {
+      console.log("'%s' doesn't look like a date/time string...", d);
+      return ""
+    }
+
+    d = new Date();
+    d.setTime(Date.UTC(parseInt(m[1]),   // year
+                      parseInt(m[2])-1, // month
+                      parseInt(m[3]),   // day
+                      parseInt(m[4]),   // hour
+                      parseInt(m[5]),   // minute
+                      parseInt(m[6]))); // second
+    return d;
+  }
+
+  if (!(d instanceof Date)) {
+    var _d = new Date()
+    if (!isNaN(d)) {
+      _d.setTime(d * 1000);
+    }
+    return _d;
+  }
+
+  return d;
+} // }}}
+
+function yyyymmdd(d) {
+  var yyyy = (d.getUTCFullYear()).toString(),
+        mm = (d.getUTCMonth() + 1).toString(),
+        dd = (d.getUTCDate()).toString();
+
+  if (mm.length == 1) { mm = "0"+mm; }
+  if (dd.length == 1) { dd = "0"+dd; }
+  return yyyy+mm+dd;
+}
+
+function dated(yyyymmdd, unknown) {
+  yyyymmdd = (yyyymmdd || '').toString();
+  if (yyyymmdd.length == 4) { yyyymmdd += '0101'; }
+  if (yyyymmdd.length == 6) { yyyymmdd +=   '01'; }
+  if (yyyymmdd.length != 8) { return unknown; }
+
+  var dd   =  yyyymmdd                        % 100;
+  var mm   = (yyyymmdd -          dd) /   100 % 100;
+  var yyyy = (yyyymmdd - mm*100 - dd) / 10000;
+  return new Date(yyyy, mm - 1, dd);
+}
+
+function datev(yyyymmdd) {
+  return strftime('%Y-%m-%d', dated(yyyymmdd));
+}
+
+function colorize(s) {
+  var c = s.split("");
+  for (var i = 0; i < c.length; i++) {
+    c[i] = '<span class="ms ms-'+c[i].toLowerCase()+' ms-cost"></span>';
+  }
+  return c.join('');
+}
+
+var $BASE  = undefined,
+    $CARDS = undefined,
+    $SETS  = undefined,
+    $INDEX = {};
+
+$(function () {
+  console.log('retrieving personal details...');
+  $.ajax({
+    type: 'GET',
+    url:  '/v/whoami',
+    success: function (data) {
+      if (data.id) {
+        $('.-username').html(data.display);
+        $(document.body).attr('data-user-id', data.id)
+                        .attr('data-cohort',  data.cohort);
+      }
+    }
+  });
+
+  var shim = {
+    convert: function (src) {
+      var out = {};
+      for (var code in src.sets) {
+        out[code] = [];
+        for (var i = 0; i < src.sets[code].cards.length; i++) {
+          var card = src.sets[code].cards[i];
+          out[code].push({
+            id        : card.id,
+            oid       : card.oid,
+            artist    : card.artist,
+            layout    : card.layout,
+            // frame unused
+            number    : card.number,
+            // border unused
+
+            image     : src.sets[code].code + "/" + src.sets[code].code + "-" + card.id + ".jpg",
+
+            rarity    : card.flags.indexOf('1') >= 0 ? "common"   :
+                        card.flags.indexOf('2') >= 0 ? "uncommon" :
+                        card.flags.indexOf('3') >= 0 ? "rare"     :
+                        card.flags.indexOf('4') >= 0 ? "mythic"   : "unknown",
+
+            name      : src.cards[card.oid].name,
+            type      : src.cards[card.oid].type_line,
+            oracle    : src.cards[card.oid].text,
+
+            cmc       : src.cards[card.oid].cmc,
+            cost      : src.cards[card.oid].mana_cost,
+            color     : src.cards[card.oid].colors.join(''),
+
+            price     : undefined, // we will backpatch this later, with prices.json data
+            owned     : 0,         // we will backpatch this later, with collection.json data
+
+            flavor    : card.flavor,
+            power     : src.cards[card.oid].power,
+            toughness : src.cards[card.oid].toughness,
+            pt        : (src.cards[card.oid].power && src.cards[card.oid].toughness
+                        ? src.cards[card.oid].power + "/" + src.cards[card.oid].toughness
+                        : ""),
+            art       : card.illustration,
+
+            back      : "", // FIXME - seems to be missing
+
+            spotlight : card.flags.indexOf('@') >= 0,
+            reserved  : card.flags.indexOf('!') >= 0,
+            reprint   : card.flags.indexOf('+') >= 0,
+            // full_art unused
+            // oversized unused
+            // variation unused
+
+            set: {
+              name  : src.sets[code].name,
+              code  : src.sets[code].code,
+              total : src.sets[code].cards.length,
+            },
+            legal: {
+              standard  : src.cards[card.oid].legal.indexOf('s') >= 0 ? 'legal' : 'not_legal',
+              brawl     : src.cards[card.oid].legal.indexOf('B') >= 0 ? 'legal' : 'not_legal',
+              duel      : src.cards[card.oid].legal.indexOf('d') >= 0 ? 'legal' : 'not_legal',
+              vintage   : src.cards[card.oid].legal.indexOf('v') >= 0 ? 'legal' : 'not_legal',
+              commander : src.cards[card.oid].legal.indexOf('E') >= 0 ? 'legal' : 'not_legal',
+              modern    : src.cards[card.oid].legal.indexOf('m') >= 0 ? 'legal' : 'not_legal',
+              historic  : src.cards[card.oid].legal.indexOf('h') >= 0 ? 'legal' : 'not_legal',
+              future    : src.cards[card.oid].legal.indexOf('f') >= 0 ? 'legal' : 'not_legal',
+              pioneer   : src.cards[card.oid].legal.indexOf('p') >= 0 ? 'legal' : 'not_legal',
+              pauper    : src.cards[card.oid].legal.indexOf('B') >= 0 ? 'legal' : 'not_legal',
+              penny     : src.cards[card.oid].legal.indexOf('$') >= 0 ? 'legal' : 'not_legal',
+              oldschool : src.cards[card.oid].legal.indexOf('o') >= 0 ? 'legal' : 'not_legal',
+              legacy    : src.cards[card.oid].legal.indexOf('l') >= 0 ? 'legal' : 'not_legal',
+            }
+          });
+        }
+      }
+      return out;
+    }
+  };
+
+  var $ONCARD = undefined;
+  console.log('retrieving full card set data (/cards.json)...');
+  $.ajax({
+    type: 'GET',
+    url:  '/cards.json',
+    success: function (data) {
+      console.log('card data retrieved successfully!');
+
+      $BASE  = shim.convert(data);
+      $INDEX = {};
+
+      console.log('indexing cards...');
+      for (var set in $BASE) {
+        for (var i = 0; i < $BASE[set].length; i++) {
+          $BASE[set][i].owned = 0;
+          $BASE[set][i].decks = {};
+          $INDEX[$BASE[set][i].id] = $BASE[set][i];
+        }
+      }
+      console.log('indexing complete!');
+
+      if ($ONCARD) {
+        console.log('chaining to the oncard function...');
+        var fn = $ONCARD;
+        $ONCARD = undefined;
+        fn.call();
+      }
+    }
+  });
+
+  var $ONSET = undefined;
+  console.log('retrieving full set data (/sets.json)...');
+  $.ajax({
+    type: 'GET',
+    url:  '/sets.json',
+    success: function (data) {
+      console.log('set data retrieved successfully!');
+
+      $SETS = data;
+      if ($ONSET) {
+        console.log('chaining to the onset function...');
+        var fn = $ONSET;
+        $ONSET = undefined;
+        fn.call();
+      }
+    }
+  });
+
+  function search(q) {
+    console.log('triggering search handler...');
+    if (q) {
+      $('input[name=q]').val(q).trigger('change');
+    } else {
+      $('input[name=q]').trigger('change');
+    }
+  }
+
+  function refreshCollection(then) {
+    console.log('attempting to refresh collection...');
+
+    $.ajax({
+      type: 'GET',
+      url:  '/my/collection.json',
+      success: function (cards) {
+        if (cards.error) {
+          console.log('/my/collection.json failed: %s', cards.error);
+          return;
+        }
+
+        $CARDS = $BASE;
+        $INDEX = {};
+
+        console.log('indexing cards (against collection)...');
+        for (var set in $CARDS) {
+          for (var i = 0; i < $CARDS[set].length; i++) {
+            $CARDS[set][i].owned = 0;
+            $CARDS[set][i].decks = {};
+            if (set in cards && $CARDS[set][i].name in cards[set]) {
+              $CARDS[set][i].owned = cards[set][$CARDS[set][i].name];
+            }
+            if (cards._decked && $CARDS[set][i].name in cards._decked) {
+              for (var deck in cards._decked[$CARDS[set][i].name]) {
+                $CARDS[set][i].decks[deck.toLowerCase()] = 1;
+              }
+            }
+            $INDEX[$CARDS[set][i].id] = $CARDS[set][i];
+          }
+        }
+
+        if (then) {
+          console.log('chain-executing post-search callback function...');
+          then.call();
+        }
+      }
+    });
+  }
+
+  function loading() {
+    var msg = [ /* {{{ */
+      /* flavor:canto or flavor:"Song" */
+      /* Arbor Armament (DOM) */
+      "<blockquote>&ldquo;Llanowar's boughs are ever ready<br>To unleash an autumn of steel leaves.&rdquo;<cite>&mdash;&ldquo;Song of Freyalise&rdquo;</cite></blockquote>",
+
+      /* Blinding Light (MIR) */
+      "<blockquote>&ldquo;My shield will bear a shining sun so you will always be with me. / Inlaid with gold, it will shine like glowing embers.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+      /* Chariot of the Sun (MIR) */
+      "<blockquote>&ldquo;Sun follows Moon until she tires, then carries her until she's strong / and runs ahead of him again.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+      /* Congregate (A25) */
+      "<blockquote>&ldquo;In the gathering there is strength for all who founder, renewal for all who languish, love for all who sing.&rdquo;<cite>&mdash;Song of All, canto 642</cite></blockquote>",
+
+      /* Defensive Formation (USG) */
+      "<blockquote>&ldquo;Your enemies will pound upon the door of your defenses, but only you shall have the key, and it is the key of life.&rdquo;<cite>&mdash;Song of All, canto 873</cite></blockquote>",
+
+      /* Disenchant (A25) */
+      "<blockquote>&ldquo;The tools of evil are mere things. And like all things, they cannot last forever.&rdquo;<cite>&mdash;Song of All, canto 881</cite></blockquote>",
+
+      /* Early Harvest (MIR) */
+      "<blockquote>&ldquo;Tonight we'll eat a farewell feast. Cold corn porridge is not enough. / Let's peel papayas, pineapples, and mangoes, drink coconut milk, / and bake bananas.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+      /* Femeref Knight (MIR) */
+      "<blockquote>&ldquo;I will return / with lizard skins for your sandals. Paint your eyes black and wait for me.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+      /* Flare (MIR) */
+      "<blockquote>&ldquo;In the forest, fires light the sky as black clouds unfold their weight.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+      /* Invoke the Divine (DOM) */
+      "<blockquote>&ldquo;Let go of all that harms you. Cast your burdens into the darkness, and build for the faithful a house of light.&rdquo;<cite>&mdash;Song of All, canto 1008</cite></blockquote>",
+
+      /* Kukemssa Pirates (MIR) */
+      "<blockquote>&ldquo;. . . pirates gambled with a djinn and lost the thing more dear than gold.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+      /* On Serra's Wings (DOM) */
+      "<blockquote>&ldquo;The spirit of Serra raised Brindri high and commanded her to keep the balance.&rdquo;<cite>&mdash;Song of All, canto 524</cite></blockquote>",
+
+      /* Pegasus Charger (USG) */
+      "<blockquote>&ldquo;The clouds came alive and dove to the earth! Hooves flashed among the dark army, who fled before the spectacle of fury.&rdquo;<cite>&mdash;Song of All, canto 211</cite></blockquote>",
+
+      /* Planar Birth (USG) */
+      "<blockquote>&ldquo;From womb of nothingness sprang this place of beauty, purity, and hope realized.&rdquo;<cite>&mdash;Song of All, canto 3</cite></blockquote>",
+
+      /* Sacred Mesa (MIR) */
+      "<blockquote>&ldquo;Do not go there, do not go / unless you rise on wings, unless you walk on hooves.&rdquo;<cite>&mdash;&ldquo;Song to the Sun,&rdquo; Femeref song</cite></blockquote>",
+
+      /* Serra Avenger (TSP) */
+      "<blockquote>&ldquo;Those who endure in the face of suffering, those whose faith shines long in evil days, they shall see salvation.&rdquo;<cite>&mdash;Song of All, canto 904</cite></blockquote>",
+
+      /* Serra's Embrace (USG) */
+      "<blockquote>&ldquo;Lifted beyond herself, for that battle Brindri was an angel of light and fury.&rdquo;<cite>&mdash;Song of All, canto 524</cite></blockquote>",
+
+      /* Unfulfilled Desires (MIR) */
+      "<blockquote>&ldquo;Like Day from Night, / I'll live my life apart from you, just glimpsing you across the sky, / because you cannot change, my dear, and nor can I.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+      /* Village Elder (MIR) */
+      "<blockquote>&ldquo;Enchant me with your tale-telling. Tell about Tree, Grass, River, and Wind. / Tell why Truth must fight with Falsehood, and why Truth will always win.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+      /* Voice of Grace (USG) */
+      "<blockquote>&ldquo;Opposite Law is Grace, and Grace must be preserved. If the strands of Grace are unraveled, its design will be lost, and the people with it.&rdquo;<cite>&mdash;Song of All, canto 167</cite></blockquote>",
+
+      /* Voice of Law (USG) */
+      "<blockquote>&ldquo;Life's balance is as a star: on one point is Law, and Law must be upheld. If the knots of order are loosened, chaos will spill through.&rdquo;<cite>&mdash;Song of All, canto 167</cite></blockquote>",
+
+      /* Wild Elephant (MIR) */
+      "<blockquote>&ldquo;I will tell my father's stories . . . . How the elephants trampled the leopard cub, and its father, though he knew, killed nine goats instead.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+      /* Wildgrowth Walker (XLN) */
+      "<blockquote>&ldquo;Hear me, stone, root, branch: be the fist of this land. Turn back those who trample upon your domain.&rdquo;<cite>&mdash;Song of the Shaper</cite></blockquote>",
+
+      /* Zebra Unicorn (MIR) */
+      "<blockquote>&ldquo;I'll capture gentle zebras / for your steeds and fill the stable with every kind of unicorn.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+      /* Zhalfirin Knight (MIR) */
+      "<blockquote>&ldquo;You returned a warrior. . . . Your hair was cut, your eye tattooed with the red triangle of war.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>"
+
+    ];
+    /* }}} */
+
+    $('#main').template('loading');
+    var on = false
+    var marquee = function () {
+      if ($('.loading .marquee').length == 0) {
+        on = false;
+        return;
+      }
+      var $m = $('.loading .marquee');
+      if (on) {
+        $m.fadeOut();
+        on = !on;
+        window.setTimeout(marquee, 800);
+      } else {
+        $m.html($(msg[parseInt(Math.random() * msg.length)])).fadeIn();
+        on = !on;
+        window.setTimeout(marquee, 7700);
+      }
+    };
+    marquee();
+  }
+
+  var $LANDING = $('#main').html();
+
+  function goto(sub) {
+    var topify = function () {
+      $('html, body').animate({ scrollTop: 0 }, 200);
+    };
+
+    $('body > .colors').css({visibility: 'hidden' });
+    console.log('nav to ['+sub+']');
+
+    if (sub == "") {
+      topify();
+      $('#main').html($LANDING);
+      return;
+    }
+
+    if (sub.match(/^play(\/.*)?$/)) {
+      var id = sub.replace(/.*play\//, '');
+
+      $('#main').template('play');
+      new TabletopAlpha(id, $('#main .play'));
+      return;
+    }
+
+    if (sub == "login") {
+      topify();
+      $('#main').template('login');
+      $('input[name=username]').focus();
+      return;
+    }
+
+    if (sub == "sets") {
+      var thunk = function () {
+        topify();
+        $('#main').template('sets', { sets: $SETS });
+        $('#main table.sortable').sortableTable();
+
+      };
+      if (!$SETS) {
+        $ONSET = thunk;
+      } else {
+        thunk();
+      }
+    }
+
+    if (sub == "docs") {
+      topify();
+      $('#main').template(sub);
+      return;
+    }
+
+    if (sub.match(/^changelog(\/.*)?$/)) {
+      $('#main').template("changelog");
+
+      var $target = $('h2[id="!/'+sub+'"]');
+      if ($target.length != 0) {
+        $('html, body').animate({
+          scrollTop: $target.offset().top
+        }, 200);
+      } else {
+        topify();
+      }
+      return;
+    }
+
+    if (sub == "logout") {
+      $.ajax({
+        type: 'POST',
+        url:  '/v/logout',
+        contentType: 'application/json',
+        complete: function () {
+          document.cookie = 'vcb_sesh=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+          document.location.href = document.location.href.replace(/#.*/, '');
+        }
+      });
+      return;
+    }
+
+    if (sub.match(/^draft(\/.*)?$/)) {
+      var set = sub.replace(/^draft\//, '').toUpperCase();
+          set = set.replace(/\/.*/, '');
+      if (!$BASE) {
+        console.log('BASE collection not yet loaded; registering $ONCARD event handler...');
+        $ONCARD = function () {
+          console.log('$ONCARD handler fired... refreshing collection and then proceeded with search for %s', q);
+
+          if (!$CARDS) { $CARDS = $BASE; }
+
+          if (!(set in $CARDS)) { set = 'M19'; }
+          var draft = new Draft({}, $CARDS[set]);
+          $('#main').empty().template('results', { results: draft.pack(), max: 100 });
+        };
+        loading();
+        return;
+      }
+
+      if (!$CARDS) { $CARDS = $BASE; }
+
+      if (!(set in $CARDS)) { set = 'M19'; }
+      var draft = new Draft({}, $CARDS[set]);
+      $('#main').empty().template('results', { results: draft.pack(), max: 100 });
+      return;
+    }
+
+    if (sub.match(/^timeline(\/.*)?$/)) {
+      var verb = sub.replace(/^timeline\//, '');
+      if (verb == 'buy' || verb == 'sell') {
+        $('#main').template("buy-sell", { type: verb })
+                  .autofocus();
+        return;
+      }
+      if (verb.match(/^edit\/.*/)) {
+        var cid = verb.replace(/edit\//, '');
+        $.ajax({
+          type: 'GET',
+          url:  '/my/changes/'+cid,
+          success: function (change) {
+            $('#main').template("buy-sell", { type: change.type, change: change })
+                      .autofocus();
+          }
+        });
+        return;
+      }
+
+      if (verb.match(/^delete\/.*/)) {
+        var cid = verb.replace(/delete\//, '');
+        if (confirm("Are you sure you want to delete this buy/sell change?")) {
+          $.ajax({
+            type: 'DELETE',
+            url:  '/my/changes/'+cid,
+            success: function (change) {
+              document.location.hash = '#!/timeline/'+now();
+            }
+          });
+        } else {
+          document.location.hash = '#!/timeline/'+now();
+        }
+        return;
+      }
+
+      loading();
+      $.ajax({
+        type: 'GET',
+        url:  '/my/timeline',
+        success: function (data) {
+          if (data.authn == 'required') {
+            document.location.hash = '#!/login';
+            return;
+          }
+          console.log(data);
+          $('#main').template('timeline', { changes: data });
+        }
+      });
+      return;
+    }
+
+    if (sub.match(/^decks(\/.*)?$/)) {
+      loading();
+      $.ajax({
+        type: 'GET',
+        url:  '/my/decks',
+        success: function (data) {
+          if (data.authn == 'required') {
+            document.location.hash = '#!/login';
+            return;
+          }
+          $('#main').template('decks', { decks: data });
+        }
+      });
+      return;
+    }
+    if (sub.match(/^import\/deck$/)) {
+      $('#main').template('import-deck');
+      return;
+    }
+
+    if (sub.match(/^deck\/(.*)(\/.*)?$/)) {
+      sub = sub.replace(/^deck\//, '');
+      var id = decodeURIComponent(sub.replace(/\/.*/, ''));
+      console.log(sub);
+      loading();
+      $.ajax({
+        type: 'GET',
+        url:  '/my/decks/'+id,
+        success: function (data) {
+          if (sub.match(/\/edit$/)) {
+            $('#main').template('edit-deck', { deck: data });
+          } else {
+            $('#main').template('deck', { deck: data });
+          }
+        }
+      });
+      return;
+    }
+
+    if (sub.match(/^q\/./)) {
+      var q = decodeURIComponent(sub.replace(/^q\//, ''));
+      $('input[name="q"]').val(q);
+      console.log('search requested, for (%s)', q);
+      if (!$BASE) {
+        console.log('BASE collection not yet loaded; registering $ONCARD event handler...');
+        $ONCARD = function () {
+          console.log('$ONCARD handler fired... refreshing collection and then proceeded with search for %s', q);
+          search(q);
+          //refreshCollection(function () { search(q); });
+        };
+        loading();
+        return;
+      }
+
+      if (!$CARDS) { $CARDS = $BASE; }
+
+      var query, n = 50000;
+      try {
+        console.log('parsing query: ', q);
+        query = Query.parse(q);
+      } catch (e) {
+        $('#main').template('results', { q: q, oops: e.toString() });
+        return;
+      }
+
+      var found = [];
+      var colors = {};
+      for (var set in $CARDS) {
+        for (var i = 0; i < $CARDS[set].length; i++) {
+          var card = $CARDS[set][i];
+          if (query.match(card)) {
+            found.push(card);
+            if (card.color == '') {
+              colors['C'] = (colors['C'] || 0) + 1;
+              colors.total = (colors.total || 0) + 1;
+            } else {
+              $.each(card.color.split(''), function (j, color) {
+                colors[color] = (colors[color] || 0) + 1;
+                colors.total = (colors.total || 0) + 1;
+              });
+            }
+            n--;
+            if (n == 0) { break; }
+          }
+        }
+        if (n == 0) { break; }
+      }
+
+      var at = 0, n = 0, colorliteral;
+      var css = 'linear-gradient(90deg';
+      $.each('WUBRGC'.split(''), function (j, color) {
+        if (!(color in colors)) { return; }
+        n++;
+        css += ', ';
+        switch (color) {
+        case 'W': colorliteral = '#EEE6B5'; break;
+        case 'U': colorliteral = '#375FB6'; break;
+        case 'B': colorliteral = '#333333'; break;
+        case 'R': colorliteral = '#AE4441'; break;
+        case 'G': colorliteral = '#2F7A5B'; break;
+        case 'C': colorliteral = '#CBC9C6'; break;
+        }
+        if (at > 0) {
+          css += ' '+at+'vw, ';
+        }
+        css += colorliteral;
+        if (at > 0) {
+          css += ' '+at+'vw'
+        }
+        at += colors[color] / colors.total * 100.0;
+      });
+      css += ')';
+      if (n == 0) { colorliteral = '#CBC9C6'; }
+      if (n <  2) { css = colorliteral; }
+      $('body > .colors').css({background: css, visibility: found.length == 0 ? 'hidden' : 'visible'});
+      found = found.sort(function (a, b) {
+        if (a.name > b.name) { return 1; }
+        if (a.name < b.name) { return -1; }
+        return 0;
+      });
+
+      $('#main').template('results', {
+        q:       q,
+        max:     400,
+        results: found,
+      }, true)
+      return;
+    }
+  }
+
+  $(window).on('hashchange', function (event) {
+    if (document.location.hash.match(/^#!/)) {
+      goto(document.location.hash.replace(/^#!\/?/, ''));
+    }
+  }).trigger('hashchange');
+
+  $(document.body)
+  .on('keyup', function (event) {
+    if ($('.modal-fg').is(':visible')) {
+      switch (event.key) {
+      case 'ArrowDown':
+      case 'ArrowUp':
+        event.preventDefault();
+        break;
+
+      case 'ArrowLeft':
+      case 'ArrowRight':
+        $('.modal-bg, .modal-fg').hide();
+        var id = $('.modal-fg .card.face [data-id]').attr('data-id'),
+            who;
+
+        if (event.key == 'ArrowRight') {
+          var who = $('.results [data-id="'+id+'"]').closest('[data-own]').next();
+          if (!who.length) {
+            who = $('.results  [data-own]').first();
+          }
+        } else {
+          who = $('.results [data-id="'+id+'"]').closest('[data-own]').prev();
+          if (!who.length) {
+            who = $('.results [data-own]').last();
+          }
+        }
+        who[0].scrollIntoView();
+        who.find('.face img').trigger('click');
+        break;
+      }
+    }
+  })
+  .on('click',  'header > h1', function (event) {
+    event.preventDefault();
+    document.location.hash = '#!/';
+    goto('');
+  })
+  .on('click',  'form a[rel=toggle-extra]', function (event) {
+    event.preventDefault();
+    $(event.target).closest('a').toggleClass('on').closest('form').find('.extra').fadeToggle();
+  })
+  .on('click', 'button[rel="new-buy"]', function (event) {
+    event.preventDefault();
+    document.location.hash = '#!/timeline/buy';
+  })
+  .on('click', 'button[rel="new-sell"]', function (event) {
+    event.preventDefault();
+    document.location.hash = '#!/timeline/sell';
+  })
+  .on('click', 'button[rel="new-deck"]', function (event) {
+    document.location.hash = "#!/import-deck";
+    event.preventDefault();
+    $('#main').template("import-deck")
+              .autofocus();
+  })
+  .on('click', 'button[rel="edit-deck"]', function (event) {
+    event.preventDefault();
+    document.location.hash = "#!/deck/"+($(event.target).closest('.deck').attr('data-id'))+"/edit";
+  })
+  .on('click', 'button[rel="playtest"]', function (event) {
+    event.preventDefault();
+    document.location.hash = "#!/play/"+($(event.target).closest('.deck').attr('data-uuid'));
+  })
+  .on('click', 'button[rel="delete-deck"]', function (event) {
+    event.preventDefault();
+    if (confirm("Are you sure you want to remove this deck?")) {
+      $.ajax({
+        type: 'DELETE',
+        url:  '/my/decks/'+$(event.target).closest('.deck').attr('data-id'),
+        success: function () { document.location.hash = "#!/decks/"+now(); }
+      });
+    }
+  })
+  .on('submit', 'form#login', function (event) {
+    event.preventDefault();
+    var $f = $(event.target);
+    $('.oops').hide();
+
+    $.ajax({
+      type: 'POST',
+      url:  '/v/login',
+      contentType: 'application/json',
+      data: JSON.stringify({
+        username: $f.find('[name=username]').val(),
+        password: $f.find('[name=password]').val()
+      }),
+      success: function (data) {
+        if (data.ok) {
+          document.cookie = 'vcb_sesh='+data.user.session+';max-age=7776000;samesite=strict';
+          $('.-username').html(data.user.display);
+          $(document.body).attr('data-user-id', data.user.id)
+                          .attr('data-cohort',  data.user.cohort);
+          document.location.hash = '#!/q/owned';
+          $(window).trigger('hashchange');
+
+        } else if (data.error) {
+          $('#login .oops').html(data.error).fadeIn();
+
+        } else {
+          $('#login .oops').html("Uh-oh, something broke pretty bad.  Tap "+colorize("2UUU")+" and summon James, Fixer of Codes!").fadeIn();
+        }
+      },
+      error: function (xhr) {
+        try {
+          console.log(xhr.responseText);
+          var data = JSON.parse(xhr.responseText);
+          if (data.error) {
+            $('#login .oops').html(data.error).fadeIn();
+          } else {
+            throw 'internal failure';
+          }
+        } catch (e) {
+          console.log(e);
+          $('#login .oops').html("Uh-oh, something broke pretty bad.  Tap "+colorize("4BR")+" to cast James Legendary Bug Fix").fadeIn();
+        }
+      }
+    });
+  })
+  .on('submit', 'form#buy, form#sell, form#import', function (event) {
+    event.preventDefault();
+    var $form = $(event.target);
+    var $oops = $form.find('.oops');
+
+    if (!$form.validate('reset').validate('validate')) {
+      $oops.html('There were problems with this change to the collection...').show();
+      return;
+    }
+
+    var $save = $form.find('button[data-in-progress]');
+    $save.attr('data-original', $save.text())
+         .text($save.attr('data-in-progress'))
+         .addClass('in-progress');
+
+    Clarifier.check($form.find('textarea.vif').val(), {
+      update: function (vif) {
+        $form.find('textarea.vif').val(vif);
+      },
+
+      failed: function (clarifier, error) {
+        $save.removeClass('in-progress')
+             .text($save.attr('data-original'));
+
+        $oops.hide();
+
+        if (clarifier) {
+          $oops.html('There were some problems with your import').fadeIn();
+          clarifier.mount($form.closest('div').find('.clarify'));
+
+          if (clarifier.interactive()) {
+            $form.find('button[type=submit]').hide();
+          } else {
+            $form.find('button[type=submit]').show();
+          }
+
+        } else {
+          $oops.html(error).fadeIn();
+        }
+      },
+
+      ok: function () {
+        $('.clarify').empty().append('<div class="ok">Everything looks good!  Updating  your collection...</div>');
+
+        var data = $form.serializeObject(true);
+        data.occurred_at = data.occurred_at
+                         ? data.occurred_at.replace(/-/g, '')
+                         : strftime("%Y%m%d", new Date());
+
+        console.log(data.occurred_at);
+        $.ajax({
+          type: (data.id ? 'PUT'                  : 'POST'),
+          url:  (data.id ? '/my/changes/'+data.id : '/my/changes'),
+          contentType: 'application/json',
+          data: JSON.stringify(data),
+          success: function () {
+            console.log('changes posted; redirecting to the timeline...');
+            document.location.hash = '#!/timeline/'+now();
+          }
+        });
+      }
+    });
+  })
+  .on('submit', 'form#deck', function (event) {
+    event.preventDefault();
+    var $form = $(event.target);
+    var $oops = $form.find('.oops');
+
+    if (!$form.validate('reset').validate('validate')) {
+      $oops.html('There were problems with this deck import...').show();
+      return;
+    }
+
+    var $save = $form.find('button[data-in-progress]');
+    $save.attr('data-original', $save.text())
+         .text($save.attr('data-in-progress'))
+         .addClass('in-progress');
+
+    Clarifier.check($form.find('textarea.vif').val(), {
+      update: function (vif) {
+        $form.find('textarea.vif').val(vif);
+      },
+
+      failed: function (clarifier, error) {
+        $save.removeClass('in-progress')
+             .text($save.attr('data-original'));
+
+        $oops.hide();
+        if (clarifier) {
+          $oops.html('There were some problems with your import').fadeIn();
+          clarifier.mount($form.closest('div').find('.clarify'));
+
+          if (clarifier.interactive()) {
+            $form.find('button[type=submit]').hide();
+          } else {
+            $form.find('button[type=submit]').show();
+          }
+
+        } else {
+          $oops.html(error).fadeIn();
+        }
+      },
+
+      ok: function () {
+        $('.clarify').empty().append('<div class="ok">Everything looks good!  Importing your deck...</div>');
+
+        var data = $form.serializeObject();
+        $.ajax({
+          type: (data.id ? 'PUT'                : 'POST'),
+          url:  (data.id ? '/my/decks/'+data.id : '/my/decks'),
+          contentType: 'application/json',
+          data: JSON.stringify(data),
+          success: function () {
+            console.log('changes posted; redirecting to the deck list...');
+            document.location.hash = '#!/decks/'+now();
+          }
+        });
+      }
+    });
+  })
+  .on('change', 'input[name="q"]', function (event) {
+    event.preventDefault();
+    var q = $(event.target).val();
+    $('input[name="q"]').each(function (i,e) { $(e).val(q); });
+    var dest = '#!/q/'+encodeURIComponent(q);
+    if (document.location.hash == dest) {
+      $(window).trigger('hashchange');
+    } else {
+      document.location.hash = dest;
+    }
+  })
+  .on('click', '.face a[rel=flip]', function (event) {
+    event.preventDefault();
+    var $card = $(event.target).closest('.face');
+    var $img  = $(event.target).closest('.face').find('img');
+
+    if ($card.is('.transform') || $card.is('.double_faced_token')) {
+      var src = $img.attr('src');
+      $img.attr('src', $img.attr('data-flip-src'));
+      $img.attr('data-flip-src', src);
+
+    } else if ($card.is('.flip')) {
+      $img.toggleClass('flipped');
+    }
+  })
+  .on('click', '.results .face img', function (event) {
+    var id   = $(event.target).closest('[data-id]').attr('data-id'),
+        card = $INDEX[id],
+        img  = $(event.target).closest('img');
+
+    window.$current = card;
+    $('.modal-fg').empty().append($.template('card-detail', { card: card }));
+    $('.modal-fg .face img').attr('src',           img.attr('src'))
+                            .attr('data-flip-src', img.attr('data-flip-src'));
+    $('.modal-bg, .modal-fg').show();
+  })
+  .on('click', '.oops ul a[href="#more"]', function (event) {
+    event.preventDefault();
+    $(event.target).closest('ul').find('li.suppress').show();
+    $(event.target).closest('li').hide();
+  })
+  .on('click', '.modal-fg a.close', function (event) {
+    event.preventDefault();
+    $('.modal-bg, .modal-fg').hide();
+  })
+});
+</script>
+</body>
+</html>

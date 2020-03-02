@@ -264,6 +264,8 @@ pub struct OracleCard {
     pub text: String,
     pub cmc: f32,
     pub mana_cost: String,
+    pub power: String,
+    pub tough: String,
 
     pub legal: Legality,
 
@@ -283,6 +285,14 @@ impl std::convert::From<&scryfall::Card> for OracleCard {
             },
             cmc: card.cmc,
             mana_cost: match &card.mana_cost {
+                Some(s) => s.to_string(),
+                None => "".to_string(),
+            },
+            power: match &card.power {
+                Some(s) => s.to_string(),
+                None => "".to_string(),
+            },
+            tough: match &card.toughness {
                 Some(s) => s.to_string(),
                 None => "".to_string(),
             },
@@ -373,8 +383,10 @@ pub struct PrintCard {
     pub id: String,
     pub oid: String,
 
+    pub illustration: String,
     pub artist: String,
     pub number: String,
+    pub flavor: String,
 
     pub frame: String,
     pub border: String,
@@ -407,6 +419,16 @@ impl std::convert::From<&scryfall::Card> for PrintCard {
             frame: card.frame.to_string(),
             border: card.border_color.to_string(),
             layout: card.layout.to_string(),
+
+            illustration: match &card.illustration_id {
+                Some(s) => s.to_string(),
+                None => card.id.to_string(),
+            },
+
+            flavor: match &card.flavor_text {
+                Some(s) => s.to_string(),
+                None => "".to_string(),
+            },
 
             flags: Flags {
                 full_art: maybe_true(&card.full_art),

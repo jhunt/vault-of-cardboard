@@ -206,6 +206,9 @@ pub struct Card {
     pub rarity: String,
     pub color_identity: Vec<String>,
     pub colors: Option<Vec<String>>,
+
+    pub power: Option<String>,
+    pub toughness: Option<String>,
 }
 
 #[derive(Deserialize)]
