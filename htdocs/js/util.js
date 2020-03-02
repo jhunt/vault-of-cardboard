@@ -1,4 +1,13 @@
 ;(function (jQuery, exported, document, undefined) {
+  exported.flagged = function (v, map, fallback) {
+    for (var k in map) {
+      if (v.indexOf(k) >= 0) {
+        return map[k];
+      }
+    }
+    return fallback;
+  };
+
   exported.now = function () {
     var d = new Date();
     return d.getTime();

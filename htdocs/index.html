@@ -254,7 +254,12 @@
       <li>#[[= _.card.number ]]/[[= _.card.set.total ]]</li>
       <li>[[= colorize(_.card.color) ]]</li>
       <li><strong>CMC:</strong> [[= _.card.cmc ]]</li>
-      <li>[[= _.card.rarity ]]</li>
+      <li>[[= flagged(_.card.flags, {
+                '1': 'common',
+                '2': 'uncommon',
+                '3': 'rare',
+                '4': 'mythic'
+              }, 'unknown rarity') ]]</li>
     </ul>
     <textarea style="display: none">[[= quotify(_.card.name, _.card.set, _.card.flavor) ]]</textarea>
     <ul class="owned">
@@ -1490,6 +1495,7 @@ $(function () {
           out[code].push({
             id        : card.id,
             oid       : card.oid,
+            flags     : card.flags + src.cards[card.oid].legal, // this is new
             artist    : card.artist,
             layout    : card.layout,
             // frame unused
@@ -1498,18 +1504,13 @@ $(function () {
 
             image     : src.sets[code].code + "/" + src.sets[code].code + "-" + card.id + ".jpg",
 
-            rarity    : card.flags.indexOf('1') >= 0 ? "common"   :
-                        card.flags.indexOf('2') >= 0 ? "uncommon" :
-                        card.flags.indexOf('3') >= 0 ? "rare"     :
-                        card.flags.indexOf('4') >= 0 ? "mythic"   : "unknown",
-
             name      : src.cards[card.oid].name,
             type      : src.cards[card.oid].type_line,
             oracle    : src.cards[card.oid].text,
 
             cmc       : src.cards[card.oid].cmc,
             cost      : src.cards[card.oid].mana_cost,
-            color     : src.cards[card.oid].colors.join(''),
+            color     : src.cards[card.oid].color_identity.join(''),
 
             price     : undefined, // we will backpatch this later, with prices.json data
             owned     : 0,         // we will backpatch this later, with collection.json data
@@ -1524,33 +1525,11 @@ $(function () {
 
             back      : "", // FIXME - seems to be missing
 
-            spotlight : card.flags.indexOf('@') >= 0,
-            reserved  : card.flags.indexOf('!') >= 0,
-            reprint   : card.flags.indexOf('+') >= 0,
-            // full_art unused
-            // oversized unused
-            // variation unused
-
             set: {
               name  : src.sets[code].name,
               code  : src.sets[code].code,
               total : src.sets[code].cards.length,
             },
-            legal: {
-              standard  : src.cards[card.oid].legal.indexOf('s') >= 0 ? 'legal' : 'not_legal',
-              brawl     : src.cards[card.oid].legal.indexOf('B') >= 0 ? 'legal' : 'not_legal',
-              duel      : src.cards[card.oid].legal.indexOf('d') >= 0 ? 'legal' : 'not_legal',
-              vintage   : src.cards[card.oid].legal.indexOf('v') >= 0 ? 'legal' : 'not_legal',
-              commander : src.cards[card.oid].legal.indexOf('E') >= 0 ? 'legal' : 'not_legal',
-              modern    : src.cards[card.oid].legal.indexOf('m') >= 0 ? 'legal' : 'not_legal',
-              historic  : src.cards[card.oid].legal.indexOf('h') >= 0 ? 'legal' : 'not_legal',
-              future    : src.cards[card.oid].legal.indexOf('f') >= 0 ? 'legal' : 'not_legal',
-              pioneer   : src.cards[card.oid].legal.indexOf('p') >= 0 ? 'legal' : 'not_legal',
-              pauper    : src.cards[card.oid].legal.indexOf('B') >= 0 ? 'legal' : 'not_legal',
-              penny     : src.cards[card.oid].legal.indexOf('$') >= 0 ? 'legal' : 'not_legal',
-              oldschool : src.cards[card.oid].legal.indexOf('o') >= 0 ? 'legal' : 'not_legal',
-              legacy    : src.cards[card.oid].legal.indexOf('l') >= 0 ? 'legal' : 'not_legal',
-            }
           });
         }
       }

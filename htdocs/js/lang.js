@@ -1,4 +1,8 @@
 function tokenize(s) {
+  var autobool = function (predicate) {
+    return [['QUALIFIER', predicate],
+            ['IDENTIFIER', 'y']];
+  };
   var keywords = {
     AND:   [['AND']],
     OR:    [['OR']],
@@ -14,10 +18,12 @@ function tokenize(s) {
     UNIQUE: [['QUALIFIER', 'UNIQUE'],
              ['IDENTIFIER', 'card']],
 
-    REPRINT:   [['QUALIFIER', 'REPRINT'],
-                ['IDENTIFIER', 'y']],
-    RESERVED:  [['QUALIFIER', 'RESERVED'],
-                ['IDENTIFIER', 'y']]
+    REPRINT:   autobool('REPRINT'),
+    RESERVED:  autobool('RESERVED'),
+    SPOTLIGHT: autobool('SPOTLIGHT'),
+    FULLART:   autobool('FULLART'),
+    OVERSIZED: autobool('OVERSIZED'),
+    VARIANT:   autobool('VARIANT'),
   };
 
   var aliases = {
@@ -147,12 +153,35 @@ function parse(tok) {
       loose_re  = function (v) { return new RegExp('\\b'+v+'\\b', 'i'); },
       setcode   = function (v) { return v.toUpperCase(); },
       literal   = function (v) { return v ; },
-      legalese  = function (v) {
-        v = v.toLowerCase();
-        if (v == 'edh') {
-          v = 'commander';
+      rarity    = function (v) {
+        switch (v.toLowerCase()) {
+        case 'c': case 'common':     return '1';
+        case 'u': case 'uncommon':   return '2';
+        case 'r': case 'rare':       return '3';
+        case 'm': case 'mythic':     return '4';
+        default: return ' ';
         }
-        return v;
+      },
+      legalese  = function (v) {
+        switch (v.toLowerCase()) {
+        case 'brawl':      return 'B';
+        case 'edh':
+        case 'commander':  return 'E';
+        case 'duel':       return 'd';
+        case 'frontier':   return 'j';
+        case 'future':     return 'f';
+        case 'historic':   return 'h';
+        case 'legacy':     return 'j';
+        case 'modern':     return 'm';
+        case 'old-school':
+        case 'old_school': return 'o';
+        case 'pauper':     return 'B';
+        case 'penny':      return '$';
+        case 'pioneer':    return 'p';
+        case 'standard':   return 's';
+        case 'vintage':    return 'v';
+        default:           return ' ';
+        }
       },
       boolish   = function (v) {
         var fn = function (v) { return !v; }
@@ -331,9 +360,12 @@ function parse(tok) {
       case 'UNIQUE':  fn = uniquify; break;
       case 'SET':     fn = setcode;  break;
       case 'LAYOUT':
-      case 'PT':
-      case 'RARITY':  fn = literal;  break;
+      case 'PT':      fn = literal;  break;
+      case 'RARITY':  fn = rarity;   break;
       case 'LEGAL':   fn = legalese; break;
+      case 'FULLART':
+      case 'OVERSIZED':
+      case 'VARIANT':
       case 'SPOTLIGHT':
       case 'RESERVED':
       case 'REPRINT': fn = boolish;  break;
@@ -462,6 +494,9 @@ Query.prototype.toString = function () {
   case 'IN':
     return '('+this.type+' '+this.a.toString()+')';
 
+  case 'FULLART':
+  case 'OVERSIZED':
+  case 'VARIANT':
   case 'SPOTLIGHT':
   case 'RESERVED':
   case 'REPRINT':
@@ -505,7 +540,7 @@ Query.prototype.match = function (card) {
   case 'ARTIST':
     return this.a.exec(card.artist);
   case 'RARITY':
-    return this.a == card.rarity;
+    return card.flags.indexOf(this.a) >= 0;
   case 'COLOR':
     return this.a.call(card, card.color);
   case 'P':
@@ -521,15 +556,21 @@ Query.prototype.match = function (card) {
   case 'LAYOUT':
       return this.a == card.layout;
   case 'LEGAL':
-      return card.legal[this.a.toLowerCase()] == 'legal';
+      return card.flags.indexOf(this.a) >= 0;
   case 'PT':
       return this.a == card.pt;
+  case 'FULLART':
+      return this.a.call(card, card.flags.indexOf('^') >= 0);
+  case 'OVERSIZED':
+      return this.a.call(card, card.flags.indexOf('O') >= 0);
+  case 'VARIANT':
+      return this.a.call(card, card.flags.indexOf('~') >= 0);
   case 'SPOTLIGHT':
-      return this.a.call(card, card.spotlight);
+      return this.a.call(card, card.flags.indexOf('@') >= 0);
   case 'RESERVED':
-      return this.a.call(card, card.reserved);
+      return this.a.call(card, card.flags.indexOf('!') >= 0);
   case 'REPRINT':
-      return this.a.call(card, card.reprint);
+      return this.a.call(card, card.flags.indexOf('+') >= 0);
   case 'OWN':
     return this.a.call(card, card.owned);
   case 'USD':
