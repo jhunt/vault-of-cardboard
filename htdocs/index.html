@@ -1567,6 +1567,21 @@ $(function () {
       console.log('card data retrieved successfully!');
 
       $BASE  = shim.convert(data);
+      $.ajax({
+        type: 'GET',
+        url:  '/prices.json',
+        success: function (data) {
+          console.log("ingesting pricing data");
+          for (var set in $BASE) {
+            for (var i = 0; i < $BASE[set].length; i++) {
+              if ($BASE[set][i].id in data) {
+                $BASE[set][i].price = parseFloat(data[$BASE[set][i].id]);
+              }
+            }
+          }
+          console.log("pricing data updated");
+        }
+      });
       $INDEX = {};
 
       console.log('indexing cards...');

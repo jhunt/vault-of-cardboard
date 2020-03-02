@@ -143,7 +143,14 @@ fn main() {
         |_: &mut Request| {
             let api = boot();
             match api.file("prices.json") {
-                Ok(f) => Ok(Response::with((status::Ok, f))),
+                Ok(f) => {
+                    let mut r = Response::with((status::Ok, f));
+                    r.headers.set(ContentType(Mime(
+                                TopLevel::Application,
+                                SubLevel::Json,
+                                vec![])));
+                    Ok(r)
+                }
                 Err(e) => {
                     println!("error: {}", e);
                     done!(500 => "internal server error")
@@ -159,7 +166,14 @@ fn main() {
             let api = boot();
             let uid = param!(r, "uid");
             match api.file(&format!("c/{}/_/collection.json", uid)) {
-                Ok(f) => Ok(Response::with((status::Ok, f))),
+                Ok(f) => {
+                    let mut r = Response::with((status::Ok, f));
+                    r.headers.set(ContentType(Mime(
+                                TopLevel::Application,
+                                SubLevel::Json,
+                                vec![])));
+                    Ok(r)
+                }
                 Err(e) => {
                     println!("error: {}", e);
                     done!(500 => "internal server error")
