@@ -279,7 +279,7 @@ cmp_deeply(
 ###   coalescing all of our gain/loss operations in the process.
 ###
 
-system("cargo run --bin reconciler test/integration/fs/c/$UID/_/collection.json");
+system("cargo run --bin cardboard reconciler test/integration/fs/c/$UID/_/collection.json");
 ok($? == 0, "reconciler process should run ok");
 
 my $res = get("/collectors/$UID/collections/_/collection.json");

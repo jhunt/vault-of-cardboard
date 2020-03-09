@@ -1,5 +1,3 @@
-#[macro_use]
-extern crate clap;
 use serde_json::json;
 use std::fs::{self, File};
 use std::path::Path;
@@ -8,8 +6,8 @@ use std::io;
 use std::time::Instant;
 use serde::{Serialize, Deserialize};
 
-use vault_of_cardboard::prelude::*;
-use vault_of_cardboard::card;
+use crate::prelude::*;
+use crate::card;
 
 #[derive(Serialize, Deserialize)]
 pub struct Aggregate(Vec<(u32, card::OwnedCard)>, Vec<Vec<card::Card>>);
@@ -22,18 +20,8 @@ impl Persistable for Aggregate {
     }
 }
 
-impl Aggregate {
-}
-
-fn main() {
-    let matches = clap_app!(reconciler =>
-        (version: "1.0")
-        (author: "James Hunt <bugs@vaultofcardboard.com>")
-        (about: "Reconciles a collection by applying outstanding patches to it.")
-        (@arg FILE: +required "Path to the collection.json file to reconcile.")).get_matches();
-
-
-    let path = Path::new(matches.value_of("FILE").unwrap());
+pub fn run(path: &str) {
+    let path = Path::new(path);
     let mut file = match File::open(path) {
         Ok(f) => f,
         Err(e) => panic!("unable to open {} to reconcile it: {}", path.to_str().unwrap(), e),

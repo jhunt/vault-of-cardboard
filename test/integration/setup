@@ -22,7 +22,7 @@ docker run --rm -d -p ${DOCKER_REDIS_PORT}:6379 --label vcbt=redis redis
 echo ">> rescrying test/scryfall/* -> test/integration/fs/* ..."
 rm -rf test/integration/fs
 mkdir -p test/integration/fs
-cargo run --bin rescry -- \
+cargo run --bin cardboard -- rescry \
   --raw test/scryfall/sets \
   --cards test/integration/fs/cards.json \
   --prices test/integration/fs/prices.json \

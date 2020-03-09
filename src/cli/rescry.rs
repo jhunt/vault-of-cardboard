@@ -1,28 +1,17 @@
-#[macro_use]
-extern crate clap;
 use serde_json::json;
 use std::fs::File;
 use std::io::prelude::*;
 use std::time::Instant;
 
-use vault_of_cardboard::card;
+use crate::card;
 
-fn main() {
-    let matches = clap_app!(rescry =>
-        (version: "1.0")
-        (author: "James Hunt <bugs@vaultofcardboard.com>")
-        (about: "Transforms ingested Scryfall set/card data into usable formats.")
-        (@arg raw:    -r --raw    +takes_value +required "Where to find the raw Scryfall set files.")
-        (@arg cards:  -c --cards  +takes_value "Where to put the output cards.json file.")
-        (@arg prices: -p --prices +takes_value "Where to put the output prices.json file.")
-        (@arg lookup: -l --lookup +takes_value "Where to put the output lookup.json file.")).get_matches();
-
-    let cache = match matches.value_of("raw") {
-        Some(cache) => cache,
+pub fn run(raw: Option<&str>, cards_json: Option<&str>, prices_json: Option<&str>, lookup_json: Option<&str>) {
+    let raw = match raw {
+        Some(v) => v,
         None => "data/cache",
     };
 
-    let cards_json = match matches.value_of("cards") {
+    let cards_json = match cards_json {
         Some(v) => v,
         None => "cards.json",
     };
@@ -34,7 +23,7 @@ fn main() {
         ),
     };
 
-    let prices_json = match matches.value_of("prices") {
+    let prices_json = match prices_json {
         Some(v) => v,
         None => "prices.json",
     };
@@ -46,7 +35,7 @@ fn main() {
         ),
     };
 
-    let lookup_json = match matches.value_of("lookup") {
+    let lookup_json = match lookup_json {
         Some(v) => v,
         None => "lookup.json",
     };
@@ -59,7 +48,7 @@ fn main() {
     };
 
     let now = Instant::now();
-    let pool = card::Pool::read(cache).unwrap();
+    let pool = card::Pool::read(raw).unwrap();
     let elapsed = now.elapsed().as_millis();
     let (no, ns, nc) = pool.enumerate();
     println!("parsed raw scryfall data ({} oracle cards / {} sets / {} print cards) in {}ms", no, ns, nc, elapsed);

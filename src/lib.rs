@@ -1,6 +1,7 @@
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_migrations;
 #[macro_use] extern crate error_chain;
+#[macro_use] extern crate hyper;
 
 pub mod api;
 pub mod card;
@@ -9,6 +10,8 @@ pub mod db;
 pub mod schema;
 pub mod scryfall;
 pub mod prelude;
+
+pub mod cli;
 
 #[cfg(test)]
 mod test {

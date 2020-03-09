@@ -9,7 +9,7 @@ unit-tests:
 
 integration-api:
 	source test/integration/envrc \
-	&& cargo run --bin vaultd
+	&& cargo run --bin cardboard api
 integration-tests:
 	source test/integration/envrc \
 	&& ./test/integration/setup \

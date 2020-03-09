@@ -1,4 +1,3 @@
-#[macro_use] extern crate hyper;
 use iron::prelude::*;
 use iron::status;
 use iron::mime::{Mime,TopLevel, SubLevel};
@@ -10,8 +9,8 @@ use std::path::Path;
 
 header! { (WwwAuthenticate, "WWW-Authenticate") => [String] }
 
-use vault_of_cardboard::api::{Object, API};
-use vault_of_cardboard::db::Database;
+use crate::api::{Object, API};
+use crate::db::Database;
 
 fn boot() -> API {
     API::new(
@@ -113,7 +112,7 @@ macro_rules! done {
     };
 }
 
-fn main() {
+pub fn run() {
     let mut router = Router::new();
 
     router.get(
