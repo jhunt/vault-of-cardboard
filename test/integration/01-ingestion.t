@@ -76,6 +76,7 @@ my $res = post("/v1/authenticate", payload => {
 	password => $password
 });
 ok($res->is_success, "authentication message should succeed");
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
 cmp_deeply(from_json($res->content), {
 	response => {
 		ok => bool(undef),
@@ -89,6 +90,7 @@ my $res = post("/v1/signup", payload => {
 	password => $password
 });
 ok($res->is_success, "signup should succeed");
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
 $res = from_json($res->content);
 cmp_deeply($res, {
 	authenticated => {
@@ -111,6 +113,7 @@ my $SID = $res->{authenticated}{session};
 my $res = get("/cards.json");
 ok($res->is_success, "should be able to retrieve all cards, as JSON")
 	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
 
 my $cards = from_json($res->content);
 cmp_deeply(
@@ -141,6 +144,7 @@ cmp_deeply(
 my $res = get("/prices.json");
 ok($res->is_success, "should be able to retrieve pricing data, as JSON")
 	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
 
 my $prices = from_json($res->content);
 is($prices->{'2e5cd12a-2a07-44a8-8eac-de00d26fe9e3'}, '19.63',
@@ -158,6 +162,7 @@ ok(!exists $prices->{'01fc5bb3-ebd7-4ab4-8aef-2ece1e1d9b7c'}, "pricing should no
 my $res = get("/collectors/$UID/collections/_/collection.json");
 ok($res->is_success, "should be able to retrieve users default collection, as JSON")
 	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
 cmp_deeply(
 	from_json($res->content),
 	[[], [[]]],
@@ -181,10 +186,12 @@ my $res = post("/v1/collectors/$UID/collections/_/transactions", as => $SID, pay
 });
 ok($res->is_success, "should be able to post an import transaction, as JSON")
 	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
 
 my $res = get("/collectors/$UID/collections/_/collection.json");
 ok($res->is_success, "should be able to retrieve the updated collection, as JSON")
 	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
 cmp_deeply(
 	from_json($res->content),
 	[
@@ -225,10 +232,12 @@ my $res = post("/v1/collectors/$UID/collections/_/transactions", as => $SID, pay
 });
 ok($res->is_success, "should be able to post an update transaction, as JSON")
 	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
 
 my $res = get("/collectors/$UID/collections/_/collection.json");
 ok($res->is_success, "should be able to retrieve the updated collection, as JSON")
 	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
 cmp_deeply(
 	from_json($res->content),
 	[
@@ -285,6 +294,7 @@ ok($? == 0, "reconciler process should run ok");
 my $res = get("/collectors/$UID/collections/_/collection.json");
 ok($res->is_success, "should be able to retrieve the reconciled collection, as JSON")
 	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
 cmp_deeply(
 	from_json($res->content),
 	[
@@ -324,6 +334,7 @@ my $res = post("/v1/signup", payload => {
 });
 ok($res->is_success, "signup should succeed")
 	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
 $res = from_json($res->content);
 cmp_deeply($res, {
 	authenticated => {
@@ -337,6 +348,7 @@ my $OTHER_SID = $res->{authenticated}{session};
 my $res = get("/collectors/$UID/collections/_/collection.json");
 ok($res->is_success, "should be able to retrieve $UID\'s collection, for forensics")
 	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
 my $COLLECTION = from_json($res->content);
 
 my $res = post("/v1/collectors/$UID/collections/_/transactions", as => undef, payload => {
@@ -353,6 +365,7 @@ is($res->code, 401, "should NOT be able to post an update transaction anonymousl
 my $res = get("/collectors/$UID/collections/_/collection.json");
 ok($res->is_success, "should be able to retrieve $UID\'s collection, for forensic comparison")
 	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
 cmp_deeply(from_json($res->content), $COLLECTION, "collection should remain untouched, having foiled anonymous' plan");
 
 my $res = post("/v1/collectors/$UID/collections/_/transactions", as => $OTHER_SID, payload => {
@@ -369,6 +382,7 @@ is($res->code, 403, "should NOT be able to post an update transaction to another
 my $res = get("/collectors/$UID/collections/_/collection.json");
 ok($res->is_success, "should be able to retrieve $UID\'s collection, for forensic comparison")
 	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
 cmp_deeply(from_json($res->content), $COLLECTION, "collection should remain untouched, having foiled the other user's attempt to edit it");
 
 ######################################################################

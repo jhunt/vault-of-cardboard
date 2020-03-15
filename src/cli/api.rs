@@ -61,16 +61,19 @@ macro_rules! auth {
     };
 }
 
+fn json_response(code: status::Status, json: String) -> Response {
+    let mut r = Response::with((code, format!("{}\n", json)));
+    r.headers.set(ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![])));
+    r
+}
+
 macro_rules! done {
     (204) => {
         Ok(Response::with(status::NoContent))
     };
 
     (200 => $o: expr) => {
-        Ok(Response::with((
-            status::Ok,
-            format!("{}\n", json!($o).to_string()),
-        )))
+        Ok(json_response(status::Ok, json!($o).to_string()))
     };
 
     (400 => $s: expr) => {
@@ -102,13 +105,12 @@ macro_rules! done {
     };
 
     ($object: expr) => {
-        Ok(Response::with((
+        Ok(json_response(
             match &$object {
                 Object::NotFound(_) => status::NotFound,
                 _ => status::Ok,
             },
-            format!("{}\n", json!(&$object).to_string()),
-        )))
+            json!(&$object).to_string()))
     };
 }
 
