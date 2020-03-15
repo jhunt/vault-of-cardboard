@@ -102,7 +102,7 @@ button:focus, input:focus { outline: 0; }
   font-family: sans-serif;
   font-size: 90%;
   padding: 2px 6px;
-  background-image: url(/hili.png);
+  background-image: url(/img/hili.png);
   background-repeat: no-repeat;
   background-size: cover;
 }
@@ -291,7 +291,7 @@ body > .colors {
 .grid.results > span .card.face {
   transform: rotate(5deg);
   cursor: pointer;
-  background-image: url(/mtgblank.jpg);
+  background-image: url(/img/mtgblank.jpg);
   background-size: cover;
 }
 .grid.results > span .back {
