@@ -1,3 +1,4 @@
+use super::schema::{collections, collectors, decks, transactions};
 use bcrypt;
 use chrono::{naive::NaiveDate, DateTime, Utc};
 use diesel::pg::PgConnection;
@@ -6,9 +7,8 @@ use redis;
 use serde::Serialize;
 use serde_json::json;
 use std::fs::{self, File};
-use std::io::{self, Read, Write, Seek};
+use std::io::{self, Read, Seek, Write};
 use std::path::{Path, PathBuf};
-use super::schema::{collections, collectors, decks, transactions};
 use uuid::Uuid;
 
 use crate::prelude::*;
@@ -78,11 +78,14 @@ impl FStore {
 
     pub fn append_to_json_list<T: Serialize>(&self, filename: &str, item: T) -> Result<()> {
         let pb = self.path_to(filename);
-        let mut file = fs::OpenOptions::new().read(true).write(true).open(
-            pb.to_str()
-                .chain_err(|| "failed to construct a path for file modifucation")?,
-        )
-        .chain_err(|| "failed to open file")?;
+        let mut file = fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(
+                pb.to_str()
+                    .chain_err(|| "failed to construct a path for file modifucation")?,
+            )
+            .chain_err(|| "failed to open file")?;
 
         file.seek(io::SeekFrom::End(-2))
             .chain_err(|| "failed to seek to end of json list file")?;
@@ -236,6 +239,12 @@ fn gen_uuid(id: Option<Uuid>) -> Uuid {
 }
 
 impl Database {
+    pub fn migrate(pg: &str) -> Result<()> {
+        let pg = PgConnection::establish(pg).chain_err(|| "unable to connect to database")?;
+        embedded_migrations::run(&pg).chain_err(|| "failed to run database migrations")?;
+        Ok(())
+    }
+
     // Connect to a DSN (must be PostgreSQL) and run migrations.
     pub fn connect(pg: &str, rd: &str, fsroot: &Path) -> Result<Database> {
         let db = Database {
@@ -263,7 +272,9 @@ impl Database {
     }
 
     pub fn get_file(&self, rel: &str) -> Result<std::fs::File> {
-        Ok(self.fs.get_as_reader(rel)
+        Ok(self
+            .fs
+            .get_as_reader(rel)
             .chain_err(|| "unable to retrieve file from filesystem")?)
     }
 
@@ -375,7 +386,11 @@ impl Database {
             .get_result::<Collection>(&self.pg)
             .chain_err(|| "failed to insert collection record for new collector into database")?;
 
-        self.fs.create(&format!("c/{}/_/collection.json", id.to_string()), r#"[[],[[]]]"#)
+        self.fs
+            .create(
+                &format!("c/{}/_/collection.json", id.to_string()),
+                r#"[[],[[]]]"#,
+            )
             .chain_err(|| "failed to create initial collection cache file")?;
 
         Ok(collector)
@@ -514,7 +529,7 @@ impl Database {
                     .chain_err(|| "failed to parse new gains during transaction update")?;
 
                 self.apply_collection_credit(obj.collection, cdif::File::diff(&then, &now))?;
-            },
+            }
         };
 
         match upd.loss {
@@ -526,7 +541,7 @@ impl Database {
                     .chain_err(|| "failed to parse new losses during transaction update")?;
 
                 self.apply_collection_debit(obj.collection, cdif::File::diff(&then, &now))?;
-            },
+            }
         };
 
         Ok(txn)
@@ -540,7 +555,9 @@ impl Database {
     }
 
     fn apply_collection_diff(&self, id: Uuid, cards: cdif::File, credit: bool) -> Result<()> {
-        let mut f = self.fs.get_as_reader("lookup.json")
+        let mut f = self
+            .fs
+            .get_as_reader("lookup.json")
             .chain_err(|| "failed to retrieve card name -> print id lookup table")?;
 
         let lookup = card::Map::from_reader(&mut f)
@@ -550,7 +567,11 @@ impl Database {
         if !credit {
             delta.invert();
         }
-        self.fs.append_to_json_list(&format!("c/{}/_/collection.json", id.to_string()), delta.cards)
+        self.fs
+            .append_to_json_list(
+                &format!("c/{}/_/collection.json", id.to_string()),
+                delta.cards,
+            )
             .chain_err(|| "failed to append json object to collection json file")?;
 
         Ok(())
@@ -628,23 +649,26 @@ mod test {
     fn connect() -> (TempDir, Database) {
         use std::env;
 
-        let pg = env::var("TEST_DATABASE_URL")
-            .or_else(|_| env::var("VCB_DATABASE_URL"))
-            .expect("Either TEST_DATABASE_URL or VCB_DATABASE_URL must be set in the environment.");
+        let pg = env::var("VCB_DATABASE_URL")
+            .expect("VCB_DATABASE_URL must be set in the environment.");
 
-        let rd = env::var("TEST_REDIS_URL")
-            .or_else(|_| env::var("VCB_REDIS_URL"))
-            .expect("Either TEST_REDIS_URL or VCB_REDIS_URL must be set in the environment.");
+        let rd = env::var("VCB_REDIS_URL")
+            .expect("VCB_REDIS_URL must be set in the environment.");
 
         let fs = TempDir::new("vcb-test").expect("Failed to create temp directory");
 
         let db = Database::connect(&pg, &rd, &fs.path()).unwrap();
         db.testmode().unwrap();
-        db.fs.create("lookup.json", r#"
+        db.fs
+            .create(
+                "lookup.json",
+                r#"
 {
   "XLN Opt": "xln-opt-fake-id"
 }
-"#).unwrap();
+"#,
+            )
+            .unwrap();
         (fs, db)
     }
 
@@ -756,7 +780,8 @@ mod test {
         assert!(!other.is_err());
     }
 
-    #[test] #[ignore]
+    #[test]
+    #[ignore]
     fn should_be_able_to_reuse_passwords() {
         let (_tmp, db) = connect();
 
@@ -1054,7 +1079,8 @@ mod test {
         assert_eq!(deck.ordinal, 0);
     }
 
-    #[test] #[ignore]
+    #[test]
+    #[ignore]
     pub fn can_authenticate_a_collector() {
         let (_tmp, db) = connect();
 
@@ -1141,8 +1167,12 @@ mod test {
         let fs = TempDir::new("data-fs-test").expect("failed to create tempdir");
         let store = FStore::new(fs.path());
 
-        assert!(store.create("something.json", r#"[["initial"],[[]]]"#).is_ok());
-        assert!(store.append_to_json_list("something.json", vec!["new", "things"]).is_ok());
+        assert!(store
+            .create("something.json", r#"[["initial"],[[]]]"#)
+            .is_ok());
+        assert!(store
+            .append_to_json_list("something.json", vec!["new", "things"])
+            .is_ok());
         let s = store.get_as_string("something.json");
         assert!(s.is_ok());
         let s = s.unwrap();

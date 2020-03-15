@@ -4,8 +4,11 @@ TAG     ?= dev
 default: test
 
 test: unit-tests integration-tests
+
 unit-tests:
-	source test/envrc && cargo test
+	source test/unit/envrc \
+	&& ./test/unit/setup \
+	&& cargo test --lib
 
 integration-api:
 	source test/integration/envrc \
@@ -16,7 +19,9 @@ integration-tests:
 	&& prove test/integration/*.t
 
 watch-and-test:
-	source test/envrc && cargo watch -x 'test --lib'
+	source test/unit/envrc \
+	&& ./test/unit/setup \
+	&& cargo watch -x 'test --lib'
 
 docker: rescry-docker api-docker
 base-docker:

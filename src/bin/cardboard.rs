@@ -9,6 +9,8 @@ fn main() {
     (about: "Vault of Cardboard multi-tool")
     (@subcommand api =>
      (about: "The Vault of Cardboard server API daemon"))
+    (@subcommand migrate =>
+     (about: "Apply Vault of Cardboard API Database Migrations"))
     (@subcommand reconciler =>
      (about: "Reconciles a collection by applying outstanding patches to it.")
      (@arg FILE: +required "Path to the collection.json file to reconcile."))
@@ -23,10 +25,10 @@ fn main() {
 
     if args.is_present("api") {
         cli::api::run();
+    } else if args.is_present("migrate") {
+        cli::migrate::run();
     } else if let Some(subargs) = args.subcommand_matches("reconciler") {
-        cli::reconciler::run(
-            subargs.value_of("FILE").unwrap()
-        );
+        cli::reconciler::run(subargs.value_of("FILE").unwrap());
     } else if let Some(subargs) = args.subcommand_matches("rescry") {
         cli::rescry::run(
             subargs.value_of("raw"),

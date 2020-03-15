@@ -1,0 +1,42 @@
+#!/bin/bash
+set -eu
+
+cid() {
+  docker ps -f label="$1" --format '{{.ID}}'
+}
+
+echo ">> starting postgres container on 127.0.0.1:${DOCKER_PG_PORT} ..."
+pg=$(cid vcbt=unit-pg)
+if [[ -n $pg ]]; then
+  docker rm -f $pg
+fi
+docker run --rm -d -p ${DOCKER_PG_PORT}:5432 --label vcbt=unit-pg postgres
+
+echo ">> starting redis container on 127.0.0.1:${DOCKER_REDIS_PORT} ..."
+rd=$(cid vcbt=unit-redis)
+if [[ -n $rd ]]; then
+  docker rm -f $rd
+fi
+docker run --rm -d -p ${DOCKER_REDIS_PORT}:6379 --label vcbt=unit-redis redis
+
+pg=$(cid vcbt=unit-pg)
+echo "waiting 30s for postgres (container $pg) to come up..."
+n=300
+while [[ $n -gt 0 ]]; do
+  if docker exec $pg psql -U postgres -c 'select 1;' > /dev/null 2>&1; then
+    n=ok; break
+  fi
+  n=$(( n - 1 ))
+  sleep 0.1;
+
+  if docker exec $pg psql -U postgres -c 'select 1;' > /dev/null 2>&1; then
+    n=ok; break
+  fi
+done
+if [[ $n != "ok" ]]; then
+  echo >&2 "psql did not come up fast enough...";
+  exit 1
+fi
+
+echo ">> running database migrations..."
+cargo run --bin cardboard -- migrate
