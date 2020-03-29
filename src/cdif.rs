@@ -149,11 +149,20 @@ impl Line {
 
 pub struct File {
     pub lines: HashMap<String, Line>,
+
     total: u32,
     unique: u32,
 }
 
 impl File {
+    fn blank() -> Self {
+        Self {
+            lines: HashMap::new(),
+            total: 0,
+            unique: 0,
+        }
+    }
+
     pub fn count(&self) -> (u32, u32) {
         (self.total, self.unique)
     }
@@ -161,6 +170,7 @@ impl File {
     fn track(&mut self, line: Line) {
         if line.quantity != 0 {
             self.total += line.quantity as u32;
+
             match self.lines.get_mut(&line.id()) {
                 Some(l) => {
                     l.quantity += line.quantity;
@@ -174,11 +184,7 @@ impl File {
     }
 
     pub fn diff(a: &Self, b: &Self) -> Self {
-        let mut diff = Self {
-            lines: HashMap::new(),
-            total: 0,
-            unique: 0,
-        };
+        let mut diff = Self::blank();
 
         for (k, line) in &a.lines {
             let quantity = match b.lines.get(k) {
@@ -221,11 +227,7 @@ impl File {
 impl Persistable for File {
     fn from_reader<T: io::Read>(src: &mut T) -> Result<Self, io::Error> {
         let src = BufReader::new(src);
-        let mut file = Self {
-            lines: HashMap::new(),
-            total: 0,
-            unique: 0,
-        };
+        let mut file = Self::blank();
         for line in src.lines() {
             match line {
                 Ok(line) => {
