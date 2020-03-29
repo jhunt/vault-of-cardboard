@@ -205,27 +205,23 @@ impl API {
         API { db: dat }
     }
 
-    pub fn guard(&self, sid: Option<String>, uid: &str) -> Option<i16>{
+    pub fn guard(&self, sid: Option<String>, uid: &str) -> Option<i16> {
         let sid = match sid {
             None => return Some(401),
-            Some(sid) => {
-                match Uuid::parse_str(&sid) {
-                    Err(_) => return Some(401),
-                    Ok(sid) => sid,
-                }
-            }
+            Some(sid) => match Uuid::parse_str(&sid) {
+                Err(_) => return Some(401),
+                Ok(sid) => sid,
+            },
         };
 
         match self.db.get_session(sid) {
             Err(_) => Some(403),
             Ok(None) => Some(401),
-            Ok(Some(session)) => {
-                match session.attrs.get("user-id") {
-                    Some(id) if id == uid => None,
-                    Some(_) => Some(403),
-                    None => Some(401),
-                }
-            }
+            Ok(Some(session)) => match session.attrs.get("user-id") {
+                Some(id) if id == uid => None,
+                Some(_) => Some(403),
+                None => Some(401),
+            },
         }
     }
 
