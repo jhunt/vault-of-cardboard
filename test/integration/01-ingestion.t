@@ -94,8 +94,9 @@ is($res->header('Content-Type'), 'application/json', "response should be JSON");
 $res = from_json($res->content);
 cmp_deeply($res, {
 	authenticated => {
-		session => is_uuid(),
-		uid     => is_uuid(),
+		session  => is_uuid(),
+		username => $username,
+		uid      => is_uuid(),
 	}
 }, "successful signup should return enough information for future authentication");
 my $UID = $res->{authenticated}{uid};
@@ -338,8 +339,9 @@ is($res->header('Content-Type'), 'application/json', "response should be JSON");
 $res = from_json($res->content);
 cmp_deeply($res, {
 	authenticated => {
-		session => is_uuid(),
-		uid     => is_uuid(),
+		session  => is_uuid(),
+		username => "not-$username",
+		uid      => is_uuid(),
 	}
 }, "successful signup should return enough information for future authentication");
 isnt($res->{authenticated}{uid}, $UID, "should get a different UID for the not-$username user");

@@ -185,6 +185,24 @@ pub fn run() {
     );
 
     router.post(
+        "/v1/whoami",
+        |r: &mut Request| {
+            let api = boot();
+            match serde_json::from_reader(&mut r.body) {
+                Err(e) => {
+                    println!("error: {}", e);
+                    done!(400 => "bad request")
+                }
+                Ok(who) => {
+                    let r = api.whoami(who);
+                    done!(r)
+                }
+            }
+        },
+        "v1_whoami_handler",
+    );
+
+    router.post(
         "/v1/authenticate",
         |r: &mut Request| {
             let api = boot();

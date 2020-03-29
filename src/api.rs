@@ -80,6 +80,7 @@ pub struct Response {
 #[derive(Serialize)]
 pub struct Authenticated {
     pub uid: String,
+    pub username: String,
     pub session: String,
 }
 
@@ -232,6 +233,40 @@ impl API {
         Ok(self.db.get_file(rel).chain_err(|| "unable to get file")?)
     }
 
+    pub fn whoami(&self, sid: Option<String>) -> Object {
+        let sid = match sid {
+            None => return Object::fail("not-authenticated"),
+            Some(sid) => match Uuid::parse_str(&sid) {
+                Ok(sid) => sid,
+                _ => return Object::fail("invalid-session-id"),
+            },
+        };
+
+        let session = match self.db.get_session(sid) {
+            Ok(Some(session)) => session,
+            _ => return Object::fail("invalid-session-id"),
+        };
+
+        let uid = match session.attrs.get("user-id") {
+            Some(uid) => match Uuid::parse_str(&uid) {
+                Ok(uid) => uid,
+                _ => return Object::fail("invalid-session-id"),
+            },
+            _ => return Object::fail("invalid-session-id"),
+        };
+
+        let who = match self.db.find_collector_by_uuid(uid) {
+            Ok(Some(collector)) => collector,
+            _ => return Object::fail("invalid-session-id"),
+        };
+
+        Object::Authenticated(Authenticated {
+            uid: who.id.to_string(),
+            username: who.username.to_string(),
+            session: session.id.to_string(),
+        })
+    }
+
     pub fn authenticate(&self, a: AuthenticationAttempt) -> Result<Object> {
         match self.db.authenticate_collector(&a.username, &a.password) {
             Ok(Some(who)) => {
@@ -240,6 +275,7 @@ impl API {
                 match self.db.set_session(session) {
                     Ok(session) => Ok(Object::Authenticated(Authenticated {
                         uid: who.id.to_string(),
+                        username: who.username.to_string(),
                         session: session.id.to_string(),
                     })),
                     _ => Ok(Object::fail("session-failed")),
@@ -268,6 +304,7 @@ impl API {
         match self.db.set_session(session) {
             Ok(session) => Ok(Object::Authenticated(Authenticated {
                 uid: who.id.to_string(),
+                username: who.username.to_string(),
                 session: session.id.to_string(),
             })),
             _ => Ok(Object::fail("signup-failed")),
