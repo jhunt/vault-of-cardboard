@@ -123,7 +123,6 @@ pub struct Transaction {
     pub total_card_loss: u32,
     pub unique_card_gain: u32,
     pub unique_card_loss: u32,
-    pub involved_sets: u32,
 }
 
 impl std::convert::From<db::Transaction> for Transaction {
@@ -137,7 +136,6 @@ impl std::convert::From<db::Transaction> for Transaction {
             total_card_loss: other.total_card_loss(),
             unique_card_gain: other.unique_card_gain(),
             unique_card_loss: other.unique_card_loss(),
-            involved_sets: other.involved_sets(),
 
             gain: other.gain,
             loss: other.loss,

@@ -172,10 +172,6 @@ impl Transaction {
     pub fn unique_card_loss(&self) -> u32 {
         self.metadata_value_as_u32("unique_loss", 0)
     }
-
-    pub fn involved_sets(&self) -> u32 {
-        self.metadata_value_as_u32("set_count", 0)
-    }
 }
 
 #[derive(Insertable)]
