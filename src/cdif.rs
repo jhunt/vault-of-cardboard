@@ -149,17 +149,25 @@ impl Line {
 
 pub struct File {
     pub lines: HashMap<String, Line>,
+    total: u32,
+    unique: u32,
 }
 
 impl File {
+    pub fn count(&self) -> (u32, u32) {
+        (self.total, self.unique)
+    }
+
     fn track(&mut self, line: Line) {
         if line.quantity != 0 {
+            self.total += line.quantity as u32;
             match self.lines.get_mut(&line.id()) {
                 Some(l) => {
                     l.quantity += line.quantity;
                 }
                 None => {
                     self.lines.insert(line.id(), line);
+                    self.unique += 1;
                 }
             };
         }
@@ -168,6 +176,8 @@ impl File {
     pub fn diff(a: &Self, b: &Self) -> Self {
         let mut diff = Self {
             lines: HashMap::new(),
+            total: 0,
+            unique: 0,
         };
 
         for (k, line) in &a.lines {
@@ -213,6 +223,8 @@ impl Persistable for File {
         let src = BufReader::new(src);
         let mut file = Self {
             lines: HashMap::new(),
+            total: 0,
+            unique: 0,
         };
         for line in src.lines() {
             match line {
@@ -557,6 +569,7 @@ mod test {
 
         let file = File::from_string(&test_dot_cdif).unwrap();
         assert_eq!(file.lines.len(), 2);
+        assert_eq!(file.count(), (5, 2));
 
         let line = file.lines.get("DOM Mox Amber");
         assert!(line.is_some());
@@ -597,6 +610,7 @@ mod test {
 
         let file = File::from_string(&test_dot_cdif).unwrap();
         assert_eq!(file.lines.len(), 1);
+        assert_eq!(file.count(), (3, 1));
 
         let line = file.lines.get("DOM Mox Amber");
         assert!(line.is_some());

@@ -139,8 +139,43 @@ pub struct Transaction {
     pub dated: NaiveDate,
     pub gain: String,
     pub loss: String,
+    pub metadata: serde_json::Value,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+impl Transaction {
+    fn metadata_value_as_u32(&self, key: &str, or: u32) -> u32 {
+        match self.metadata.get(key) {
+            Some(serde_json::Value::Number(number)) => {
+                match number.as_f64() {
+                    Some(n) => n as u32,
+                    _ => or,
+                }
+            },
+            _ => or,
+        }
+    }
+
+    pub fn total_card_gain(&self) -> u32 {
+        self.metadata_value_as_u32("total_gain", 0)
+    }
+
+    pub fn total_card_loss(&self) -> u32 {
+        self.metadata_value_as_u32("total_loss", 0)
+    }
+
+    pub fn unique_card_gain(&self) -> u32 {
+        self.metadata_value_as_u32("unique_gain", 0)
+    }
+
+    pub fn unique_card_loss(&self) -> u32 {
+        self.metadata_value_as_u32("unique_loss", 0)
+    }
+
+    pub fn involved_sets(&self) -> u32 {
+        self.metadata_value_as_u32("set_count", 0)
+    }
 }
 
 #[derive(Insertable)]
@@ -490,20 +525,47 @@ impl Database {
 
     // Create a new Transaction.
     pub fn create_transaction(&self, id: Option<Uuid>, new: NewTransaction) -> Result<Transaction> {
+        let gain = cdif::File::from_string(&new.gain)
+            .chain_err(|| "unable to parse gained cards from transaction")?;
+        let loss = cdif::File::from_string(&new.loss)
+            .chain_err(|| "unable to parse lost cards from transaction")?;
+
+        let mut meta = serde_json::Map::new();
+
+        let (total, unique) = gain.count();
+        meta.insert(
+            "total_gain".to_string(),
+            serde_json::Value::Number(serde_json::Number::from_f64(total as f64).unwrap()),
+        );
+        meta.insert(
+            "unique_gain".to_string(),
+            serde_json::Value::Number(serde_json::Number::from_f64(unique as f64).unwrap()),
+        );
+
+        let (total, unique) = loss.count();
+        meta.insert(
+            "total_loss".to_string(),
+            serde_json::Value::Number(serde_json::Number::from_f64(total as f64).unwrap()),
+        );
+        meta.insert(
+            "unique_loss".to_string(),
+            serde_json::Value::Number(serde_json::Number::from_f64(unique as f64).unwrap()),
+        );
+
         let txn = diesel::insert_into(transactions::table)
-            .values((&new, transactions::dsl::id.eq(gen_uuid(id))))
+            .values((
+                &new,
+                transactions::dsl::metadata.eq(serde_json::Value::Object(meta)),
+                transactions::dsl::id.eq(gen_uuid(id)),
+            ))
             .get_result(&self.pg)
             .chain_err(|| "failed to insert transaction record into database")?;
 
         // update the collection with new, resolved CDIF
-        let gain = cdif::File::from_string(&new.gain)
-            .chain_err(|| "unable to parse gained cards from transaction")?;
         self.apply_collection_credit(new.collection, gain)
             .chain_err(|| "unable to apply new gains from transaction")?;
 
         // update the collection again for any losses
-        let loss = cdif::File::from_string(&new.loss)
-            .chain_err(|| "unable to parse lost cards from transaction")?;
         self.apply_collection_debit(new.collection, loss)
             .chain_err(|| "unable to apply new losses from transaction")?;
 

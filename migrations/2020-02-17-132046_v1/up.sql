@@ -24,6 +24,8 @@ CREATE TABLE transactions (
     gain         TEXT     NOT NULL DEFAULT '',
     loss         TEXT     NOT NULL DEFAULT '',
 
+    metadata     JSONB    NOT NULL DEFAULT '{}'::json,
+
     created_at   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );

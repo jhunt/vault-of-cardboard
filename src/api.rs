@@ -117,6 +117,12 @@ pub struct Transaction {
     pub dated: NaiveDate,
     pub gain: String,
     pub loss: String,
+
+    pub total_card_gain: u32,
+    pub total_card_loss: u32,
+    pub unique_card_gain: u32,
+    pub unique_card_loss: u32,
+    pub involved_sets: u32,
 }
 
 impl std::convert::From<db::Transaction> for Transaction {
@@ -125,6 +131,13 @@ impl std::convert::From<db::Transaction> for Transaction {
             id: other.id.to_string(),
             collection: other.collection.to_string(),
             dated: other.dated,
+
+            total_card_gain: other.total_card_gain(),
+            total_card_loss: other.total_card_loss(),
+            unique_card_gain: other.unique_card_gain(),
+            unique_card_loss: other.unique_card_loss(),
+            involved_sets: other.involved_sets(),
+
             gain: other.gain,
             loss: other.loss,
         }
