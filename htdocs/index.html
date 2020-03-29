@@ -1031,23 +1031,27 @@
          };
 
          $.each(_.changes, function (i, change) {
-           now.card   += change.card_gain   - change.card_loss;
-           now.unique += change.unique_gain - change.unique_loss;
+           _.changes[i].total_delta  = change.total_card_gain  - change.total_card_loss;
+           _.changes[i].unique_delta = change.unique_card_gain - change.unique_card_loss;
 
-           $.each(change.sets.split(/:/), function (j, set) {
-             now.sets[set] = 1;
-           });
+           if (change.total_card_gain > 0) {
+             if (change.total_card_loss > 0) {
+               _.changes[i].type = 'trade';
+             } else {
+               _.changes[i].type = 'buy';
+             }
+           } else {
+             _.changes[i].type = 'sell';
+           }
+
+           now.card   += _.changes[i].total_delta;
+           now.unique += _.changes[i].unique_delta;
          });
-
-         var sets = [];
-         for (var k in now.sets) { sets.push(k); }
-         now.sets = sets;
       ]]
       <div class="now summary">
         <h2>Today</h2>
         <ul>
           <li><em>[[= now.card ]]</em> cards (<em>[[= now.unique ]]</em> unique)</li>
-          <li>across <em>[[= now.sets.length ]]</em> sets</li>
         </ul>
 
         <div class="buttons">
@@ -1059,25 +1063,20 @@
       [[ var dates = {};
          var totals = {};
          for (var i = 0; i < _.changes.length; i++) {
-           var d = _.changes[i].occurred_at;
+           var d = _.changes[i].dated;
+           d = d ? parseInt(d.replace(/-/g, '')) : undefined;
            d = d ? (100 * parseInt(d / 100) + 5).toString() : '0';
 
            if (!(d in dates)) {
              dates[d] = [];
              totals[d] = {
-               card_delta:   0,
+               total_delta:  0,
                unique_delta: 0,
-               sets:         {}
              };
            }
            dates[d].push(_.changes[i]);
-           totals[d].card_delta += _.changes[i].card_gain;
-           totals[d].card_delta -= _.changes[i].card_loss;
-           totals[d].unique_delta += _.changes[i].unique_gain;
-           totals[d].unique_delta -= _.changes[i].unique_loss;
-           $.each(_.changes[i].sets.split(/:/), function (j, set) {
-             totals[d].sets[k] = 1;
-           });
+           totals[d].total_delta  += _.changes[i].total_delta;
+           totals[d].unique_delta += _.changes[i].unique_delta;
          }
 
          var bands = [];
@@ -1093,10 +1092,10 @@
            var d = dates[i][0];
       ]]
       <div class="aggr">
-        <h2>[[= parseInt(d) ? strftime("%B %Y", dated(d)) : "The Beginning" ]] <span class="[[= gainloss(totals[d].card_delta) ]]">[[= sprintf("%+d", totals[d].card_delta) ]] cards <span class="[[= gainloss(totals[d].unique_delta) ]]">([[= sprintf("%+d", totals[d].unique_delta) ]] unique)</span></span></h2>
+        <h2>[[= parseInt(d) ? strftime("%B %Y", dated(d)) : "The Beginning" ]] <span class="[[= gainloss(totals[d].total_delta) ]]">[[= sprintf("%+d", totals[d].total_delta) ]] cards <span class="[[= gainloss(totals[d].unique_delta) ]]">([[= sprintf("%+d", totals[d].unique_delta) ]] unique)</span></span></h2>
         <ul>
           [[ $.each(dates[i][1], function (j, change) { ]]
-          <li class="[[= change.type ]]"><em class="[[= gainloss(change.card_gain - change.card_loss) ]]">[[= sprintf("%+d", change.card_gain - change.card_loss) ]]</em> cards (<em>[[= change.sets.split(/:/).length ]]</em> sets) in [[= change.type ]] <strong>[[= change.summary ]]</strong> <span class="actions"><a href="#!/timeline/edit/[[= change.id ]]">edit</a>[[ if (change.type != 'import') { ]] | <a href="#!/timeline/delete/[[= change.id ]]">delete</a>[[ } ]]</span></li>
+          <li class="[[= change.type ]]"><em class="[[= gainloss(change.total_delta) ]]">[[= sprintf("%+d", change.total_delta) ]]</em> cards in [[= change.type ]] <strong>[[= change.id ]]</strong> <span class="actions"><a href="#!/timeline/edit/[[= change.id ]]">edit</a>[[ if (change.type != 'import') { ]] | <a href="#!/timeline/delete/[[= change.id ]]">delete</a>[[ } ]]</span></li>
           [[ }); ]]
         </ul>
       </div>
@@ -1473,17 +1472,33 @@ var $BASE  = undefined,
 
 $(function () {
   console.log('retrieving personal details...');
-  $.ajax({
-    type: 'GET',
-    url:  '/v/whoami',
-    success: function (data) {
-      if (data.id) {
-        $('.-username').html(data.display);
-        $(document.body).attr('data-user-id', data.id)
-                        .attr('data-cohort',  data.cohort);
+  var $USER = {};
+  var session = (function () {
+    var cookies = document.cookie.split(/; */);
+    for (var i = 0; i < cookies.length; i++) {
+      var kv = cookies[i].split('=');
+      if (kv[0] == 'vcb_sesh') {
+        return kv[1];
       }
     }
-  });
+    return undefined;
+  })();
+
+  if (session) {
+    $.ajax({
+      type: 'POST',
+      url:  '/v1/whoami',
+      data: '"'+session+'"',
+      success: function (data) {
+        if (data.authenticated) {
+          $USER = data.authenticated;
+          $('.-username').html(data.authenticated.username);
+          $(document.body).attr('data-user-id', data.authenticated.uid)
+                          .attr('data-cohort',  'stable'); // FIXME
+        }
+      }
+    });
+  }
 
   var shim = {
     convert: function (src) {
@@ -1822,6 +1837,7 @@ $(function () {
         url:  '/v/logout',
         contentType: 'application/json',
         complete: function () {
+          $USER = {};
           document.cookie = 'vcb_sesh=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
           document.location.href = document.location.href.replace(/#.*/, '');
         }
@@ -1894,14 +1910,14 @@ $(function () {
       loading();
       $.ajax({
         type: 'GET',
-        url:  '/my/timeline',
+        url:  '/v1/collectors/'+$USER.uid+'/collections/_/transactions',
         success: function (data) {
           if (data.authn == 'required') {
             document.location.hash = '#!/login';
             return;
           }
           console.log(data);
-          $('#main').template('timeline', { changes: data });
+          $('#main').template('timeline', { changes: data.transactions });
         }
       });
       return;
@@ -2121,20 +2137,22 @@ $(function () {
     var $f = $(event.target);
     $('.oops').hide();
 
+    username = $f.find('[name=username]').val();
     $.ajax({
       type: 'POST',
-      url:  '/v/login',
+      url:  '/v1/authenticate',
       contentType: 'application/json',
       data: JSON.stringify({
-        username: $f.find('[name=username]').val(),
+        username: username,
         password: $f.find('[name=password]').val()
       }),
       success: function (data) {
-        if (data.ok) {
-          document.cookie = 'vcb_sesh='+data.user.session+';max-age=7776000;samesite=strict';
-          $('.-username').html(data.user.display);
-          $(document.body).attr('data-user-id', data.user.id)
-                          .attr('data-cohort',  data.user.cohort);
+        console.log(data.authenticated);
+        if (data.authenticated) {
+          document.cookie = 'vcb_sesh='+data.authenticated.session+';max-age=7776000;samesite=strict';
+          $('.-username').html(data.authenticated.username);
+          $(document.body).attr('data-user-id', data.authenticated.uid)
+                          .attr('data-cohort',  'stable'); // FIXME
           document.location.hash = '#!/q/owned';
           $(window).trigger('hashchange');
 
@@ -2206,14 +2224,13 @@ $(function () {
         $('.clarify').empty().append('<div class="ok">Everything looks good!  Updating  your collection...</div>');
 
         var data = $form.serializeObject(true);
-        data.occurred_at = data.occurred_at
-                         ? data.occurred_at.replace(/-/g, '')
-                         : strftime("%Y%m%d", new Date());
+        data.occurred_at = data.occurred_at || strftime("%Y-%m-%d", new Date());
 
         console.log(data.occurred_at);
+        var url = '/v1/collectors/'+$USER.uid+'/collections/_/transactions';
         $.ajax({
-          type: (data.id ? 'PUT'                  : 'POST'),
-          url:  (data.id ? '/my/changes/'+data.id : '/my/changes'),
+          type: (data.id ? 'PATCH'         : 'POST'),
+          url:  (data.id ? url+'/'+data.id : url),
           contentType: 'application/json',
           data: JSON.stringify(data),
           success: function () {

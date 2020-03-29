@@ -6,6 +6,8 @@
   };
 
   Clarifier.check = function (vif, options) {
+    options.ok.apply({}, []); // FIXME remove this once we get validation support server-side
+    return;                   // FIXME remove this once we get validation support server-side
     $.ajax({
       type: 'POST',
       url:  '/v/import/validate',
