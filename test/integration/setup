@@ -29,19 +29,27 @@ cargo run --bin cardboard -- rescry \
   --prices test/integration/fs/prices.json \
   --lookup test/integration/fs/lookup.json
 
+ok=no
 pg=$(cid vcbt=pg)
 echo "waiting 30s for postgres (container $pg) to come up..."
 n=300
 while [[ $n -gt 0 ]]; do
   if docker exec $pg psql -U postgres -c 'select 1;' > /dev/null 2>&1; then
-    exit 0
+    ok=yes
+    break
   fi
   n=$(( n - 1 ))
   sleep 0.1;
 
   if docker exec $pg psql -U postgres -c 'select 1;' > /dev/null 2>&1; then
-    exit 0
+    ok=yes
+    break
   fi
 done
-echo >&2 "psql did not come up fast enough...";
-exit 1
+if [[ $ok != "yes" ]]; then
+  echo >&2 "psql did not come up fast enough...";
+  exit 1
+fi
+
+cargo run --bin cardboard -- migrate
+exit 0

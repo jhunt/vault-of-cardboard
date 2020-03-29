@@ -278,14 +278,11 @@ impl Database {
 
     // Connect to a DSN (must be PostgreSQL) and run migrations.
     pub fn connect(pg: &str, rd: &str, fsroot: &Path) -> Result<Database> {
-        let db = Database {
+        Ok(Database {
             pg: PgConnection::establish(pg).chain_err(|| "unable to connect to database")?,
             rd: redis::Client::open(rd).chain_err(|| "unable to connect to session store")?,
             fs: FStore::new(fsroot),
-        };
-
-        embedded_migrations::run(&db.pg).chain_err(|| "failed to run database migrations")?;
-        Ok(db)
+        })
     }
 
     #[cfg(test)]
