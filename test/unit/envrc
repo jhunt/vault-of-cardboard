@@ -3,7 +3,7 @@
 export DOCKER_PG_PORT=9019
 export DOCKER_REDIS_PORT=9020
 
-export VCB_DATABASE_URL=postgres://postgres:@127.0.0.1:${DOCKER_PG_PORT}/postgres
+export VCB_DATABASE_URL=postgres://postgres:foo@127.0.0.1:${DOCKER_PG_PORT}/postgres
 export VCB_REDIS_URL=redis://127.0.0.1:${DOCKER_REDIS_PORT}
 # VCB_FS_ROOT is ignored
 

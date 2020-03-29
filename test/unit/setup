@@ -2,15 +2,16 @@
 set -eu
 
 cid() {
-  docker ps -f label="$1" --format '{{.ID}}'
+  docker ps -a -f label="$1" --format '{{.ID}}'
 }
 
 echo ">> starting postgres container on 127.0.0.1:${DOCKER_PG_PORT} ..."
 pg=$(cid vcbt=unit-pg)
 if [[ -n $pg ]]; then
+  echo ">> (first removing leftover container $pg...)"
   docker rm -f $pg
 fi
-docker run --rm -d -p ${DOCKER_PG_PORT}:5432 --label vcbt=unit-pg postgres
+docker run --rm -d -p ${DOCKER_PG_PORT}:5432 -e POSTGRES_PASSWORD=foo --label vcbt=unit-pg postgres
 
 echo ">> starting redis container on 127.0.0.1:${DOCKER_REDIS_PORT} ..."
 rd=$(cid vcbt=unit-redis)

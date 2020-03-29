@@ -11,7 +11,7 @@ if [[ -n $pg ]]; then
   echo ">> (first removing leftover container $pg...)"
   docker rm -f $pg
 fi
-docker run --rm -d -p ${DOCKER_PG_PORT}:5432 --label vcbt=pg postgres
+docker run --rm -d -p ${DOCKER_PG_PORT}:5432 -e POSTGRES_PASSWORD=foo --label vcbt=pg postgres
 
 echo ">> starting redis container on 127.0.0.1:${DOCKER_REDIS_PORT} ..."
 rd=$(cid vcbt=redis)
