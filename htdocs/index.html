@@ -8,67 +8,13 @@
 <link rel="stylesheet" type="text/css" href="/css/mana.min.css" />
 <link rel="stylesheet" type="text/css" href="/css/vcb.css" />
 </head>
-<body class="signed-in">
-<header>
-  <h1>Vault of Cardboard</h1>
-  <input name="q" placeholder="i.e.: Ral color:RU +draw" autocomplete="off">
-  <nav>
-    <li><a>Search</a>
-        <nav>
-          <li><a href="#!/docs">How do I search?</a></li>
-          <li><a href="#!/sets">What sets are there?</a></li>
-          <li class="separator"></li>
-          <li class="if-authed"><a href="#!/q/owned">My Collection</a></li>
-          <li class="if-authed"><a href="#!/q/own:2+">My Duplicates</a></li>
-          <li class="if-authed"><a href="#!/q/own:4+">My Playsets</a></li>
-          <li class="if-authed separator"></li>
-          <li><a href="#!/q/type:planeswalker">Planeswalkers</a></li>
-          <li><a href="#!/q/=mythic">Mythics</a></li>
-          <li><a href="#!/q/+gains? and +loses?">Life Gain + Loss</a></li>
-          <li><a href="#!/q/type:land and +damage">Pain Lands</a></li>
-          <li><a href="#!/q/usd:10+ and usd:400-">Expensive Cards</a></li>
-        </nav></li>
-    <li class="if-not-authed"><a href="#!/login" rel="login">Sign in</a></li>
-    <li class="if-authed"><a class="-username">Member</a>
-        <nav>
-          <li><a href="#!/timeline">My Collection</a></li>
-          <li class="cohort-preview"><a href="#!/decks">Decks</a></li>
-          <li><a href="#!/logout" rel="logout">Sign out</a></li>
-        </nav></li>
-  </nav>
-</header>
-<div class="colors"></div>
-
-<div id="main">
-  <div class="landing">
-    <div><img src="/img/front.png"></div>
-    <div>
-      <p>Whether you're putting together <a href="#!/q/type:sliver">that Sliver deck,</a>
-      seeking out <a href="#!/q/type:legendary and type:creature">your next Commander,</a>
-      or <a href="#!/q/Didgeridoo or type:Minotaur">just looking for some jank</a>,
-      <em>Vault of Cardboard</em> has got you covered.</p>
-
-      <p>With a <strong>powerful and flexible query language</strong> that lets you refine
-      queries until you find <em>exactly</em> what you're looking for, and a
-      <strong>buy / sell / trade</strong> model of <strong>collection management</strong>,
-      you'll never again wonder what you have or what you need.</p>
-
-      <footer>
-        Magic: The Gathering is a Trademark of Wizards of the Coast, Inc. and Hasbro, Inc.<br/>
-        Vault of Cardboard is Copyright &copy; 2020 <a href="https://jameshunt.us">James Hunt</a>
-      </footer>
-    </div>
-  </div>
-</div>
-
-
-<div class="modal-bg"></div>
-<div class="modal-fg"></div>
+<body>
+<div id="app"></div>
 
 <script type="text/html" id="template:loading"><!-- {{{ -->
   <div class="loading">
-    <h1>Loading...</h1>
-    <p class="marquee"></p>
+    <h1>Loading...</h1>foo
+    <p class="marquee" v-html="quotes[current]"></p>
   </div>
 </script><!-- }}} -->
 <script type="text/html" id="template:login"><!-- {{{ -->
@@ -233,101 +179,6 @@
            alt="[[= alt ]]" title="[[= alt ]]">
     </span>
   </span>
-</script><!-- }}} -->
-<script type="text/html" id="template:card-detail"><!-- {{{ -->
-  [[ var alt = _.card.name + ' [' + _.card.set.code + ']'; ]]
-  <div class="cardable" data-own="[[= _.owned ]]"><div>
-    <span class="card back"><img src="/img/mtgback.jpg"></span>
-    <span class="card face [[= _.card.layout]]">
-      [[ if (_.card.layout == 'transform') { ]]<a href="#" rel="flip"></a>[[ } ]]
-      <img data-id="[[= _.card.id ]]" alt="[[= alt ]]" title="[[= alt ]]">
-    </span>
-  </div></div>
-  [[# include('cardface', { card: _.card, noback: 1 }); ]]
-  <div class="detail">
-    <a class="close" href="#">X</a>
-    [[# <ul class="tags"><li>tag</li><li>control</li></ul> ]]
-    <ul class="info">
-      <li><strong>[[= _.card.name ]]</strong></li>
-      <li><em>[[= clean(_.card.type) ]]</em></li>
-      <li>[[= _.card.set.name ]] ([[= _.card.set.code ]])</li>
-      <li>#[[= _.card.number ]]/[[= _.card.set.total ]]</li>
-      <li>[[= colorize(_.card.color) ]]</li>
-      <li><strong>CMC:</strong> [[= _.card.cmc ]]</li>
-      <li>[[= flagged(_.card.flags, {
-                '1': 'common',
-                '2': 'uncommon',
-                '3': 'rare',
-                '4': 'mythic'
-              }, 'unknown rarity') ]]</li>
-    </ul>
-    <textarea style="display: none">[[= quotify(_.card.name, _.card.set, _.card.flavor) ]]</textarea>
-    <ul class="owned">
-      <li><strong>Owned:</strong> [[= _.card.owned.toString() ]]</li>
-      [[# <li><strong>Proxied:</strong> 1</li> ]]
-    </ul>
-    [[# <ul class="where">
-          <li>1 in <a href="#">Niv-Mizzet →</a></li>
-          <li>1 in <a href="#">ctl60 →</a></li>
-          <li>1 in <a href="#">Collection →</a></li>
-        </ul> ]]
-    <ul>
-      <li class="oracle"><p>[[= symbolize(clean(_.card.oracle)).replace(/\n/g, '</p><p>') ]]</p></li>
-    </ul>
-    [[ if (typeof(_.card.price) !== 'undefined') { ]]<p class="price">[[= price(_.card.price) ]]
-       [[= (_.card.price > 999 ? '<span class="w1">remember kids, M:tG is <strong>NOT</strong> an investment...</span>' :
-            _.card.price >  99 ? '<span class="w2">oof</span>' :
-            _.card.price >   9 ? '<span class="w3">that\'s a tad much, don\'t you think?</span>' : '') ]]
-    </p>[[ } ]]
-  </div>
-</script><!-- }}} -->
-<script type="text/html" id="template:results"><!-- {{{ -->
-  [[#
-      {results} - Main View Search Results
-  ]]
-<div class="search">
-  [[ if (_.oops) { ]]
-  <div class="oops">[[= _.q ]]: [[= _.oops ]]</div>
-  [[ } else { ]]
-  <div class="meta-results">found <span class="count">[[= _.results.length ]]</span> card[[= _.results.length == 1 ? '' : 's' ]].</div>
-  <div class="results grid">
-    [[
-      for (var i = 0; i < _.results.length && i < _.max; i++) {
-        include('cardface', { owned: _.results[i].owned,
-                              card:  _.results[i] });
-      }
-    ]]
-  </div>
-  [[ } ]]
-</div>
-</script><!-- }}} -->
-<script type="text/html" id="template:sets"><!-- {{{ -->
-  <div class="sets prose">
-    <h1>Currently Known Magic: the Gathering Sets</h1>
-    <p>These are all the M:tG sets that Vault of Cardboard knows about.
-    Most of these should have images.  If a set is missing, or missing its images,
-    please let us know!</p>
-    <table class="sets sortable listing">
-      <thead><tr>
-        <th></th>
-        <th class="sortable">Code</th>
-        <th class="sortable">Name</th>
-        <th class="sortable" data-sort-as="number">Release Date</th>
-        <th class="sortable" data-sort-as="number">Size</th>
-      </tr></thead>
-      <tbody>
-      [[ $.each(_.sets, function (i, set) { ]]
-        <tr>
-          <td><span class="ss ss-[[= set.code.toLowerCase() ]]"></span></td>
-          <td>[[= set.code ]]</td>
-          <td>[[= set.name ]]</td>
-          <td data-sort="[[= set.release ]]">[[= strftime("%B %Oe, %Y", dated(set.release)) ]]</td>
-          <td data-sort="[[= set.size ]]"><a href="#!/q/set:[[= set.code ]]">[[= set.size ]]</a></td>
-        </tr>
-      [[ }); ]]
-      </tbody>
-    </table>
-  </div>
 </script><!-- }}} -->
 <script type="text/html" id="template:docs"><!-- {{{ -->
   <div class="docs prose">
@@ -1381,9 +1232,517 @@
     imgroot: "//vault-of-cardboard.s3.amazonaws.com"
   };
 </script>
+<script src="https://vuejs.org/js/vue.js"></script>
 <script type="text/javascript" src="js/jquery.js"></script>
-<script type="text/javascript" src="js/lang.js"></script>
 <script type="text/javascript" src="js/util.js"></script>
+<script type="text/javascript">
+let Vault = {
+  cards: {},
+  sets: [],
+  index: {}
+};
+
+Vault.card = (id) => {
+  return Vault.index[id];
+};
+
+Vault.fetch = () => {
+  Vault.promise = fetch('/cards.json').then(response => {
+    if (!response.ok) {
+      throw new Wrror("unable to fetch card data from /cards.json!");
+    }
+    return response.json();
+  }).then(data => {
+    Vault.cards = Vault.convert(data);
+    Vault.sets = [];
+    for (var set in data.sets) {
+      Vault.sets.push({
+        name:    data.sets[set].name,
+        size:    data.sets[set].cards.length,
+        code:    data.sets[set].code,
+        release: data.sets[set].released_at.replace(/-/g, '')
+      });
+
+      Vault.cards[set].forEach(card => {
+        Vault.index[card.id] = card;
+      });
+    };
+  });
+
+  Vault.ready = (fn) => {
+    Vault.promise.then(fn);
+  };
+};
+
+Vault.convert = (data) => {
+  var out = {};
+  for (var code in data.sets) {
+    out[code] = [];
+    for (var i = 0; i < data.sets[code].cards.length; i++) {
+      var card = data.sets[code].cards[i];
+      out[code].push({
+        id        : card.id,
+        oid       : card.oid,
+        flags     : card.flags + data.cards[card.oid].legal, // this is new
+        artist    : card.artist,
+        layout    : card.layout,
+        // frame unused
+        number    : card.number,
+        // border unused
+
+        // for draft
+        rarity    : flagged(card.flags, {
+                        '1': 'common',
+                        '2': 'uncommon',
+                        '3': 'rare',
+                        '4': 'mythic'
+                      }, 'unknown rarity'),
+
+        image     : data.sets[code].code + "/" + data.sets[code].code + "-" + card.id + ".jpg",
+
+        name      : data.cards[card.oid].name,
+        type      : data.cards[card.oid].type_line,
+        oracle    : data.cards[card.oid].text,
+
+        cmc       : data.cards[card.oid].cmc,
+        cost      : data.cards[card.oid].mana_cost,
+        color     : data.cards[card.oid].color_identity.join(''),
+
+        price     : undefined, // we will backpatch this later, with prices.json data
+        owned     : 0,         // we will backpatch this later, with collection.json data
+
+        flavor    : card.flavor,
+        power     : data.cards[card.oid].power,
+        toughness : data.cards[card.oid].toughness,
+        pt        : (data.cards[card.oid].power && data.cards[card.oid].toughness
+                    ? data.cards[card.oid].power + "/" + data.cards[card.oid].toughness
+                    : ""),
+        art       : card.illustration,
+
+        back      : "", // FIXME - seems to be missing
+
+        set: {
+          name  : data.sets[code].name,
+          code  : data.sets[code].code,
+          total : data.sets[code].cards.length,
+        },
+      });
+    }
+  }
+  return out;
+};
+
+Vault.search = (q, n) => {
+  var query = Query.parse(q);
+
+  var found = [];
+  for (var set in Vault.cards) {
+    for (var i = 0; i < Vault.cards[set].length; i++) {
+      if (query.match(Vault.cards[set][i])) {
+        found.push(Vault.cards[set][i]);
+        n--;
+        if (n == 0) { break; }
+      }
+    }
+    if (n == 0) { break; }
+  }
+
+  found = found.sort(function (a, b) {
+    if (a.name > b.name) { return 1; }
+    if (a.name < b.name) { return -1; }
+    return 0;
+  });
+
+  return found;
+};
+
+Vault.fetch();
+</script>
+<script type="text/javascript">
+let UI = new Vue({
+  el: '#app',
+  data: {
+    // A session object, representing the currently authenticated
+    // collector.  Contains their username, personal details, and
+    // internal identifiers as sub-keys.
+    //
+    session: undefined,
+
+    mode: 'landing',
+    modal: false,
+
+    sets: [],
+
+    search: {},
+  },
+  methods: {
+    isSearching: (query) => {
+      UI.search.results = [];
+      UI.search.query = query;
+      UI.search.error = undefined;
+      UI.mode = 'loading';
+    },
+    colorBandStyle: (cards) => {
+      let colors = {};
+      cards.forEach(card => {
+        if (card.color == '') {
+          colors['C'] = (colors['C'] || 0) + 1;
+          colors.total = (colors.total || 0) + 1;
+        } else {
+          card.color.split('').forEach(color => {
+            colors[color] = (colors[color] || 0) + 1;
+            colors.total = (colors.total || 0) + 1;
+          });
+        }
+      });
+
+      var at = 0, n = 0, literal;
+      var css = 'linear-gradient(90deg';
+      'WUBRGC'.split('').forEach(color => {
+        if (!(color in colors)) { return; }
+        n++;
+        css += ', ';
+        switch (color) {
+        case 'W': literal = '#EEE6B5'; break;
+        case 'U': literal = '#375FB6'; break;
+        case 'B': literal = '#333333'; break;
+        case 'R': literal = '#AE4441'; break;
+        case 'G': literal = '#2F7A5B'; break;
+        case 'C': literal = '#CBC9C6'; break;
+        }
+        if (at > 0) {
+          css += ' '+at+'vw, ';
+        }
+        css += literal;
+        if (at > 0) {
+          css += ' '+at+'vw'
+        }
+        at += colors[color] / colors.total * 100.0;
+      });
+      css += ')';
+      if (n == 0) { literal = '#CBC9C6'; }
+      if (n <  2) { css = literal; }
+      return {
+        background: css,
+        visibility: 'visible',
+        height: '7px'
+      };
+    },
+  },
+  template: `
+<div id="app">
+  <header>
+    <h1>Vault of Cardboard</h1>
+    <input name="q" placeholder="i.e.: Ral color:RU +draw" autocomplete="off">
+    <nav>
+      <li><a>Search</a>
+        <nav>
+          <li><a href="#!/docs">How do I search?</a></li>
+          <li><a href="#!/sets">What sets are there?</a></li>
+          <li class="separator"></li>
+          <li v-if="session"><a href="#!/q/owned">My Collection</a></li>
+          <li v-if="session"><a href="#!/q/own:2+">My Duplicates</a></li>
+          <li v-if="session"><a href="#!/q/own:4+">My Playsets</a></li>
+          <li v-if="session" class="separator"></li>
+          <li><a href="#!/q/type:planeswalker">Planeswalkers</a></li>
+          <li><a href="#!/q/=mythic">Mythics</a></li>
+          <li><a href="#!/q/+gains? and +loses?">Life Gain + Loss</a></li>
+          <li><a href="#!/q/type:land and +damage">Pain Lands</a></li>
+          <li><a href="#!/q/usd:10+ and usd:400-">Expensive Cards</a></li>
+        </nav></li>
+      <li v-if="!session"><a href="#!/login" rel="login">Sign in</a></li>
+      <li v-if="session"><a class="-username">{{ session.username }}</a>
+        <nav>
+          <li><a href="#!/timeline">My Collection</a></li>
+          <li v-if="session.cohort == 'preview'"><a href="#!/decks">Decks</a></li>
+          <li><a href="#!/logout" rel="logout">Sign out</a></li>
+        </nav></li>
+    </nav>
+  </header>
+  <div v-if="mode == 'search' && search.results.length > 0"
+       class="colors" :style="colorBandStyle(search.results)"></div>
+  <div id="main">
+    <loading v-if="mode == 'loading'"></loading>
+    <card-grid
+      v-else-if="mode == 'search'"
+      v-bind:q="search.query"
+      v-bind:oops="search.error"
+      v-bind:cards="search.results"></card-grid>
+    <card-grid
+      v-else-if="mode == 'draft'"
+      v-bind:cards="draft.pack()"></card-grid>
+    <set-list
+      v-else-if="mode == 'sets'"
+      v-bind:sets="sets"></set-list>
+    <div v-else class="landing">
+      <div><img src="/img/front.png"></div>
+      <div>
+        <p>Whether you're putting together <a href="#!/q/type:sliver">that Sliver deck,</a>
+        seeking out <a href="#!/q/type:legendary and type:creature">your next Commander,</a>
+        or <a href="#!/q/Didgeridoo or type:Minotaur">just looking for some jank</a>,
+        <em>Vault of Cardboard</em> has got you covered.</p>
+
+        <p>With a <strong>powerful and flexible query language</strong> that lets you refine
+        queries until you find <em>exactly</em> what you're looking for, and a
+        <strong>buy / sell / trade</strong> model of <strong>collection management</strong>,
+        you'll never again wonder what you have or what you need.</p>
+
+        <footer>
+          Magic: The Gathering is a Trademark of Wizards of the Coast, Inc. and Hasbro, Inc.<br/>
+          Vault of Cardboard is Copyright &copy; 2020 <a href="https://jameshunt.us">James Hunt</a>
+        </footer>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-bg" v-if="modal"></div>
+  <card-detail
+    v-if="modal"
+    v-bind:card="modalfg.card"></card-detail>
+</div>
+`
+});
+
+Vue.component('loading', {
+  data: () => {
+    return {
+      quotes: [
+        /* flavor:canto or flavor:"Song" */
+        /* Arbor Armament (DOM) */
+        "<blockquote>&ldquo;Llanowar's boughs are ever ready<br>To unleash an autumn of steel leaves.&rdquo;<cite>&mdash;&ldquo;Song of Freyalise&rdquo;</cite></blockquote>",
+
+        /* Blinding Light (MIR) */
+        "<blockquote>&ldquo;My shield will bear a shining sun so you will always be with me. / Inlaid with gold, it will shine like glowing embers.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+        /* Chariot of the Sun (MIR) */
+        "<blockquote>&ldquo;Sun follows Moon until she tires, then carries her until she's strong / and runs ahead of him again.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+        /* Congregate (A25) */
+        "<blockquote>&ldquo;In the gathering there is strength for all who founder, renewal for all who languish, love for all who sing.&rdquo;<cite>&mdash;Song of All, canto 642</cite></blockquote>",
+
+        /* Defensive Formation (USG) */
+        "<blockquote>&ldquo;Your enemies will pound upon the door of your defenses, but only you shall have the key, and it is the key of life.&rdquo;<cite>&mdash;Song of All, canto 873</cite></blockquote>",
+
+        /* Disenchant (A25) */
+        "<blockquote>&ldquo;The tools of evil are mere things. And like all things, they cannot last forever.&rdquo;<cite>&mdash;Song of All, canto 881</cite></blockquote>",
+
+        /* Early Harvest (MIR) */
+        "<blockquote>&ldquo;Tonight we'll eat a farewell feast. Cold corn porridge is not enough. / Let's peel papayas, pineapples, and mangoes, drink coconut milk, / and bake bananas.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+        /* Femeref Knight (MIR) */
+        "<blockquote>&ldquo;I will return / with lizard skins for your sandals. Paint your eyes black and wait for me.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+        /* Flare (MIR) */
+        "<blockquote>&ldquo;In the forest, fires light the sky as black clouds unfold their weight.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+        /* Invoke the Divine (DOM) */
+        "<blockquote>&ldquo;Let go of all that harms you. Cast your burdens into the darkness, and build for the faithful a house of light.&rdquo;<cite>&mdash;Song of All, canto 1008</cite></blockquote>",
+
+        /* Kukemssa Pirates (MIR) */
+        "<blockquote>&ldquo;. . . pirates gambled with a djinn and lost the thing more dear than gold.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+        /* On Serra's Wings (DOM) */
+        "<blockquote>&ldquo;The spirit of Serra raised Brindri high and commanded her to keep the balance.&rdquo;<cite>&mdash;Song of All, canto 524</cite></blockquote>",
+
+        /* Pegasus Charger (USG) */
+        "<blockquote>&ldquo;The clouds came alive and dove to the earth! Hooves flashed among the dark army, who fled before the spectacle of fury.&rdquo;<cite>&mdash;Song of All, canto 211</cite></blockquote>",
+
+        /* Planar Birth (USG) */
+        "<blockquote>&ldquo;From womb of nothingness sprang this place of beauty, purity, and hope realized.&rdquo;<cite>&mdash;Song of All, canto 3</cite></blockquote>",
+
+        /* Sacred Mesa (MIR) */
+        "<blockquote>&ldquo;Do not go there, do not go / unless you rise on wings, unless you walk on hooves.&rdquo;<cite>&mdash;&ldquo;Song to the Sun,&rdquo; Femeref song</cite></blockquote>",
+
+        /* Serra Avenger (TSP) */
+        "<blockquote>&ldquo;Those who endure in the face of suffering, those whose faith shines long in evil days, they shall see salvation.&rdquo;<cite>&mdash;Song of All, canto 904</cite></blockquote>",
+
+        /* Serra's Embrace (USG) */
+        "<blockquote>&ldquo;Lifted beyond herself, for that battle Brindri was an angel of light and fury.&rdquo;<cite>&mdash;Song of All, canto 524</cite></blockquote>",
+
+        /* Unfulfilled Desires (MIR) */
+        "<blockquote>&ldquo;Like Day from Night, / I'll live my life apart from you, just glimpsing you across the sky, / because you cannot change, my dear, and nor can I.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+        /* Village Elder (MIR) */
+        "<blockquote>&ldquo;Enchant me with your tale-telling. Tell about Tree, Grass, River, and Wind. / Tell why Truth must fight with Falsehood, and why Truth will always win.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+        /* Voice of Grace (USG) */
+        "<blockquote>&ldquo;Opposite Law is Grace, and Grace must be preserved. If the strands of Grace are unraveled, its design will be lost, and the people with it.&rdquo;<cite>&mdash;Song of All, canto 167</cite></blockquote>",
+
+        /* Voice of Law (USG) */
+        "<blockquote>&ldquo;Life's balance is as a star: on one point is Law, and Law must be upheld. If the knots of order are loosened, chaos will spill through.&rdquo;<cite>&mdash;Song of All, canto 167</cite></blockquote>",
+
+        /* Wild Elephant (MIR) */
+        "<blockquote>&ldquo;I will tell my father's stories . . . . How the elephants trampled the leopard cub, and its father, though he knew, killed nine goats instead.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+        /* Wildgrowth Walker (XLN) */
+        "<blockquote>&ldquo;Hear me, stone, root, branch: be the fist of this land. Turn back those who trample upon your domain.&rdquo;<cite>&mdash;Song of the Shaper</cite></blockquote>",
+
+        /* Zebra Unicorn (MIR) */
+        "<blockquote>&ldquo;I'll capture gentle zebras / for your steeds and fill the stable with every kind of unicorn.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>",
+
+        /* Zhalfirin Knight (MIR) */
+        "<blockquote>&ldquo;You returned a warrior. . . . Your hair was cut, your eye tattooed with the red triangle of war.&rdquo;<cite>&mdash;&ldquo;Love Song of Night and Day&rdquo;</cite></blockquote>"
+      ],
+      current: 0,
+      next:    1,
+    };
+  },
+  mounted() {
+    var self = this;
+    window.setInterval(() => { self.advance(); }, 7700);
+    this.next = parseInt(Math.random() * this.quotes.length);
+    this.advance();
+  },
+  methods: {
+    advance() {
+      this.current = this.next;
+      this.next = parseInt(Math.random() * (this.quotes.length - 1));
+      if (this.next >= this.current) {
+        this.next++;
+      }
+    }
+  },
+  template: `
+<div class="loading">
+  <h1>Loading...</h1>
+  <p class="marquee" v-html="quotes[current]"></p>
+</div>
+`
+});
+
+Vue.component('set-list', {
+  props: ['sets'],
+  mounted() {
+    $('#main table.sortable').sortableTable();
+  },
+  methods: {
+    dated:    dated,
+    strftime: strftime,
+  },
+  template: `
+<div class="sets prose">
+  <h1>Currently Known Magic: the Gathering Sets</h1>
+  <p>These are all the M:tG sets that Vault of Cardboard knows about.
+  Most of these should have images.  If a set is missing, or missing its images,
+  please let us know!</p>
+  <table class="sets sortable listing">
+    <thead><tr>
+      <th></th>
+      <th class="sortable">Code</th>
+      <th class="sortable">Name</th>
+      <th class="sortable" data-sort-as="number">Release Date</th>
+      <th class="sortable" data-sort-as="number">Size</th>
+      <th></th>
+    </tr></thead>
+    <tbody>
+      <tr v-for="set in sets"
+          v-bind:key="set.code"
+          v-bind:set="set">
+        <td><span :class="'ss ss-' + set.code.toLowerCase()"></span></td>
+        <td>{{ set.code }}</td>
+        <td>{{ set.name }}</td>
+        <td :data-sort="set.release">{{ strftime("%B %Oe, %Y", dated(set.release)) }}</td>
+        <td :data-sort="set.size"><a :href="'#!/q/set:' + set.code">{{ set.size }}</a></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+`
+})
+Vue.component('card-grid', {
+  props: ['q', 'oops', 'cards'],
+  template: `
+<div class="search">
+  <div v-if="oops" class="oops">{{ q }}: {{ oops }}</div>
+  <div v-if="q" class="meta-results">found <span class="count">{{ cards.length }}</span> card{{ cards.length == 1 ? '' : 's' }}.</div>
+  <div class="results grid">
+    <card
+      v-for="card in cards"
+      v-bind:key="card.id"
+      v-bind:card="card"></card>
+  </div>
+</div>
+`
+});
+
+Vue.component('card', {
+  props: ['card'],
+  data: () => {
+    return {
+      imgroot: $CONFIG.imgroot,
+    };
+  },
+  template: `
+<span :data-own="card.owned">
+  <span class="card back"><img src="/img/mtgback.jpg"></span>
+  <span :class="'card face ' + card.layout">
+    <a v-if="card.layout == 'transform'" href="#" rel="flip"></a>
+    <img :data-id="card.id" :src="imgroot + '/cards/' + card.image"
+         :alt="card.name + ' [' + card.set.code + ']'"
+         :title="card.name + ' [' + card.set.code + ']'"
+         :data-flip-src="imgroot + '/cards/' + card.back">
+  </span>
+</span>
+`
+});
+
+Vue.component('card-detail', {
+  props: ['card'],
+  data: () => {
+    return {
+      imgroot: $CONFIG.imgroot,
+    };
+  },
+  methods: {
+    colorize: colorize,
+    oracle: (card) => {
+      return symbolize(card.oracle).replace(/\n/g, '</p></p>');
+    }
+  },
+  template: `
+<div class="modal-fg">
+  <div class="cardable">
+
+  </div>
+  <div class="cardable" :data-own="card.owned"><div>
+    <span class="card back"><img src="/img/mtgback.jpg"></span>
+    <span :class="'card face ' + card.layout">
+      <a v-if="card.layout == 'transform'" href="#" rel="flip"></a>
+      <img :data-id="card.id" :src="imgroot + '/cards/' + card.image"
+           :alt="card.name + ' [' + card.set.code + ']'"
+           :title="card.name + ' [' + card.set.code + ']'"
+           :data-flip-src="imgroot + '/cards/' + card.back">
+    </span>
+  </div></div>
+  <div class="detail">
+    <a class="close" href="#">X</a>
+    <ul class="info">
+      <li><strong>{{ card.name }}</strong></li>
+      <li><em>{{ card.type }}</em></li>
+      <li>{{ card.set.name }} ({{ card.set.code }})</li>
+      <li>#{{ card.number }}/{{ card.set.total }}</li>
+      <li v-html="colorize(card.color)"></li>
+      <li><strong>CMC:</strong> {{ card.cmc }}</li>
+      <li>{{ card.rarity }}</li>
+    </ul>
+    <ul class="owned">
+      <li><strong>Owned:</strong> {{ card.owned }}</li>
+    </ul>
+    <ul>
+      <li class="oracle"><p v-html="oracle(card)"></p></li>
+    </ul>
+    <p v-if="card.price" class="price">
+      {{ price(card.price) }}
+      <span v-if="card.price > 999" class="w1">remember kids, M:tG is <strong>NOT</strong> an investment...</span>
+      <span v-else-if="card.price > 99" class="w2">oof</span>
+      <span v-else-if="card.price > 9" class="w3">that's a bit much, don't you think?</span>
+    </p>
+  </div>
+</div>
+`
+});
+</script>
+<script type="text/javascript" src="js/lang.js"></script>
 <script type="text/javascript" src="js/table.js"></script>
 <script type="text/javascript" src="js/lens.js"></script>
 <script type="text/javascript" src="js/forms.js"></script>
@@ -1431,43 +1790,7 @@ function tparse(d) { // {{{
   return d;
 } // }}}
 
-function yyyymmdd(d) {
-  var yyyy = (d.getUTCFullYear()).toString(),
-        mm = (d.getUTCMonth() + 1).toString(),
-        dd = (d.getUTCDate()).toString();
-
-  if (mm.length == 1) { mm = "0"+mm; }
-  if (dd.length == 1) { dd = "0"+dd; }
-  return yyyy+mm+dd;
-}
-
-function dated(yyyymmdd, unknown) {
-  yyyymmdd = (yyyymmdd || '').toString();
-  if (yyyymmdd.length == 4) { yyyymmdd += '0101'; }
-  if (yyyymmdd.length == 6) { yyyymmdd +=   '01'; }
-  if (yyyymmdd.length != 8) { return unknown; }
-
-  var dd   =  yyyymmdd                        % 100;
-  var mm   = (yyyymmdd -          dd) /   100 % 100;
-  var yyyy = (yyyymmdd - mm*100 - dd) / 10000;
-  return new Date(yyyy, mm - 1, dd);
-}
-
-function datev(yyyymmdd) {
-  return strftime('%Y-%m-%d', dated(yyyymmdd));
-}
-
-function colorize(s) {
-  var c = s.split("");
-  for (var i = 0; i < c.length; i++) {
-    c[i] = '<span class="ms ms-'+c[i].toLowerCase()+' ms-cost"></span>';
-  }
-  return c.join('');
-}
-
 var $BASE  = undefined,
-    $CARDS = undefined,
-    $SETS  = undefined,
     $INDEX = {};
 
 $(function () {
@@ -1552,69 +1875,6 @@ $(function () {
     }
   };
 
-  var $ONCARD = undefined;
-  console.log('retrieving full card set data (/cards.json)...');
-  $.ajax({
-    type: 'GET',
-    url:  '/cards.json',
-    success: function (data) {
-      console.log('card data retrieved successfully!');
-
-      $BASE  = shim.convert(data);
-      $.ajax({
-        type: 'GET',
-        url:  '/prices.json',
-        success: function (data) {
-          console.log("ingesting pricing data");
-          for (var set in $BASE) {
-            for (var i = 0; i < $BASE[set].length; i++) {
-              if ($BASE[set][i].id in data) {
-                $BASE[set][i].price = parseFloat(data[$BASE[set][i].id]);
-              }
-            }
-          }
-          console.log("pricing data updated");
-        }
-      });
-      $INDEX = {};
-
-      console.log('indexing cards...');
-      for (var set in $BASE) {
-        for (var i = 0; i < $BASE[set].length; i++) {
-          $BASE[set][i].owned = 0;
-          $BASE[set][i].decks = {};
-          $INDEX[$BASE[set][i].id] = $BASE[set][i];
-        }
-      }
-      console.log('indexing complete!');
-
-      if ($ONCARD) {
-        console.log('chaining to the oncard function...');
-        var fn = $ONCARD;
-        $ONCARD = undefined;
-        fn.call();
-      }
-    }
-  });
-
-  var $ONSET = undefined;
-  console.log('retrieving full set data (/sets.json)...');
-  $.ajax({
-    type: 'GET',
-    url:  '/sets.json',
-    success: function (data) {
-      console.log('set data retrieved successfully!');
-
-      $SETS = data;
-      if ($ONSET) {
-        console.log('chaining to the onset function...');
-        var fn = $ONSET;
-        $ONSET = undefined;
-        fn.call();
-      }
-    }
-  });
-
   function search(q) {
     console.log('triggering search handler...');
     if (q) {
@@ -1622,46 +1882,6 @@ $(function () {
     } else {
       $('input[name=q]').trigger('change');
     }
-  }
-
-  function refreshCollection(then) {
-    console.log('attempting to refresh collection...');
-
-    $.ajax({
-      type: 'GET',
-      url:  '/my/collection.json',
-      success: function (cards) {
-        if (cards.error) {
-          console.log('/my/collection.json failed: %s', cards.error);
-          return;
-        }
-
-        $CARDS = $BASE;
-        $INDEX = {};
-
-        console.log('indexing cards (against collection)...');
-        for (var set in $CARDS) {
-          for (var i = 0; i < $CARDS[set].length; i++) {
-            $CARDS[set][i].owned = 0;
-            $CARDS[set][i].decks = {};
-            if (set in cards && $CARDS[set][i].name in cards[set]) {
-              $CARDS[set][i].owned = cards[set][$CARDS[set][i].name];
-            }
-            if (cards._decked && $CARDS[set][i].name in cards._decked) {
-              for (var deck in cards._decked[$CARDS[set][i].name]) {
-                $CARDS[set][i].decks[deck.toLowerCase()] = 1;
-              }
-            }
-            $INDEX[$CARDS[set][i].id] = $CARDS[set][i];
-          }
-        }
-
-        if (then) {
-          console.log('chain-executing post-search callback function...');
-          then.call();
-        }
-      }
-    });
   }
 
   function loading() {
@@ -1798,17 +2018,11 @@ $(function () {
     }
 
     if (sub == "sets") {
-      var thunk = function () {
+      Vault.ready(() => {
         topify();
-        $('#main').template('sets', { sets: $SETS });
-        $('#main table.sortable').sortableTable();
-
-      };
-      if (!$SETS) {
-        $ONSET = thunk;
-      } else {
-        thunk();
-      }
+        UI.sets = Vault.sets;
+        UI.mode = 'sets';
+      });
     }
 
     if (sub == "docs") {
@@ -1848,26 +2062,12 @@ $(function () {
     if (sub.match(/^draft(\/.*)?$/)) {
       var set = sub.replace(/^draft\//, '').toUpperCase();
           set = set.replace(/\/.*/, '');
-      if (!$BASE) {
-        console.log('BASE collection not yet loaded; registering $ONCARD event handler...');
-        $ONCARD = function () {
-          console.log('$ONCARD handler fired... refreshing collection and then proceeded with search for %s', q);
 
-          if (!$CARDS) { $CARDS = $BASE; }
-
-          if (!(set in $CARDS)) { set = 'M19'; }
-          var draft = new Draft({}, $CARDS[set]);
-          $('#main').empty().template('results', { results: draft.pack(), max: 100 });
-        };
-        loading();
-        return;
-      }
-
-      if (!$CARDS) { $CARDS = $BASE; }
-
-      if (!(set in $CARDS)) { set = 'M19'; }
-      var draft = new Draft({}, $CARDS[set]);
-      $('#main').empty().template('results', { results: draft.pack(), max: 100 });
+      UI.mode = 'loading';
+      Vault.ready(() => {
+        UI.mode = "draft";
+        UI.draft = new Draft({}, Vault.cards[set]);
+      });
       return;
     }
 
@@ -1964,91 +2164,22 @@ $(function () {
 
     if (sub.match(/^q\/./)) {
       var q = decodeURIComponent(sub.replace(/^q\//, ''));
-      $('input[name="q"]').val(q);
+      $('input[name="q"]').val(q); // FIXME
+
+      UI.isSearching(q);
       console.log('search requested, for (%s)', q);
-      if (!$BASE) {
-        console.log('BASE collection not yet loaded; registering $ONCARD event handler...');
-        $ONCARD = function () {
-          console.log('$ONCARD handler fired... refreshing collection and then proceeded with search for %s', q);
-          search(q);
-          //refreshCollection(function () { search(q); });
-        };
-        loading();
-        return;
-      }
+      Vault.ready(() => {
+        try {
+          results = Vault.search(q);
+          console.dir(results);
+          UI.search.results = results;
+          UI.mode = 'search';
 
-      if (!$CARDS) { $CARDS = $BASE; }
-
-      var query, n = 50000;
-      try {
-        console.log('parsing query: ', q);
-        query = Query.parse(q);
-      } catch (e) {
-        $('#main').template('results', { q: q, oops: e.toString() });
-        return;
-      }
-
-      var found = [];
-      var colors = {};
-      for (var set in $CARDS) {
-        for (var i = 0; i < $CARDS[set].length; i++) {
-          var card = $CARDS[set][i];
-          if (query.match(card)) {
-            found.push(card);
-            if (card.color == '') {
-              colors['C'] = (colors['C'] || 0) + 1;
-              colors.total = (colors.total || 0) + 1;
-            } else {
-              $.each(card.color.split(''), function (j, color) {
-                colors[color] = (colors[color] || 0) + 1;
-                colors.total = (colors.total || 0) + 1;
-              });
-            }
-            n--;
-            if (n == 0) { break; }
-          }
+        } catch (e) {
+          UI.mode = 'search';
+          UI.search.error = e.toString();
         }
-        if (n == 0) { break; }
-      }
-
-      var at = 0, n = 0, colorliteral;
-      var css = 'linear-gradient(90deg';
-      $.each('WUBRGC'.split(''), function (j, color) {
-        if (!(color in colors)) { return; }
-        n++;
-        css += ', ';
-        switch (color) {
-        case 'W': colorliteral = '#EEE6B5'; break;
-        case 'U': colorliteral = '#375FB6'; break;
-        case 'B': colorliteral = '#333333'; break;
-        case 'R': colorliteral = '#AE4441'; break;
-        case 'G': colorliteral = '#2F7A5B'; break;
-        case 'C': colorliteral = '#CBC9C6'; break;
-        }
-        if (at > 0) {
-          css += ' '+at+'vw, ';
-        }
-        css += colorliteral;
-        if (at > 0) {
-          css += ' '+at+'vw'
-        }
-        at += colors[color] / colors.total * 100.0;
       });
-      css += ')';
-      if (n == 0) { colorliteral = '#CBC9C6'; }
-      if (n <  2) { css = colorliteral; }
-      $('body > .colors').css({background: css, visibility: found.length == 0 ? 'hidden' : 'visible'});
-      found = found.sort(function (a, b) {
-        if (a.name > b.name) { return 1; }
-        if (a.name < b.name) { return -1; }
-        return 0;
-      });
-
-      $('#main').template('results', {
-        q:       q,
-        max:     400,
-        results: found,
-      }, true)
       return;
     }
   }
@@ -2324,15 +2455,10 @@ $(function () {
     }
   })
   .on('click', '.results .face img', function (event) {
-    var id   = $(event.target).closest('[data-id]').attr('data-id'),
-        card = $INDEX[id],
-        img  = $(event.target).closest('img');
-
-    window.$current = card;
-    $('.modal-fg').empty().append($.template('card-detail', { card: card }));
-    $('.modal-fg .face img').attr('src',           img.attr('src'))
-                            .attr('data-flip-src', img.attr('data-flip-src'));
-    $('.modal-bg, .modal-fg').show();
+    var id = $(event.target).closest('[data-id]').attr('data-id');
+    console.log(id, Vault.card(id));
+    UI.modalfg = { card: Vault.card(id) };
+    UI.modal = true;
   })
   .on('click', '.oops ul a[href="#more"]', function (event) {
     event.preventDefault();
@@ -2341,9 +2467,11 @@ $(function () {
   })
   .on('click', '.modal-fg a.close', function (event) {
     event.preventDefault();
-    $('.modal-bg, .modal-fg').hide();
+    UI.modal = false;
   })
 });
+</script>
+<script type="text/javascript">
 </script>
 </body>
 </html>
