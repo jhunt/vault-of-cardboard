@@ -897,7 +897,7 @@ Vue.component('login', {
     or <a href="#!/q/Didgeridoo or type:Minotaur">just looking for some jank</a>,
     <em>Vault of Cardboard</em> has got you covered.</p>
 
-    <form id="login" v-on:submit="authenticate(username, password)">
+    <form id="login" @submit="authenticate(username, password)">
       <div class="oops" v-if="error == 'authentication-failed'">
         Invalid username or password.
       </div>
@@ -985,8 +985,8 @@ Vue.component('set-list', {
     </tr></thead>
     <tbody>
       <tr v-for="set in sets"
-          v-bind:key="set.code"
-          v-bind:set="set">
+          :key="set.code"
+          :set="set">
         <td><span :class="'ss ss-' + set.code.toLowerCase()"></span></td>
         <td>{{ set.code }}</td>
         <td>{{ set.name }}</td>
@@ -1007,8 +1007,8 @@ Vue.component('card-grid', {
   <div class="results grid">
     <card
       v-for="card in cards"
-      v-bind:key="card.id"
-      v-bind:card="card"></card>
+      :key="card.id"
+      :card="card"></card>
   </div>
 </div>
 `
@@ -1311,21 +1311,21 @@ let UI = new Vue({
       :error="error"></login>
     <card-grid
       v-else-if="mode == 'search'"
-      v-bind:q="search.query"
-      v-bind:oops="search.error"
-      v-bind:cards="search.results"></card-grid>
+      :q="search.query"
+      :oops="search.error"
+      :cards="search.results"></card-grid>
     <card-grid
       v-else-if="mode == 'draft'"
-      v-bind:cards="draft.pack()"></card-grid>
+      :cards="draft.pack()"></card-grid>
     <set-list
       v-else-if="mode == 'sets'"
-      v-bind:sets="sets"></set-list>
+      :sets="sets"></set-list>
     <docs
       v-else-if="mode == 'docs'"
       :docs="docs"></docs>
     <changelog
       v-else-if="mode == 'changelog'"
-      v-bind:changes="changes"></changelog>
+      :changes="changes"></changelog>
     <div v-else class="landing">
       <div><img src="/img/front.png"></div>
       <div>
@@ -1347,7 +1347,7 @@ let UI = new Vue({
   <div class="modal-bg" v-if="modal"></div>
   <card-detail
     v-if="modal"
-    v-bind:card="modalfg.card"></card-detail>
+    :card="modalfg.card"></card-detail>
 </div>
 `
 });
