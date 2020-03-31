@@ -554,11 +554,23 @@
 <script src="https://vuejs.org/js/vue.js"></script>
 <script type="text/javascript" src="js/jquery.js"></script>
 <script type="text/javascript" src="js/util.js"></script>
+<script type="text/javascript" src="js/lang.js"></script>
+<script type="text/javascript" src="js/table.js"></script>
+<script type="text/javascript" src="js/lens.js"></script>
+<script type="text/javascript" src="js/forms.js"></script>
+<script type="text/javascript" src="js/diff.js"></script>
+<script type="text/javascript" src="js/clarify.js"></script>
+<script type="text/javascript" src="js/play.js"></script>
+<script type="text/javascript" src="js/draft.js"></script>
+<script type="text/javascript" src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.js"></script>
 <script type="text/javascript">
 let Vault = {
   cards: {},
   sets: [],
   index: {},
+
+  fuse: undefined,
 
   changelog: {
     changes: [],
@@ -570,6 +582,37 @@ Vault.card = (id) => {
   return Vault.index[id];
 };
 
+Vault.clarify = (set, name) => {
+  if (set in Vault.cards) {
+    for (let i = 0; i < Vault.cards[set].length; i++) {
+      let card = Vault.cards[set][i];
+      if (card.name == name) {
+        return card;
+      }
+    }
+  }
+
+  let tier1 = [];
+  let tier2 = [];
+  let search = Vault.fuse.search(name);
+  for (let i = 0; i < search.length; i++) {
+    let ref = {
+      set   : search[i].item.set,
+      name  : search[i].item.name,
+      id    : search[i].item.id,
+      score : search[i].score
+    };
+    if (set && search[i].set == set) {
+      ref.type = 'in-set';
+      tier1.push(ref);
+    } else {
+      ref.type = 'global';
+      tier2.push(ref);
+    }
+  }
+  return tier1.length > 0 ? tier1 : tier2;
+};
+
 Vault.fetch = () => {
   Vault.promise = fetch('/cards.json').then(response => {
     if (!response.ok) {
@@ -577,6 +620,7 @@ Vault.fetch = () => {
     }
     return response.json();
   }).then(data => {
+    let results = [];
     Vault.cards = Vault.convert(data);
     Vault.sets = [];
     for (var set in data.sets) {
@@ -589,6 +633,17 @@ Vault.fetch = () => {
 
       Vault.cards[set].forEach(card => {
         Vault.index[card.id] = card;
+        results.push({
+          set:  set,
+          name: card.name,
+          id:   card.id
+        });
+      });
+
+      Vault.fuse = new Fuse(results, {
+        keys: ['name'],
+        includeScore: true,
+        threshold: 0.4
       });
     };
   });
@@ -604,6 +659,27 @@ Vault.fetch = () => {
     throw new Error('failed to get changelog...');
   }).then((data) => {
     Vault.changelog.changes = data.changelog;
+  });
+};
+
+Vault.fetch_collection = (uid) => {
+  Vault.promise = Vault.promise.then(() => {
+    fetch('/collectors/'+uid+'/collections/_/collection.json').then((response) => {
+      if (response.ok) {
+        return response.json();
+      }
+      throw new Error('failed to get changelog...');
+    }).then((data) => {
+      data.forEach((subset) => {
+        subset.forEach((info) => {
+          if (info.length == 0) { return; }
+          let n = info[0];
+          let id = info[1].pid;
+          Vault.index[id].owned += n;
+        });
+      });
+      Vault.collection = data;
+    });
   });
 };
 
@@ -690,17 +766,8 @@ Vault.search = (q, n) => {
 };
 
 Vault.fetch();
-</script>
-<script type="text/javascript" src="js/lang.js"></script>
-<script type="text/javascript" src="js/table.js"></script>
-<script type="text/javascript" src="js/lens.js"></script>
-<script type="text/javascript" src="js/forms.js"></script>
-<script type="text/javascript" src="js/diff.js"></script>
-<script type="text/javascript" src="js/clarify.js"></script>
-<script type="text/javascript" src="js/play.js"></script>
-<script type="text/javascript" src="js/draft.js"></script>
-<script type="text/javascript" src="config.js"></script>
-<script type="text/javascript">
+
+
 Vue.component('copyright-footer', {
   data: () => { return {}; },
   template: `
@@ -1085,11 +1152,15 @@ let UI = new Vue({
 
     sets: [],
 
-    search: {},
+    search: {
+      results: []
+    },
 
     docs: undefined,
 
-    changes: []
+    changes: [],
+
+    Vault: Vault
   },
   mounted() {
     var session = (function () {
@@ -1110,9 +1181,9 @@ let UI = new Vue({
         return response.json();
       }).then((data) => {
         UI.session = data.authenticated;
+        Vault.fetch_collection(UI.session.uid);
       });
     }
-
   },
   methods: {
     logout() {
@@ -1197,7 +1268,7 @@ let UI = new Vue({
       }
       document.title = "VCB :: `"+q+"`";
       UI.redraw('loading');
-      UI.search = { query: q };
+      UI.search = { query: q, results: [] };
       UI.withVault((v) => {
         try {
           UI.search.results = v.search(q);
@@ -1374,8 +1445,7 @@ function tparse(d) { // {{{
   return d;
 } // }}}
 
-var $BASE  = undefined,
-    $INDEX = {};
+var $INDEX = {};
 
 $(function () {
   function goto(sub) {
