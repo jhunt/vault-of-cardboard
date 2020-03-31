@@ -1176,6 +1176,16 @@ let UI = new Vue({
           UI.redraw('sets');
         });
 
+      } else if (sub.match(/^draft(\/.*)?$/)) {
+        var set = sub.replace(/^draft\//, '')
+                     .replace(/\/.*/, '')
+                     .toUpperCase();
+        UI.redraw('loading');
+        Vault.ready(() => {
+          UI.draft = new Draft({}, Vault.cards[set]).pack();
+          UI.redraw('draft');
+        });
+
       } else if (sub.match(/^q\/./)) {
         UI.doSearch(decodeURIComponent(sub.replace(/^q\//, '')), false);
       }
@@ -1290,7 +1300,7 @@ let UI = new Vue({
       :cards="search.results"></card-grid>
     <card-grid
       v-else-if="mode == 'draft'"
-      :cards="draft.pack()"></card-grid>
+      :cards="draft"></card-grid>
     <set-list
       v-else-if="mode == 'sets'"
       :sets="sets"></set-list>
@@ -1375,18 +1385,6 @@ $(function () {
 
       $('#main').template('play');
       new TabletopAlpha(id, $('#main .play'));
-      return;
-    }
-
-    if (sub.match(/^draft(\/.*)?$/)) {
-      var set = sub.replace(/^draft\//, '').toUpperCase();
-          set = set.replace(/\/.*/, '');
-
-      UI.mode = 'loading';
-      Vault.ready(() => {
-        UI.mode = "draft";
-        UI.draft = new Draft({}, Vault.cards[set]);
-      });
       return;
     }
 

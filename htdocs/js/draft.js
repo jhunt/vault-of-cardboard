@@ -28,7 +28,9 @@
       console.log('unable to satisfy request for random card of rarity level "%s":', rarity, this.cards);
       return undefined;
     }
-    return this.cards[rarity][i];
+    let card = this.cards[rarity][i];
+    this.cards[rarity].splice(i,1);
+    return card;
   };
 
   Draft.prototype.pack = function () {
