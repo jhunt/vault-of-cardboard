@@ -3,6 +3,9 @@ TAG     ?= dev
 
 default: test
 
+htdocs/changelog.json: changelog.yml
+	spruce json $< >$@
+
 test: unit-tests integration-tests
 
 unit-tests:

@@ -3,3 +3,4 @@
 /test/integration/fs
 /local
 /nginx.conf
+/htdocs/changelog.json

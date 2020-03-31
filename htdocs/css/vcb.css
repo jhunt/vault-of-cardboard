@@ -994,10 +994,6 @@ body[data-cohort="preview"] nav li.cohort-preview a::after {
   font-family: monospace;
 }
 
-#login .oops {
-  display: none;
-}
-
 .play {
   padding-bottom: 14vw;
 }
