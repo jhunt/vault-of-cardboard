@@ -11,13 +11,6 @@
 <body>
 <div id="app"></div>
 
-<script type="text/html" id="template:loading"><!-- {{{ -->
-  <div class="loading">
-    <h1>Loading...</h1>foo
-    <p class="marquee" v-html="quotes[current]"></p>
-  </div>
-</script><!-- }}} -->
-
 <script type="text/html" id="template:play-card"><!-- {{{ -->
   <img class="c" id="[[= _.id ]]" src="[[= $CONFIG.imgroot ]]/cards/[[= _.card.image ]]"
        [[ if (_.card.layout == 'transform') { ]]data-flip-src="[[= $CONFIG.imgroot ]]/cards/[[= _.card.back ]]"[[ } ]]
@@ -110,22 +103,6 @@
   </div>
 </script><!-- }}} -->
 <script type="text/html" id="template:play-draw"><!-- {{{ -->
-  <div class="cards">
-    [[ for (var i = 0; i < _.cards.length; i++) { ]]
-      [[ include('play-card', _.cards[i]); ]]
-    [[ } ]]
-    [[ if (_.mode == 'draw') { ]]
-      <img src="/img/mtgback.jpg">
-    [[ } ]]
-    <ul class="button">
-      [[ if (_.mode == 'draw') { ]]
-      <li><a href="#" rel="put-in-hand">ok</a></li>
-      [[ } ]]
-    </ul>
-  </div>
-</script><!-- }}} -->
-
-<script type="text/html" id="template:unseal-pack"><!-- {{{ -->
   <div class="cards">
     [[ for (var i = 0; i < _.cards.length; i++) { ]]
       [[ include('play-card', _.cards[i]); ]]
@@ -860,7 +837,6 @@ Vue.component('login', {
   methods: {
     authenticate(username, password) {
       event.preventDefault();
-      console.log('authenticating...');
       fetch('/v1/authenticate', {
         method: 'POST',
         body:   JSON.stringify({
@@ -883,7 +859,6 @@ Vue.component('login', {
           UI.browse('/q/owned');
         } else {
           UI.error = data.response.message;
-          console.log(UI.error);
         }
       });
     }
@@ -1182,7 +1157,6 @@ let UI = new Vue({
 
       } else if (sub == "docs") {
         if (!UI.docs) {
-          console.log('fetching /docs.html...');
           fetch('/docs.html').then((response) => {
             if (response.ok) {
               return response.text();
@@ -1460,7 +1434,6 @@ $(function () {
             document.location.hash = '#!/login';
             return;
           }
-          console.log(data);
           $('#main').template('timeline', { changes: data.transactions });
         }
       });
@@ -1489,7 +1462,6 @@ $(function () {
     if (sub.match(/^deck\/(.*)(\/.*)?$/)) {
       sub = sub.replace(/^deck\//, '');
       var id = decodeURIComponent(sub.replace(/\/.*/, ''));
-      console.log(sub);
       $.ajax({
         type: 'GET',
         url:  '/my/decks/'+id,
@@ -1631,7 +1603,6 @@ $(function () {
         var data = $form.serializeObject(true);
         data.occurred_at = data.occurred_at || strftime("%Y-%m-%d", new Date());
 
-        console.log(data.occurred_at);
         var url = '/v1/collectors/'+$USER.uid+'/collections/_/transactions';
         $.ajax({
           type: (data.id ? 'PATCH'         : 'POST'),
@@ -1719,7 +1690,6 @@ $(function () {
   })
   .on('click', '.results .face img', function (event) {
     var id = $(event.target).closest('[data-id]').attr('data-id');
-    console.log(id, Vault.card(id));
     UI.modalfg = { card: Vault.card(id) };
     UI.modal = true;
   })
