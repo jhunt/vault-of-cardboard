@@ -1,11 +1,13 @@
 # vim:ft=bash
 
+LOCALHOST=${LOCALHOST:-localhost}
+
 export DOCKER_PG_PORT=9011
 export DOCKER_REDIS_PORT=9012
 
-export VCB_DATABASE_URL=postgres://postgres:foo@127.0.0.1:${DOCKER_PG_PORT}/postgres
-export VCB_REDIS_URL=redis://127.0.0.1:${DOCKER_REDIS_PORT}
+export VCB_DATABASE_URL=postgres://postgres:foo@${LOCALHOST}:${DOCKER_PG_PORT}/postgres
+export VCB_REDIS_URL=redis://${LOCALHOST}:${DOCKER_REDIS_PORT}
 export VCB_FS_ROOT=$PWD/test/integration/fs
-export VCB_LISTEN=127.0.0.1:3000
+export VCB_LISTEN=${LOCALHOST}:3000
 
-export TEST_VAULTD_URL=http://127.0.0.1:3000
+export TEST_VAULTD_URL=http://${LOCALHOST}:3000

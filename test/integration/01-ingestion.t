@@ -7,6 +7,8 @@ use MIME::Base64 qw/encode_base64/;
 use JSON qw/to_json from_json/;
 use Data::Dumper;
 
+use Net::INET6Glue::INET_is_INET6;
+
 package LWP::UserAgent;
 
 sub patch {
@@ -75,7 +77,8 @@ my $res = post("/v1/authenticate", payload => {
 	username => $username,
 	password => $password
 });
-ok($res->is_success, "authentication message should succeed");
+ok($res->is_success, "authentication message should succeed")
+	or diag $res->as_string;
 is($res->header('Content-Type'), 'application/json', "response should be JSON");
 cmp_deeply(from_json($res->content), {
 	response => {
@@ -89,7 +92,8 @@ my $res = post("/v1/signup", payload => {
 	email    => "$username\@example.com",
 	password => $password
 });
-ok($res->is_success, "signup should succeed");
+ok($res->is_success, "signup should succeed")
+	or diag $res->as_string;
 is($res->header('Content-Type'), 'application/json', "response should be JSON");
 $res = from_json($res->content);
 cmp_deeply($res, {
