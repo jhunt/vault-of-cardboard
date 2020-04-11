@@ -161,180 +161,6 @@
   </div>
 </script><!-- }}} -->
 
-<script type="text/html" id="template:timeline"><!-- {{{ -->
-  <div class="prose">
-    [[ if (_.changes.length == 0) { ]]
-    <h1>Let's Get You A <em>Collection</em>...</h1>
-    <p>We don't have a clue what's in your collection.<br>
-    Why don't we fix that, and get to know one another better?</p>
-
-    <form id="buy" class="import">
-      <input type="hidden" name="summary" value="Initial import">
-      <input type="hidden" name="type"    value="import">
-      <div>
-        <label for="raw_gain">What Cards Do You Own?</label>
-        <textarea name="raw_gain" class="vif"
-                  data-validate="present;max=100k"># enter your list of cards here, i.e.:
-# 1x M19 Arcades, the Strategist
-
-</textarea>
-      </div>
-      <div class="clarify"></div>
-      <div>
-        <button class="default safe" data-in-progress="Saving..." type="submit">Save</button></form>
-      </div>
-    </form>
-    [[ } else { ]]
-    <h1>Your Magic Collection <em>Through Time!</em></h1>
-    <div class="timeline">
-      [[
-         var gainloss = function (n) {
-           return n < 0 ? 'loss' :
-                  n > 0 ? 'gain' :
-                          '';
-         };
-
-         var now = {
-           card:   0,
-           unique: 0,
-           sets:   {}
-         };
-
-         $.each(_.changes, function (i, change) {
-           _.changes[i].total_delta  = change.total_card_gain  - change.total_card_loss;
-           _.changes[i].unique_delta = change.unique_card_gain - change.unique_card_loss;
-
-           if (change.total_card_gain > 0) {
-             if (change.total_card_loss > 0) {
-               _.changes[i].type = 'trade';
-             } else {
-               _.changes[i].type = 'buy';
-             }
-           } else {
-             _.changes[i].type = 'sell';
-           }
-
-           now.card   += _.changes[i].total_delta;
-           now.unique += _.changes[i].unique_delta;
-         });
-      ]]
-      <div class="now summary">
-        <h2>Today</h2>
-        <ul>
-          <li><em>[[= now.card ]]</em> cards (<em>[[= now.unique ]]</em> unique)</li>
-        </ul>
-
-        <div class="buttons">
-          <button class="buy"  rel="new-buy">Buy</button>
-          <button class="sell" rel="new-sell">Sell</button>
-        </div>
-      </div>
-
-      [[ var dates = {};
-         var totals = {};
-         for (var i = 0; i < _.changes.length; i++) {
-           var d = _.changes[i].dated;
-           d = d ? parseInt(d.replace(/-/g, '')) : undefined;
-           d = d ? (100 * parseInt(d / 100) + 5).toString() : '0';
-
-           if (!(d in dates)) {
-             dates[d] = [];
-             totals[d] = {
-               total_delta:  0,
-               unique_delta: 0,
-             };
-           }
-           dates[d].push(_.changes[i]);
-           totals[d].total_delta  += _.changes[i].total_delta;
-           totals[d].unique_delta += _.changes[i].unique_delta;
-         }
-
-         var bands = [];
-         for (var d in dates) {
-           bands.push([d, dates[d].sort(function (a, b) { return b.occurred_at - a.occurred_at; })]);
-         }
-         dates = bands.sort(function (a, b) {
-           return b[0] - a[0];
-         });
-         bands = undefined;
-
-         for (var i = 0; i < dates.length; i++) {
-           var d = dates[i][0];
-      ]]
-      <div class="aggr">
-        <h2>[[= parseInt(d) ? strftime("%B %Y", dated(d)) : "The Beginning" ]] <span class="[[= gainloss(totals[d].total_delta) ]]">[[= sprintf("%+d", totals[d].total_delta) ]] cards <span class="[[= gainloss(totals[d].unique_delta) ]]">([[= sprintf("%+d", totals[d].unique_delta) ]] unique)</span></span></h2>
-        <ul>
-          [[ $.each(dates[i][1], function (j, change) { ]]
-          <li class="[[= change.type ]]"><em class="[[= gainloss(change.total_delta) ]]">[[= sprintf("%+d", change.total_delta) ]]</em> cards in [[= change.type ]] <strong>[[= change.id ]]</strong> <span class="actions"><a href="#!/timeline/edit/[[= change.id ]]">edit</a>[[ if (change.type != 'import') { ]] | <a href="#!/timeline/delete/[[= change.id ]]">delete</a>[[ } ]]</span></li>
-          [[ }); ]]
-        </ul>
-      </div>
-      [[ } ]]
-    </div>
-    [[ } ]]
-  </div>
-</script><!-- }}} -->
-<script type="text/html" id="template:buy-sell"><!-- {{{ -->
-  <div class="prose">
-    <h1>[[= (_.type == 'buy') ? '<strong>Add</strong> Cards to the Collection'
-                              : '<strong>Remove</strong> Cards from the Collection' ]]</h1>
-    <div class="oops" style="display: none"></div>
-
-    <form id="[[= _.type ]]" class="import">
-      <input type="hidden" name="type" value="[[= _.type ]]">
-      [[ if (_.change) { ]]<input type="hidden" name="id" value="[[= _.change.id ]]">[[ } ]]
-      <div><label for="summary">Name</label>
-           [[ if (_.type != 'import') { ]]
-           <p class="advanced-options">
-             <a href="#" rel="toggle-extra" class="off"><span class="on">simplified form</span><span class="off">advanced options</span></a>
-           </p>
-           [[ } ]]
-
-           <input type="text" name="summary"
-                  class="autofocus"
-                  [[ if (_.change) { ]]value="[[= _.change.summary ]]"[[ } ]]
-                  placeholder="A (unique-ish) name for this [[= _.type ]] operation"
-                  data-validate="present;min=3;max=50"
-                  data-error-if-missing="Please provide a name, which will be displayed in the timeline."
-                  data-error-out-of-bounds="Names must be between 3 and 50 characters long."
-                  autocomplete="off">
-      </div>
-
-      [[ if (_.type != 'import') { ]]
-      <div class="extra">
-           <label for="occurred_at">Date</label>
-           <input type="date" name="occurred_at"
-                  [[ if (_.change) { ]]value="[[= datev(_.change.occurred_at) ]]"[[ } ]]
-                  data-validate="present;format=date;happened"
-                  autocomplete="off">
-      </div>
-      [[ } ]]
-
-      <div class="extra">
-           <label for="notes">Notes</label>
-           <textarea name="notes" placeholder="(notes, thoughts, context - only visible to you...)"
-                     data-validate="max=2000">[[ if (_.change) { ]][[= _.change.notes ]][[ } ]]</textarea>
-      </div>
-
-      [[ var raw = (_.type == 'sell') ? 'raw_loss' : 'raw_gain'; ]]
-      <div><label for="[[= raw ]]">Cards (in <a href="#">VIF format</a>)</label>
-           <textarea name="[[= raw ]]" class="vif"
-                     data-validate="present;max=100k"
->[[ if (_.change) { ]][[= _.change[raw] ]][[ } else { ]]# enter your list of cards here, i.e.:
-# 1x M19 Arcades, the Strategist
-
-[[ } ]]</textarea>
-      </div>
-      <div class="oops" style="display: none"></div>
-
-      <div class="clarify"></div>
-      <div>
-        <button class="default safe" data-in-progress="Saving..." type="submit">Save</button></form>
-      </div>
-    </form>
-  </div>
-</script><!-- }}} -->
-
 <script type="text/html" id="template:decks"><!-- {{{ -->
   <div class="decks prose">
     <h1>Your Decks</h1>
@@ -578,14 +404,146 @@ let Vault = {
   }
 };
 
-Vault.card = (id) => {
-  return Vault.index[id];
+Vault.card = function (id) {
+  return this.index[id];
 };
 
-Vault.clarify = (set, name) => {
-  if (set in Vault.cards) {
-    for (let i = 0; i < Vault.cards[set].length; i++) {
-      let card = Vault.cards[set][i];
+Vault.parse_vif = function (vif) {
+  let lines = [];
+  let lineno = 0;
+
+  vif.split(/\n/).forEach((line) => {
+    lineno++;
+
+    let state = 0;
+    let quantity = 0;
+    let set = '';
+    let name = '';
+
+    for (i = 0; i < line.length; i++) {
+      let c = line.charAt(i);
+
+      if (state == 0 && c == ' ') {
+        // ignore whitespace
+      } else if (state == 0 && c >= '0' && c <= '9') {
+        state = 1;
+        quantity = c - '0';
+      } else if (state == 0 && c == '#') {
+        state = 14;
+      } else if (state == 1 && c >= '0' && c <= '9') {
+        quantity = quantity * 10 + (c - '0');
+      } else if (state == 1 && c == 'x') {
+        state = 2;
+      } else if (state == 1 && c == ' ') {
+        state = 3;
+      } else if (state == 2 && c == ' ') {
+        state = 3;
+      } else if (state == 3 && c == ' ') {
+        // ignore whitespace
+      } else if (state == 3 && ((c >= 'a' && c <= 'z')
+                             || (c >= 'A' && c <= 'Z')
+                             || (c >= '0' && c <= '9'))) {
+        set += c;
+        state = 4;
+      } else if (state == 4 && ((c >= 'a' && c <= 'z')
+                             || (c >= 'A' && c <= 'Z')
+                             || (c >= '0' && c <= '9'))) {
+        set += c;
+      } else if (state == 4 && c == ' ') {
+        state = 5;
+      } else if (state == 5 && c == ' ') {
+        // ignore whitespace
+      } else if (state == 5 && ((c >= 'a' && c <= 'z')
+                             || (c >= 'A' && c <= 'Z')
+                             || (c >= '0' && c <= '9'))) {
+        name += c;
+        state = 6;
+      } else if (state == 6 && c == '#') {
+        state = 14;
+      } else if (state == 6 && c == '|') {
+        state = 7;
+      } else if (state == 6) {
+        name += c;
+      } else if (state == 7 && c == ' ') {
+        // ignore whitespace
+      } else if (state == 7 && ((c >= 'a' && c <= 'z')
+                             || (c >= 'A' && c <= 'Z')
+                             || (c >= '0' && c <= '9'))) {
+        //gvar += c;
+        state = 8;
+      } else if (state == 7 && c == '(') {
+        state = 9;
+      } else if (state == 7 && c == '#') {
+        state = 14;
+      } else if (state == 8 && c == ' ') {
+        //gvars.push(gvar + c)
+        //gvar = '';
+        state = 7;
+      } else if (state == 8 && ((c >= 'a' && c <= 'z')
+                             || (c >= 'A' && c <= 'Z')
+                             || (c >= '0' && c <= '9'))) {
+        //gvar += c;
+      } else if (state == 9 && ((c >= 'a' && c <= 'z')
+                             || (c >= 'A' && c <= 'Z')
+                             || (c >= '0' && c <= '9'))) {
+        // lkey = c;
+        state = 10;
+      } else if (state == 10 && ((c >= 'a' && c <= 'z')
+                              || (c >= 'A' && c <= 'Z')
+                              || (c >= '0' && c <= '9'))) {
+        // lkey += c;
+      } else if (state == 10 && c == ':') {
+        state = 11;
+      } else if (state == 11 && c == ' ') {
+        // ignore whitespace
+      } else if (state == 11 && ((c >= 'a' && c <= 'z')
+                              || (c >= 'A' && c <= 'Z')
+                              || (c >= '0' && c <= '9'))) {
+        //lval = c;
+        state = 12;
+      } else if (state == 12 && c == ')') {
+        //lvars.push([lkey, lval]);
+        state = 13;
+      } else if (state == 12) {
+        //lval += c;
+      } else if (state == 13 && c == ' ') {
+        state = 7;
+      } else if (state == 13 && c == '#') {
+        state = 14;
+      } else if (state = 14) {
+        // ignore comments
+      } else {
+        throw new Error('syntax error on line '+lineno.toString()+' '+JSON.stringify({s:state,c:c}));
+      }
+    }
+
+    name = name.replace(/\s+$/, '');
+
+    if (state == 8) {
+      //gvars.push(gvar);
+      state = 14;
+    }
+
+    if (state == 0 || state == 6 || state == 7 || state == 8 || state == 13 || state == 14) {
+      if (quantity) {
+        lines.push({
+          line:     lineno,
+          quantity: quantity,
+          set:      set,
+          oracle:   name
+        });
+      }
+    } else {
+      throw new Error('syntax error on line '+lineno.toString()+' '+JSON.stringify({s:state,eof:true}));
+    }
+  });
+  console.dir(lines);
+};
+
+Vault.clarify = function(set, name) {
+  if (set in this.cards) {
+    for (let i = 0; i < this.cards[set].length; i++) {
+      let card = this.cards[set][i];
       if (card.name == name) {
         return card;
       }
@@ -594,7 +552,7 @@ Vault.clarify = (set, name) => {
 
   let tier1 = [];
   let tier2 = [];
-  let search = Vault.fuse.search(name);
+  let search = this.fuse.search(name);
   for (let i = 0; i < search.length; i++) {
     let ref = {
       set   : search[i].item.set,
@@ -613,26 +571,26 @@ Vault.clarify = (set, name) => {
   return tier1.length > 0 ? tier1 : tier2;
 };
 
-Vault.fetch = () => {
-  Vault.promise = fetch('/cards.json').then(response => {
+Vault.fetch = function () {
+  this.promise = fetch('/cards.json').then(response => {
     if (!response.ok) {
       throw new Wrror("unable to fetch card data from /cards.json!");
     }
     return response.json();
   }).then(data => {
     let results = [];
-    Vault.cards = Vault.convert(data);
-    Vault.sets = [];
+    this.cards = this.convert(data);
+    this.sets = [];
     for (var set in data.sets) {
-      Vault.sets.push({
+      this.sets.push({
         name:    data.sets[set].name,
         size:    data.sets[set].cards.length,
         code:    data.sets[set].code,
         release: data.sets[set].released_at.replace(/-/g, '')
       });
 
-      Vault.cards[set].forEach(card => {
-        Vault.index[card.id] = card;
+      this.cards[set].forEach(card => {
+        this.index[card.id] = card;
         results.push({
           set:  set,
           name: card.name,
@@ -640,7 +598,7 @@ Vault.fetch = () => {
         });
       });
 
-      Vault.fuse = new Fuse(results, {
+      this.fuse = new Fuse(results, {
         keys: ['name'],
         includeScore: true,
         threshold: 0.4
@@ -648,42 +606,55 @@ Vault.fetch = () => {
     };
   });
 
-  Vault.ready = (fn) => {
-    Vault.promise.then(fn);
+  this.ready = (fn) => {
+    this.promise.then(fn);
   };
 
-  Vault.changelog.loaded = fetch('/changelog.json').then((response) => {
+  this.changelog.loaded = fetch('/changelog.json').then((response) => {
     if (response.ok) {
       return response.json();
     }
     throw new Error('failed to get changelog...');
   }).then((data) => {
-    Vault.changelog.changes = data.changelog;
+    this.changelog.changes = data.changelog;
   });
 };
 
-Vault.fetch_collection = (uid) => {
-  Vault.promise = Vault.promise.then(() => {
+Vault.fetch_collection = function (uid) {
+  this.promise = this.promise.then(() => {
     fetch('/collectors/'+uid+'/collections/_/collection.json').then((response) => {
       if (response.ok) {
         return response.json();
       }
       throw new Error('failed to get changelog...');
     }).then((data) => {
-      data.forEach((subset) => {
-        subset.forEach((info) => {
-          if (info.length == 0) { return; }
-          let n = info[0];
-          let id = info[1].pid;
-          Vault.index[id].owned += n;
+      console.log(data);
+
+      // clear out old ownership data
+      for (var id in this.index) {
+        this.index[id].owned = 0;
+      }
+      // track ownership of base collection
+      data.shift().forEach((card) => {
+        if (card[1].pid in this.index) {
+          this.index[card[1].pid].owned = card[0];
+        }
+      });
+
+      data.shift().forEach(delta => {
+        delta.forEach(card => {
+          console.log(card);
+          console.log(card.id);
+          if (card.id in this.index) {
+            this.index[card.id].owned += card.quantity;
+          }
         });
       });
-      Vault.collection = data;
     });
   });
 };
 
-Vault.convert = (data) => {
+Vault.convert = function (data) {
   var out = {};
   for (var code in data.sets) {
     out[code] = [];
@@ -741,14 +712,14 @@ Vault.convert = (data) => {
   return out;
 };
 
-Vault.search = (q, n) => {
+Vault.search = function (q, n) {
   var query = Query.parse(q);
 
   var found = [];
-  for (var set in Vault.cards) {
-    for (var i = 0; i < Vault.cards[set].length; i++) {
-      if (query.match(Vault.cards[set][i])) {
-        found.push(Vault.cards[set][i]);
+  for (var set in this.cards) {
+    for (var i = 0; i < this.cards[set].length; i++) {
+      if (query.match(this.cards[set][i])) {
+        found.push(this.cards[set][i]);
         n--;
         if (n == 0) { break; }
       }
@@ -769,7 +740,7 @@ Vault.fetch();
 
 
 Vue.component('copyright-footer', {
-  data: () => { return {}; },
+  data() { return {}; },
   template: `
 <footer>
   Magic: The Gathering is a Trademark of Wizards of the Coast, Inc. and Hasbro, Inc.<br/>
@@ -779,7 +750,7 @@ Vue.component('copyright-footer', {
 });
 
 Vue.component('loading', {
-  data: () => {
+  data() {
     return {
       quotes: [
         /* flavor:canto or flavor:"Song" */
@@ -863,8 +834,7 @@ Vue.component('loading', {
     };
   },
   mounted() {
-    var self = this;
-    window.setInterval(() => { self.advance(); }, 7700);
+    window.setInterval(() => { this.advance(); }, 7700);
     this.next = parseInt(Math.random() * this.quotes.length);
     this.advance();
   },
@@ -892,7 +862,7 @@ Vue.component('login', {
       required: false,
     }
   },
-  data: () => {
+  data() {
     return {
       username: '',
       password: ''
@@ -1058,7 +1028,7 @@ Vue.component('card-grid', {
 
 Vue.component('card', {
   props: ['card'],
-  data: () => {
+  data() {
     return {
       imgroot: $CONFIG.imgroot,
     };
@@ -1079,14 +1049,14 @@ Vue.component('card', {
 
 Vue.component('card-detail', {
   props: ['card'],
-  data: () => {
+  data() {
     return {
       imgroot: $CONFIG.imgroot,
     };
   },
   methods: {
     colorize: colorize,
-    oracle: (card) => {
+    oracle(card) {
       return symbolize(card.oracle).replace(/\n/g, '</p></p>');
     }
   },
@@ -1133,6 +1103,301 @@ Vue.component('card-detail', {
 `
 });
 
+Vue.component('timeline', {
+  props: ['transactions'],
+  data: function () {
+    return {
+      target: '',
+      mode: 'view'
+    };
+  },
+  computed: {
+    total_cards() {
+      let v = 0;
+      this.transactions.forEach(t => {
+        v += t.total_card_gain  - t.total_card_loss;
+      });
+      return v;
+    },
+    total_unique_cards() {
+      let v = 0;
+      this.transactions.forEach(t => {
+        v += t.unique_card_gain - t.unique_card_loss;
+      });
+      return v;
+    },
+
+    monthly_bands() {
+      let by_date = new Map();
+
+      this.transactions.forEach(t => {
+        t.total_delta  = t.total_card_gain  - t.total_card_loss;
+        t.unique_delta = t.unique_card_gain - t.unique_card_loss;
+
+        t.type = ((gained, lost) => {
+          if (gained && lost) { return 'trade'; }
+          if (gained)         { return 'buy';   }
+          if (lost)           { return 'sell';   }
+          return 'no-op';
+        })(t.total_card_gain > 0, t.total_card_loss > 0);
+
+        var d = t.dated;
+        d = d ? parseInt(d.replace(/-/g, '')) : undefined;
+        d = d ? (100 * parseInt(d / 100) + 5).toString() : '0';
+
+        if (!by_date.has(d)) {
+          by_date.set(d, {
+            total_delta:  0,
+            unique_delta: 0,
+            transactions: []
+          });
+        }
+        let x = by_date.get(d);
+        x.transactions.push(t);
+        x.total_delta  += t.total_delta;
+        x.unique_delta += t.unique_delta;
+        by_date.set(d, x);
+      });
+
+      let to_sort = [];
+      by_date.forEach((band, d) => {
+        band.transactions = band.transactions.sort((a, b) => { return b.dated - a.dated; });
+        to_sort.push([d, band]);
+      });
+
+      return to_sort.sort((a, b) => { return b[0] - a[0]; });
+    }
+  },
+
+  methods: {
+    start_new_transaction() {
+      event.preventDefault();
+      this.mode = 'new';
+    },
+
+    start_edit_transaction(id) {
+      event.preventDefault();
+      this.target = id;
+      this.mode = 'edit';
+    },
+
+    new_transaction(ev) {
+      console.log('new transaction');
+      console.log(ev);
+      this.transactions.push(ev.transaction);
+      this.mode = 'view';
+    },
+
+    updated_transaction(ev) {
+      console.log('update transaction');
+      console.log(ev);
+
+      for (var i = 0; i < this.transactions.length; i++) {
+        if (this.transactions[i].id == ev.transaction.id) {
+          this.transactions[i] = ev.transaction;
+          break;
+        }
+      }
+      this.mode = 'view';
+    },
+
+    gainloss(n) {
+      return n < 0 ? 'loss' : n > 0 ? 'gain' : '';
+    },
+
+    heading(d) {
+      return parseInt(d) ? strftime("%B %Y", dated(d)) : "The Beginning";
+    },
+
+    sprintf: sprintf
+  },
+  template: `
+<div class="prose">
+  <template v-if="transactions.length == 0">
+    <h1>Let's Get You A <em>Collection</em>...</h1>
+    <p>We don't have a clue what's in your collection.<br>
+       Why don't we fix that, and get to know one another better?</p>
+
+    <form id="buy" class="import">
+      <input type="hidden" name="summary" value="Initial import">
+      <input type="hidden" name="type"    value="import">
+      <div>
+        <label for="raw_gain">What Cards Do You Own?</label>
+        <textarea name="raw_gain" class="vif"
+                  data-validate="present;max=100k"># enter your list of cards here, i.e.:
+# 1x M19 Arcades, the Strategist
+
+</textarea>
+      </div>
+      <div>
+        <button class="default safe" data-in-progress="Saving..." type="submit">Save</button>
+      </div>
+    </form>
+  </template>
+  <template v-else>
+    <h1>Your Magic Collection <em>Through Time!</em></h1>
+    <div class="timeline">
+      <div class="now summary">
+        <h2>Today</h2>
+        <ul>
+          <li><em>{{ total_cards }}</em> cards (<em>{{ total_unique_cards }}</em> unique)</li>
+        </ul>
+
+        <div class="buttons" v-if="mode != 'new'">
+          <button class="buy"  rel="new-buy" @click="start_new_transaction()">Buy / Sell / Trade</button>
+        </div>
+        <transaction-form v-else mode="new" @new-transaction="new_transaction($event)"></transaction-form>
+      </div>
+
+      <div v-for="d in monthly_bands" class="aggr">
+        <h2>{{ heading(d[0]) }} <span :class="gainloss(d[1].total_delta)">{{ sprintf("%+d", d[1].total_delta) }} cards <span :class="gainloss(d[1].unique_delta)">({{ sprintf("%+d", d[1].unique_delta) }} unique)</span></span></h2>
+        <ul>
+          <li v-for="txn in d[1].transactions" :class="txn.type">
+            <em :class="gainloss(txn.total_delta)">{{ sprintf("%+d", txn.total_delta) }}</em> cards in {{ txn.type }} <strong>{{ txn.summary }}</strong> ({{ txn.dated }}) <span class="actions"><a @click="start_edit_transaction(txn.id)">edit</a></span>
+            <transaction-form v-if="mode == 'edit' && target == txn.id" mode="edit" :transaction="txn"></transaction-form>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </template>
+</div>
+`
+});
+
+Vue.component('transaction-form', {
+  props: {
+    mode: String,
+    transaction: {
+      type: Object,
+      default: function() {
+        return {
+          summary:     '',
+          dated: (new Date()).toISOString().slice(0,10),
+          notes:       '',
+          gain:        '',
+          loss:        ''
+        };
+      }
+    }
+  },
+  data() {
+    return {
+    };
+  },
+  methods: {
+    today() {
+      // YYYY-MM-DD format = the first 10 chars in ISO format
+      return (new Date()).toISOString().slice(0,10);
+    },
+    save() {
+      event.preventDefault();
+
+      if (this.transaction.id) {
+        fetch('/v1/collectors/'+UI.session.uid+'/collections/_/transactions/'+this.transaction.id, {
+          method: 'PATCH',
+          headers: new Headers({
+            'Authorization': 'Basic '+btoa(UI.session.session+':')
+          }),
+          body: JSON.stringify({
+            summary: this.transaction.summary,
+            notes:   this.transaction.notes,
+            dated:   this.transaction.dated,
+            gain:    this.transaction.gain,
+            loss:    this.transaction.loss
+          })
+        }).then((response) => {
+          return response.json();
+        }).then((data) => {
+          console.log("got response: ", data);
+        });
+
+      } else {
+        fetch('/v1/collectors/'+UI.session.uid+'/collections/_/transactions', {
+          method: 'POST',
+          headers: new Headers({
+            'Authorization': 'Basic '+btoa(UI.session.session+':')
+          }),
+          body: JSON.stringify({
+            summary: this.transaction.summary,
+            notes:   this.transaction.notes,
+            dated:   this.transaction.dated,
+            gain:    this.transaction.gain,
+            loss:    this.transaction.loss
+          })
+        }).then((response) => {
+          return response.json();
+        }).then((data) => {
+          console.log("got response: ", data);
+          this.$emit('new-transaction', data);
+        });
+
+      }
+    },
+  },
+  template: `
+<form :class="'transaction-form import ' + mode" @submit="save()">
+  <h2 v-if="mode == 'new'">Buy / Sell / Trade Cards</h2>
+  <h2 v-else>Update Buy / Sell / Trade Details</h2>
+  <div class="band">
+    <div class="control">
+      <label for="summary">Summary / Transaction Name</label>
+      <input type="text" name="summary" v-model="transaction.summary"
+             class="autofocus"
+             placeholder="A (unique-ish) name for this transaction"
+             data-validate="present;min=3;max=50"
+             data-error-if-missing="Please provide a name, which will be displayed in the timeline."
+             data-error-out-of-bounds="Names must be between 3 and 50 characters long."
+             autocomplete="off">
+    </div>
+  </div>
+  <div class="band">
+    <div class="control">
+      <label for="dated">Date of Transaction</label>
+      <input type="date" name="dated" v-model="transaction.dated"
+             data-validate="present;format=date;happened"
+             autocomplete="off">
+    </div>
+  </div>
+  <div class="band">
+    <div class="control">
+      <label for="notes">Notes</label>
+      <textarea name="notes" v-model="transaction.notes"
+                placeholder="(notes, thoughts, context - only visible to you...)"
+                data-validate="max=2000"></textarea>
+    </div>
+  </div>
+  <div class="band">
+    <div class="control gainloss gained">
+      <label for="vif">Gained Cards</label>
+      <textarea name="gain" v-model="transaction.gain"
+                class="vif"
+                data-validate="present;max=100k"></textarea>
+    </div>
+    <div class="control gainloss lost">
+      <label for="vif">Lost Cards</label>
+      <textarea name="loss" v-model="transaction.loss"
+                class="vif"
+                data-validate="present;max=100k"></textarea>
+    </div>
+    <div class="help">
+      <p>VIF format is designed to be simple.<br>
+         First, specify how many cards are gained or lost:</p>
+      <p class="example"><span class="segment highlight">4x</span> <span class="segment">MIR</span> <span class="segment">Lion's Eye Diamond</span></p>
+      <p>Then, what set the printed cards are from:</p>
+      <p class="example"><span class="segment">4x</span> <span class="segment highlight">MIR</span> <span class="segment">Lion's Eye Diamond</span></p>
+      <p>Then the full card oracle name:</p>
+      <p class="example"><span class="segment">4x</span> <span class="segment">MIR</span> <span class="segment highlight">Lion's Eye Diamond</span></p>
+    </div>
+  </div>
+
+  <div>
+    <button class="default safe" data-in-progress="Saving..." type="submit">Update Collection</button>
+    <button v-if="mode == 'edit'" class="danger">Delete This Transaction</button>
+  </div>
+  </form>
+`
+});
+
 let UI = new Vue({
   el: '#app',
   data: {
@@ -1151,6 +1416,8 @@ let UI = new Vue({
     modal: false,
 
     sets: [],
+
+    transactions: [],
 
     search: {
       results: []
@@ -1257,6 +1524,20 @@ let UI = new Vue({
           UI.redraw('draft');
         });
 
+      } else if (sub.match(/^timeline(\/.*)?$/)) {
+        // FIXME handle unauth
+        UI.redraw('loading');
+        fetch('/v1/collectors/'+UI.session.uid+'/collections/_/transactions').then((response) => {
+          if (response.ok) {
+            return response.json();
+          }
+          throw new Error('failed to fetch transactions');
+        }).then((data) => {
+          console.log(data);
+          UI.transactions = data.transactions;
+          UI.redraw('timeline');
+        });
+
       } else if (sub.match(/^q\/./)) {
         UI.doSearch(decodeURIComponent(sub.replace(/^q\//, '')), false);
       }
@@ -1279,7 +1560,7 @@ let UI = new Vue({
       });
     },
 
-    colorBandStyle: (cards) => {
+    colorBandStyle(cards) {
       let colors = {};
       cards.forEach(card => {
         if (card.color == '') {
@@ -1372,6 +1653,9 @@ let UI = new Vue({
     <card-grid
       v-else-if="mode == 'draft'"
       :cards="draft"></card-grid>
+    <timeline
+      v-else-if="mode == 'timeline'"
+      :transactions="transactions"></timeline>
     <set-list
       v-else-if="mode == 'sets'"
       :sets="sets"></set-list>
@@ -1455,56 +1739,6 @@ $(function () {
 
       $('#main').template('play');
       new TabletopAlpha(id, $('#main .play'));
-      return;
-    }
-
-    if (sub.match(/^timeline(\/.*)?$/)) {
-      var verb = sub.replace(/^timeline\//, '');
-      if (verb == 'buy' || verb == 'sell') {
-        $('#main').template("buy-sell", { type: verb })
-                  .autofocus();
-        return;
-      }
-      if (verb.match(/^edit\/.*/)) {
-        var cid = verb.replace(/edit\//, '');
-        $.ajax({
-          type: 'GET',
-          url:  '/my/changes/'+cid,
-          success: function (change) {
-            $('#main').template("buy-sell", { type: change.type, change: change })
-                      .autofocus();
-          }
-        });
-        return;
-      }
-
-      if (verb.match(/^delete\/.*/)) {
-        var cid = verb.replace(/delete\//, '');
-        if (confirm("Are you sure you want to delete this buy/sell change?")) {
-          $.ajax({
-            type: 'DELETE',
-            url:  '/my/changes/'+cid,
-            success: function (change) {
-              document.location.hash = '#!/timeline/'+now();
-            }
-          });
-        } else {
-          document.location.hash = '#!/timeline/'+now();
-        }
-        return;
-      }
-
-      $.ajax({
-        type: 'GET',
-        url:  '/v1/collectors/'+$USER.uid+'/collections/_/transactions',
-        success: function (data) {
-          if (data.authn == 'required') {
-            document.location.hash = '#!/login';
-            return;
-          }
-          $('#main').template('timeline', { changes: data.transactions });
-        }
-      });
       return;
     }
 

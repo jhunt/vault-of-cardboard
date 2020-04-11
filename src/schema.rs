@@ -35,6 +35,8 @@ table! {
         id -> Uuid,
         collection -> Uuid,
         dated -> Date,
+        summary -> Text,
+        notes -> Text,
         gain -> Text,
         loss -> Text,
         metadata -> Jsonb,

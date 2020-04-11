@@ -11,14 +11,14 @@ if [[ -n $pg ]]; then
   echo ">> (first removing leftover container $pg...)"
   docker rm -f $pg
 fi
-docker run --rm -d -p ${DOCKER_PG_PORT}:5432 -e POSTGRES_PASSWORD=foo --label vcbt=pg postgres
+docker run --rm -d -p ${DOCKER_PG_PORT}:5432 -e POSTGRES_PASSWORD=foo -e POSTGRES_DB=vcb --label vcbt=pg --name vcb-pg postgres postgres -c log_statement=all
 
 echo ">> starting redis container on 127.0.0.1:${DOCKER_REDIS_PORT} ..."
 rd=$(cid vcbt=redis)
 if [[ -n $rd ]]; then
   docker rm -f $rd
 fi
-docker run --rm -d -p ${DOCKER_REDIS_PORT}:6379 --label vcbt=redis redis
+docker run --rm -d -p ${DOCKER_REDIS_PORT}:6379 --label vcbt=redis --name vcb-redis redis
 
 echo ">> rescrying test/scryfall/* -> test/integration/fs/* ..."
 rm -rf test/integration/fs

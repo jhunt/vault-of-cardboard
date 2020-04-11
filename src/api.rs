@@ -99,6 +99,8 @@ pub struct SignupAttempt {
 
 #[derive(Deserialize)]
 pub struct TransactionCreationAttempt {
+    pub summary: String,
+    pub notes: String,
     pub dated: NaiveDate,
     pub gain: String,
     pub loss: String,
@@ -106,15 +108,19 @@ pub struct TransactionCreationAttempt {
 
 #[derive(Deserialize)]
 pub struct TransactionUpdateAttempt {
+    pub summary: Option<String>,
+    pub notes: Option<String>,
+    pub dated: Option<NaiveDate>,
     pub gain: Option<String>,
     pub loss: Option<String>,
-    pub dated: Option<NaiveDate>,
 }
 
 #[derive(Serialize)]
 pub struct Transaction {
     pub id: String,
     pub collection: String,
+    pub summary: String,
+    pub notes: String,
     pub dated: NaiveDate,
     pub gain: String,
     pub loss: String,
@@ -131,6 +137,8 @@ impl std::convert::From<db::Transaction> for Transaction {
             id: other.id.to_string(),
             collection: other.collection.to_string(),
             dated: other.dated,
+            summary: other.summary.to_string(),
+            notes: other.notes.to_string(),
 
             total_card_gain: other.total_card_gain(),
             total_card_loss: other.total_card_loss(),
@@ -340,6 +348,8 @@ impl API {
             None,
             db::NewTransaction {
                 collection: collection.id,
+                summary: &new.summary,
+                notes: &new.notes,
                 dated: &new.dated,
                 gain: &new.gain,
                 loss: &new.loss,
@@ -408,6 +418,8 @@ impl API {
         match self.db.update_transaction(
             &transaction,
             db::UpdateTransaction {
+                summary: upd.summary,
+                notes: upd.notes,
                 dated: upd.dated,
                 gain: upd.gain,
                 loss: upd.loss,

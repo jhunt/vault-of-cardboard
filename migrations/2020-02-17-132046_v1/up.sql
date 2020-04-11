@@ -21,6 +21,8 @@ CREATE TABLE transactions (
       REFERENCES collections (id) ON DELETE CASCADE,
     dated        DATE     NOT NULL,
 
+    summary      TEXT     NOT NULL DEFAULT '',
+    notes        TEXT     NOT NULL DEFAULT '',
     gain         TEXT     NOT NULL DEFAULT '',
     loss         TEXT     NOT NULL DEFAULT '',
 

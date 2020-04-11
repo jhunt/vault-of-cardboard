@@ -137,6 +137,8 @@ pub struct Transaction {
     pub id: Uuid,
     pub collection: Uuid,
     pub dated: NaiveDate,
+    pub summary: String,
+    pub notes: String,
     pub gain: String,
     pub loss: String,
     pub metadata: serde_json::Value,
@@ -178,6 +180,8 @@ impl Transaction {
 #[table_name = "transactions"]
 pub struct NewTransaction<'a> {
     pub collection: Uuid,
+    pub summary: &'a str,
+    pub notes: &'a str,
     pub dated: &'a NaiveDate,
     pub gain: &'a str,
     pub loss: &'a str,
@@ -186,9 +190,11 @@ pub struct NewTransaction<'a> {
 #[derive(AsChangeset)]
 #[table_name = "transactions"]
 pub struct UpdateTransaction {
+    pub summary: Option<String>,
+    pub notes: Option<String>,
+    pub dated: Option<NaiveDate>,
     pub gain: Option<String>,
     pub loss: Option<String>,
-    pub dated: Option<NaiveDate>,
 }
 
 #[derive(Identifiable, Queryable)]
@@ -1080,6 +1086,8 @@ mod test {
         let txn = db.create_transaction(
             None,
             NewTransaction {
+                summary: "opting for ixalan",
+                notes: "",
                 collection: jhunt.id,
                 dated: &NaiveDate::from_ymd(2020, 01, 14),
                 gain: "1x XLN Opt\n",

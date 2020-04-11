@@ -182,6 +182,8 @@ cmp_deeply(
 ###
 
 my $res = post("/v1/collectors/$UID/collections/_/transactions", as => $SID, payload => {
+	summary => 'Initial Import',
+	notes => 'This is all that\'s left of my old card collection.',
 	dated => '2020-01-25',
 	gain => '# initial import of collection
 1x MIR Enlightened Tutor
@@ -228,6 +230,8 @@ cmp_deeply(
 ###
 
 my $res = post("/v1/collectors/$UID/collections/_/transactions", as => $SID, payload => {
+	summary => 'More Tutoring',
+	notes => 'I liked the tutors so much, I bought some more!',
 	dated => '2020-01-26',
 	gain => '# decided to buy a bunch more
 10x MIR Enlightened Tutor
