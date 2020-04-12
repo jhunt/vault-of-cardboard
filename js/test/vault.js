@@ -319,8 +319,8 @@ describe('Vault.when()', () => {
   };
 
   it('should specify callback names in exports', () => {
-    expect(cardboard.CardsLoaded).to.equal('cards-loaded');
-    expect(cardboard.CollectionLoaded).to.equal('collection-loaded');
+    expect(cardboard.CardsLoaded).to.equal('vault:cards-loaded');
+    expect(cardboard.CollectionLoaded).to.equal('vault:collection-loaded');
   });
 
   it('should handle awaiting callbacks registered before card ingestion', done => {

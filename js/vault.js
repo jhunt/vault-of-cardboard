@@ -2,8 +2,8 @@ const Query = require('./query.js').Query,
       When  = require('./when.js').When,
       Fuse  = require('fuse.js');
 
-const CollectionLoaded = 'collection-loaded';
-const CardsLoaded      = 'cards-loaded';
+const CollectionLoaded = 'vault:collection-loaded';
+const CardsLoaded      = 'vault:cards-loaded';
 
 function flagged(v, map, fallback) {
   for (var k in map) {
