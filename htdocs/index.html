@@ -40,7 +40,7 @@
             <div class="stats">
               <div class="details">
                 <p>Ima throw down some angels and demons, mmkay?</p>
-                <span class="colors">[[= colorize('WUB') ]]</span>
+                <span class="colors">[[= cardboard.colorize('WUB') ]]</span>
 
                 <div class="poison gauge">
                   <span class="n">9</span>
@@ -89,7 +89,7 @@
               <span class="ap">AP</span>
               <span class="nap">NAP</span>
               What Even Are Slivers, Anyway?
-              <span class="colors">[[= colorize('C') ]]</span>
+              <span class="colors">[[= cardboard.colorize('C') ]]</span>
             </h2>
             <ul class="stats">
               <li class="life">20</li>
@@ -380,365 +380,15 @@
 <script src="https://vuejs.org/js/vue.js"></script>
 <script type="text/javascript" src="js/jquery.js"></script>
 <script type="text/javascript" src="js/util.js"></script>
-<script type="text/javascript" src="js/lang.js"></script>
 <script type="text/javascript" src="js/table.js"></script>
 <script type="text/javascript" src="js/lens.js"></script>
 <script type="text/javascript" src="js/forms.js"></script>
 <script type="text/javascript" src="js/diff.js"></script>
 <script type="text/javascript" src="js/clarify.js"></script>
 <script type="text/javascript" src="js/play.js"></script>
-<script type="text/javascript" src="js/draft.js"></script>
 <script type="text/javascript" src="config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.js"></script>
+<script type="text/javascript" src="/js/cardboard.min.js"></script>
 <script type="text/javascript">
-let Vault = {
-  cards: {},
-  sets: [],
-  index: {},
-
-  fuse: undefined,
-
-  changelog: {
-    changes: [],
-    loaded: undefined
-  }
-};
-
-Vault.card = function (id) {
-  return this.index[id];
-};
-
-Vault.parse_vif = function (vif) {
-  let lines = [];
-  let lineno = 0;
-
-  vif.split(/\n/).forEach((line) => {
-    lineno++;
-
-    let state = 0;
-    let quantity = 0;
-    let set = '';
-    let name = '';
-
-    for (i = 0; i < line.length; i++) {
-      let c = line.charAt(i);
-
-      if (state == 0 && c == ' ') {
-        // ignore whitespace
-      } else if (state == 0 && c >= '0' && c <= '9') {
-        state = 1;
-        quantity = c - '0';
-      } else if (state == 0 && c == '#') {
-        state = 14;
-      } else if (state == 1 && c >= '0' && c <= '9') {
-        quantity = quantity * 10 + (c - '0');
-      } else if (state == 1 && c == 'x') {
-        state = 2;
-      } else if (state == 1 && c == ' ') {
-        state = 3;
-      } else if (state == 2 && c == ' ') {
-        state = 3;
-      } else if (state == 3 && c == ' ') {
-        // ignore whitespace
-      } else if (state == 3 && ((c >= 'a' && c <= 'z')
-                             || (c >= 'A' && c <= 'Z')
-                             || (c >= '0' && c <= '9'))) {
-        set += c;
-        state = 4;
-      } else if (state == 4 && ((c >= 'a' && c <= 'z')
-                             || (c >= 'A' && c <= 'Z')
-                             || (c >= '0' && c <= '9'))) {
-        set += c;
-      } else if (state == 4 && c == ' ') {
-        state = 5;
-      } else if (state == 5 && c == ' ') {
-        // ignore whitespace
-      } else if (state == 5 && ((c >= 'a' && c <= 'z')
-                             || (c >= 'A' && c <= 'Z')
-                             || (c >= '0' && c <= '9'))) {
-        name += c;
-        state = 6;
-      } else if (state == 6 && c == '#') {
-        state = 14;
-      } else if (state == 6 && c == '|') {
-        state = 7;
-      } else if (state == 6) {
-        name += c;
-      } else if (state == 7 && c == ' ') {
-        // ignore whitespace
-      } else if (state == 7 && ((c >= 'a' && c <= 'z')
-                             || (c >= 'A' && c <= 'Z')
-                             || (c >= '0' && c <= '9'))) {
-        //gvar += c;
-        state = 8;
-      } else if (state == 7 && c == '(') {
-        state = 9;
-      } else if (state == 7 && c == '#') {
-        state = 14;
-      } else if (state == 8 && c == ' ') {
-        //gvars.push(gvar + c)
-        //gvar = '';
-        state = 7;
-      } else if (state == 8 && ((c >= 'a' && c <= 'z')
-                             || (c >= 'A' && c <= 'Z')
-                             || (c >= '0' && c <= '9'))) {
-        //gvar += c;
-      } else if (state == 9 && ((c >= 'a' && c <= 'z')
-                             || (c >= 'A' && c <= 'Z')
-                             || (c >= '0' && c <= '9'))) {
-        // lkey = c;
-        state = 10;
-      } else if (state == 10 && ((c >= 'a' && c <= 'z')
-                              || (c >= 'A' && c <= 'Z')
-                              || (c >= '0' && c <= '9'))) {
-        // lkey += c;
-      } else if (state == 10 && c == ':') {
-        state = 11;
-      } else if (state == 11 && c == ' ') {
-        // ignore whitespace
-      } else if (state == 11 && ((c >= 'a' && c <= 'z')
-                              || (c >= 'A' && c <= 'Z')
-                              || (c >= '0' && c <= '9'))) {
-        //lval = c;
-        state = 12;
-      } else if (state == 12 && c == ')') {
-        //lvars.push([lkey, lval]);
-        state = 13;
-      } else if (state == 12) {
-        //lval += c;
-      } else if (state == 13 && c == ' ') {
-        state = 7;
-      } else if (state == 13 && c == '#') {
-        state = 14;
-      } else if (state = 14) {
-        // ignore comments
-      } else {
-        throw new Error('syntax error on line '+lineno.toString()+' '+JSON.stringify({s:state,c:c}));
-      }
-    }
-
-    name = name.replace(/\s+$/, '');
-
-    if (state == 8) {
-      //gvars.push(gvar);
-      state = 14;
-    }
-
-    if (state == 0 || state == 6 || state == 7 || state == 8 || state == 13 || state == 14) {
-      if (quantity) {
-        lines.push({
-          line:     lineno,
-          quantity: quantity,
-          set:      set,
-          oracle:   name
-        });
-      }
-    } else {
-      throw new Error('syntax error on line '+lineno.toString()+' '+JSON.stringify({s:state,eof:true}));
-    }
-  });
-  console.dir(lines);
-};
-
-Vault.clarify = function(set, name) {
-  if (set in this.cards) {
-    for (let i = 0; i < this.cards[set].length; i++) {
-      let card = this.cards[set][i];
-      if (card.name == name) {
-        return card;
-      }
-    }
-  }
-
-  let tier1 = [];
-  let tier2 = [];
-  let search = this.fuse.search(name);
-  for (let i = 0; i < search.length; i++) {
-    let ref = {
-      set   : search[i].item.set,
-      name  : search[i].item.name,
-      id    : search[i].item.id,
-      score : search[i].score
-    };
-    if (set && search[i].set == set) {
-      ref.type = 'in-set';
-      tier1.push(ref);
-    } else {
-      ref.type = 'global';
-      tier2.push(ref);
-    }
-  }
-  return tier1.length > 0 ? tier1 : tier2;
-};
-
-Vault.fetch = function () {
-  this.promise = fetch('/cards.json').then(response => {
-    if (!response.ok) {
-      throw new Wrror("unable to fetch card data from /cards.json!");
-    }
-    return response.json();
-  }).then(data => {
-    let results = [];
-    this.cards = this.convert(data);
-    this.sets = [];
-    for (var set in data.sets) {
-      this.sets.push({
-        name:    data.sets[set].name,
-        size:    data.sets[set].cards.length,
-        code:    data.sets[set].code,
-        release: data.sets[set].released_at.replace(/-/g, '')
-      });
-
-      this.cards[set].forEach(card => {
-        this.index[card.id] = card;
-        results.push({
-          set:  set,
-          name: card.name,
-          id:   card.id
-        });
-      });
-
-      this.fuse = new Fuse(results, {
-        keys: ['name'],
-        includeScore: true,
-        threshold: 0.4
-      });
-    };
-  });
-
-  this.ready = (fn) => {
-    this.promise.then(fn);
-  };
-
-  this.changelog.loaded = fetch('/changelog.json').then((response) => {
-    if (response.ok) {
-      return response.json();
-    }
-    throw new Error('failed to get changelog...');
-  }).then((data) => {
-    this.changelog.changes = data.changelog;
-  });
-};
-
-Vault.fetch_collection = function (uid) {
-  this.promise = this.promise.then(() => {
-    fetch('/collectors/'+uid+'/collections/_/collection.json').then((response) => {
-      if (response.ok) {
-        return response.json();
-      }
-      throw new Error('failed to get changelog...');
-    }).then((data) => {
-      console.log(data);
-
-      // clear out old ownership data
-      for (var id in this.index) {
-        this.index[id].owned = 0;
-      }
-      // track ownership of base collection
-      data.shift().forEach((card) => {
-        if (card[1].pid in this.index) {
-          this.index[card[1].pid].owned = card[0];
-        }
-      });
-
-      data.shift().forEach(delta => {
-        delta.forEach(card => {
-          console.log(card);
-          console.log(card.id);
-          if (card.id in this.index) {
-            this.index[card.id].owned += card.quantity;
-          }
-        });
-      });
-    });
-  });
-};
-
-Vault.convert = function (data) {
-  var out = {};
-  for (var code in data.sets) {
-    out[code] = [];
-    for (var i = 0; i < data.sets[code].cards.length; i++) {
-      var card = data.sets[code].cards[i];
-      out[code].push({
-        id        : card.id,
-        oid       : card.oid,
-        flags     : card.flags + data.cards[card.oid].legal, // this is new
-        artist    : card.artist,
-        layout    : card.layout,
-        // frame unused
-        number    : card.number,
-        // border unused
-
-        // for draft
-        rarity    : flagged(card.flags, {
-                        '1': 'common',
-                        '2': 'uncommon',
-                        '3': 'rare',
-                        '4': 'mythic'
-                      }, 'unknown rarity'),
-
-        image     : data.sets[code].code + "/" + data.sets[code].code + "-" + card.id + ".jpg",
-
-        name      : data.cards[card.oid].name,
-        type      : data.cards[card.oid].type_line,
-        oracle    : data.cards[card.oid].text,
-
-        cmc       : data.cards[card.oid].cmc,
-        cost      : data.cards[card.oid].mana_cost,
-        color     : data.cards[card.oid].color_identity.join(''),
-
-        price     : undefined, // we will backpatch this later, with prices.json data
-        owned     : 0,         // we will backpatch this later, with collection.json data
-
-        flavor    : card.flavor,
-        power     : data.cards[card.oid].power,
-        toughness : data.cards[card.oid].toughness,
-        pt        : (data.cards[card.oid].power && data.cards[card.oid].toughness
-                    ? data.cards[card.oid].power + "/" + data.cards[card.oid].toughness
-                    : ""),
-        art       : card.illustration,
-
-        back      : "", // FIXME - seems to be missing
-
-        set: {
-          name  : data.sets[code].name,
-          code  : data.sets[code].code,
-          total : data.sets[code].cards.length,
-        },
-      });
-    }
-  }
-  return out;
-};
-
-Vault.search = function (q, n) {
-  var query = Query.parse(q);
-
-  var found = [];
-  for (var set in this.cards) {
-    for (var i = 0; i < this.cards[set].length; i++) {
-      if (query.match(this.cards[set][i])) {
-        found.push(this.cards[set][i]);
-        n--;
-        if (n == 0) { break; }
-      }
-    }
-    if (n == 0) { break; }
-  }
-
-  found = found.sort(function (a, b) {
-    if (a.name > b.name) { return 1; }
-    if (a.name < b.name) { return -1; }
-    return 0;
-  });
-
-  return found;
-};
-
-Vault.fetch();
-
-
 Vue.component('copyright-footer', {
   data() { return {}; },
   template: `
@@ -872,6 +522,7 @@ Vue.component('login', {
     $('[name=username]').focus();
   },
   methods: {
+    colorize: cardboard.colorize,
     authenticate(username, password) {
       event.preventDefault();
       fetch('/v1/authenticate', {
@@ -880,19 +531,23 @@ Vue.component('login', {
           username: username,
           password: password
         })
-      }).then((response) => {
-        if (response.ok) {
-          return response.json();
-        }
-        throw new Error('bad response');
+      }).then(r => {
+        if (!r.ok) { throw new Error('bad response'); }
+        return r.json();
       }).then((data) => {
         if (data.authenticated) {
+          UI.vault.unload_collection();
+
           UI.session = {
             username : data.authenticated.username,
             uid      : data.authenticated.uid,
             id       : data.authenticated.session
           };
           document.cookie = 'vcb_sesh='+data.authenticated.session+';max-age=7776000;samesite=strict';
+          fetch('/collectors/'+UI.session.uid+'/collections/_/collection.json').then(r => {
+            if (!r.ok) { throw new Error('HTTP request failed'); }
+            return r.json();
+          }).then(raw => UI.vault.load_collection(raw[0] || [], raw[1] || []));
           UI.browse('/q/owned');
         } else {
           UI.error = data.response.message;
@@ -1055,9 +710,12 @@ Vue.component('card-detail', {
     };
   },
   methods: {
-    colorize: colorize,
+    colorize: cardboard.colorize,
+    price(d) {
+      return '$'+d.toFixed(2).split('').reverse().join('').match(/.{1,3}/g).join(',').split('').reverse().join('').replace(/,\./, '.');
+    },
     oracle(card) {
-      return symbolize(card.oracle).replace(/\n/g, '</p></p>');
+      return cardboard.symbolize(card.oracle).replace(/\n/g, '</p></p>');
     }
   },
   template: `
@@ -1305,8 +963,9 @@ Vue.component('transaction-form', {
             gain:    this.transaction.gain,
             loss:    this.transaction.loss
           })
-        }).then((response) => {
-          return response.json();
+        }).then(r => {
+          if (!r.ok) { throw new Error('unable to update transaction'); }
+          return r.json();
         }).then((data) => {
           console.log("got response: ", data);
         });
@@ -1324,8 +983,9 @@ Vue.component('transaction-form', {
             gain:    this.transaction.gain,
             loss:    this.transaction.loss
           })
-        }).then((response) => {
-          return response.json();
+        }).then(r => {
+          if (!r.ok) { throw new Error('unable to create new transaction'); }
+          return r.json();
         }).then((data) => {
           console.log("got response: ", data);
           this.$emit('new-transaction', data);
@@ -1427,7 +1087,7 @@ let UI = new Vue({
 
     changes: [],
 
-    Vault: Vault
+    vault: new cardboard.Vault()
   },
   mounted() {
     var session = (function () {
@@ -1440,31 +1100,46 @@ let UI = new Vue({
       }
       return undefined;
     })();
+
+    fetch('/cards.json').then(r => {
+      if (!r.ok) { throw new Error("HTTP request failed"); }
+      return r.json();
+    }).then(cards => {
+      this.vault.ingest(cards)
+    }).catch(e => console.log('vaut:: failed to ingest card data from /cards.json: %s', e));
+
     if (session) {
       fetch('/v1/whoami', {
         method: 'POST',
         body:   JSON.stringify(session)
-      }).then((response) => {
-        return response.json();
-      }).then((data) => {
+      }).then(r => {
+        if (!r.ok) { throw new Error("unable to retrieve session from /v1/whoami"); }
+        return r.json();
+      }).then(data => {
         UI.session = data.authenticated;
-        Vault.fetch_collection(UI.session.uid);
+      }).then(() => {
+        if (!UI.session || !UI.session.uid) {
+          this.vault.no_collection();
+          return;
+        }
+        fetch('/collectors/'+UI.session.uid+'/collections/_/collection.json').then(r => {
+          if (!r.ok) { throw new Error('HTTP request failed'); }
+          return r.json();
+        }).then(raw => this.vault.load_collection(raw[0] || [], raw[1] || []));
       });
+
+    } else {
+      this.vault.no_collection();
     }
   },
   methods: {
     logout() {
       fetch('/v1/logout', {
         method: 'POST'
-      }).then((response) => {
+      }).then(r => {
         UI.session = undefined;
         document.cookie = 'vcb_sesh=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
       });
-    },
-
-    withVault(fn) {
-      UI.redraw('loading');
-      Vault.ready(() => fn(Vault));
     },
 
     redraw(mode) {
@@ -1488,18 +1163,19 @@ let UI = new Vue({
 
       } else if (sub.match(/^changelog(\/.*)?$/)) {
         UI.redraw('loading');
-        Vault.changelog.loaded.then(() => {
-          UI.changes = Vault.changelog.changes;
+        fetch('/changelog.json').then(r => {
+          if (!r.ok) { throw new Error('failed to get changelog...'); }
+          return r.json();
+        }).then((data) => {
+          UI.changes = data.changelog
           UI.redraw('changelog');
         });
 
       } else if (sub == "docs") {
         if (!UI.docs) {
-          fetch('/docs.html').then((response) => {
-            if (response.ok) {
-              return response.text();
-            }
-            throw new Error('unable to load docs');
+          fetch('/docs.html').then(r => {
+            if (!r.ok) { throw new Error('unable to load docs'); }
+            return r.text();
           }).then((text) => {
             UI.docs = text;
             UI.redraw('docs');
@@ -1509,8 +1185,9 @@ let UI = new Vue({
         }
 
       } else if (sub == "sets") {
-        UI.withVault((v) => {
-          UI.sets = v.sets;
+        UI.redraw('loading');
+        UI.vault.when(cardboard.CardsLoaded, () => {
+          UI.sets = UI.vault.sets;
           UI.redraw('sets');
         });
 
@@ -1519,30 +1196,36 @@ let UI = new Vue({
                      .replace(/\/.*/, '')
                      .toUpperCase();
         UI.redraw('loading');
-        Vault.ready(() => {
-          UI.draft = new Draft({}, Vault.cards[set]).pack();
+        UI.vault.when(cardboard.CardsLoaded, () => {
+          UI.draft = new cardboard.Draft(UI.vault, {
+            set: set,
+            lands: set,
+          }).pack();
           UI.redraw('draft');
         });
 
       } else if (sub.match(/^timeline(\/.*)?$/)) {
         // FIXME handle unauth
         UI.redraw('loading');
-        fetch('/v1/collectors/'+UI.session.uid+'/collections/_/transactions').then((response) => {
-          if (response.ok) {
-            return response.json();
-          }
-          throw new Error('failed to fetch transactions');
-        }).then((data) => {
-          console.log(data);
-          UI.transactions = data.transactions;
-          UI.redraw('timeline');
-        });
+        UI.vault.when(':authenticated',
+          fetch('/v1/collectors/'+UI.session.uid+'/collections/_/transactions').then(r => {
+            if (!r.ok) { throw new Error('failed to fetch transactions'); }
+            return r.json();
+          }).then((data) => {
+            UI.transactions = data.transactions;
+            UI.redraw('timeline');
+          }));
 
       } else if (sub.match(/^q\/./)) {
         UI.doSearch(decodeURIComponent(sub.replace(/^q\//, '')), false);
       }
     },
 
+    forceSearch(q, update) {
+      if (event.keyCode == 13) {
+        this.doSearch(q, update);
+      }
+    },
     doSearch(q, update) {
       if (update) {
         document.location.hash = "#!/q/"+encodeURIComponent(q);
@@ -1550,9 +1233,9 @@ let UI = new Vue({
       document.title = "VCB :: `"+q+"`";
       UI.redraw('loading');
       UI.search = { query: q, results: [] };
-      UI.withVault((v) => {
+      UI.vault.when(cardboard.AllLoaded, () => {
         try {
-          UI.search.results = v.search(q);
+          UI.search.results = UI.vault.search(q);
         } catch (e) {
           UI.search.error = e.toString();
         }
@@ -1612,7 +1295,7 @@ let UI = new Vue({
   <header>
     <h1>Vault of Cardboard</h1>
     <input name="q" placeholder="i.e.: Ral color:RU +draw" autocomplete="off"
-           v-model="search.query" @change="doSearch(search.query, true)">
+           v-model="search.query" @change="doSearch(search.query, true)" @keyup="forceSearch(search.query, true)">
     <nav>
       <li><a>Search</a>
         <nav>
@@ -1992,7 +1675,7 @@ $(function () {
   })
   .on('click', '.results .face img', function (event) {
     var id = $(event.target).closest('[data-id]').attr('data-id');
-    UI.modalfg = { card: Vault.card(id) };
+    UI.modalfg = { card: UI.vault.card(id) };
     UI.modal = true;
   })
   .on('click', '.oops ul a[href="#more"]', function (event) {

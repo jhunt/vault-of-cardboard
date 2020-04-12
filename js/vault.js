@@ -14,7 +14,17 @@ function flagged(v, map, fallback) {
   return fallback;
 }
 
-let Vault = class {
+class Draft {
+  constructor() {
+    this.composition = {
+      R: 1,
+      U: 3,
+
+    }
+  }
+}
+
+class Vault {
   constructor() {
     this.index = {};
     this.cards = {};
@@ -113,6 +123,15 @@ let Vault = class {
 
   card(id) {
     return this.index[id];
+  }
+
+  find(set, name) {
+    for (let i = 0; i < this.cards[set].length; i++) {
+      if (this.cards[set][i].name == name) {
+        return this.cards[set][i];
+      }
+    }
+    return undefined;
   }
 
   clear_collection() {
