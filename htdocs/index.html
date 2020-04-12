@@ -536,14 +536,11 @@ Vue.component('login', {
         return r.json();
       }).then(data => {
         if (data.authenticated) {
+          UI.session = data.authenticated;
           UI.vault.unload_collection();
+          cardboard.When.trigger('authenticated');
 
-          UI.session = {
-            username : data.authenticated.username,
-            uid      : data.authenticated.uid,
-            id       : data.authenticated.session
-          };
-          document.cookie = 'vcb_sesh='+data.authenticated.session+';max-age=7776000;samesite=strict';
+          document.cookie = 'vcb_sesh='+UI.session.session+';max-age=7776000;samesite=strict';
           fetch('/collectors/'+UI.session.uid+'/collections/_/collection.json').then(r => {
             if (!r.ok) { throw new Error('HTTP request failed'); }
             return r.json();
@@ -1117,7 +1114,8 @@ let UI = new Vue({
         return r.json();
       }).then(data => {
         UI.session = data.authenticated;
-      }).then(() => {
+        cardboard.When.trigger('authenticated');
+
         if (!UI.session || !UI.session.uid) {
           this.vault.no_collection();
           return;
@@ -1129,6 +1127,7 @@ let UI = new Vue({
       });
 
     } else {
+      cardboard.When.trigger('authenticated');
       this.vault.no_collection();
     }
   },
@@ -1186,7 +1185,7 @@ let UI = new Vue({
 
       } else if (sub == "sets") {
         UI.redraw('loading');
-        UI.vault.when(cardboard.CardsLoaded, () => {
+        cardboard.When(cardboard.CardsLoaded, () => {
           UI.sets = UI.vault.sets;
           UI.redraw('sets');
         });
@@ -1196,10 +1195,14 @@ let UI = new Vue({
                      .replace(/\/.*/, '')
                      .toUpperCase();
         UI.redraw('loading');
-        UI.vault.when(cardboard.CardsLoaded, () => {
+        cardboard.When(cardboard.CardsLoaded, () => {
+          let land_set = set;
+          while (land_set && !UI.vault.has_any('set:'+land_set+' and type:basic land')) {
+            land_set = UI.vault.previous_set(land_set);
+          }
           UI.draft = new cardboard.Draft(UI.vault, {
             set: set,
-            lands: set,
+            lands: land_set,
           }).pack();
           UI.redraw('draft');
         });
@@ -1207,14 +1210,19 @@ let UI = new Vue({
       } else if (sub.match(/^timeline(\/.*)?$/)) {
         // FIXME handle unauth
         UI.redraw('loading');
-        UI.vault.when(':authenticated',
-          fetch('/v1/collectors/'+UI.session.uid+'/collections/_/transactions').then(r => {
-            if (!r.ok) { throw new Error('failed to fetch transactions'); }
-            return r.json();
-          }).then((data) => {
-            UI.transactions = data.transactions;
-            UI.redraw('timeline');
-          }));
+        cardboard.When('authenticated', () => {
+          if (UI.session && UI.session.uid) {
+            fetch('/v1/collectors/'+UI.session.uid+'/collections/_/transactions').then(r => {
+              if (!r.ok) { throw new Error('failed to fetch transactions'); }
+              return r.json();
+            }).then(data => {
+              UI.transactions = data.transactions;
+              UI.redraw('timeline');
+            })
+          } else {
+            UI.redraw('login');
+          }
+        });
 
       } else if (sub.match(/^q\/./)) {
         UI.doSearch(decodeURIComponent(sub.replace(/^q\//, '')), false);
@@ -1233,7 +1241,7 @@ let UI = new Vue({
       document.title = "VCB :: `"+q+"`";
       UI.redraw('loading');
       UI.search = { query: q, results: [] };
-      UI.vault.when(cardboard.AllLoaded, () => {
+      cardboard.When(cardboard.AllLoaded, () => {
         try {
           UI.search.results = UI.vault.search(q);
         } catch (e) {
@@ -1375,13 +1383,6 @@ let UI = new Vue({
 });
 
 
-String.prototype.reline = function (n,s) {
-  var l = this.split(/\n/);
-  if (s instanceof Array) { s = s.join("\n"); }
-  l.splice(n-1,1,s);
-  return l.join("\n");
-}
-
 function tparse(d) { // {{{
   if (typeof d == "string") {
     // because we insist on doing bad things with date formatting in the API...
@@ -1504,18 +1505,6 @@ $(function () {
     event.preventDefault();
     document.location.hash = '#!/';
     goto('');
-  })
-  .on('click',  'form a[rel=toggle-extra]', function (event) {
-    event.preventDefault();
-    $(event.target).closest('a').toggleClass('on').closest('form').find('.extra').fadeToggle();
-  })
-  .on('click', 'button[rel="new-buy"]', function (event) {
-    event.preventDefault();
-    document.location.hash = '#!/timeline/buy';
-  })
-  .on('click', 'button[rel="new-sell"]', function (event) {
-    event.preventDefault();
-    document.location.hash = '#!/timeline/sell';
   })
   .on('click', 'button[rel="new-deck"]', function (event) {
     document.location.hash = "#!/import-deck";

@@ -120,12 +120,15 @@ describe('Color Identitiy Querying', () => {
   //should_match('@dimir', '', $dimir);
 });
 
-describe('Vault.search()', () => {
+describe('Vault.search() and Vault.has_any()', () => {
   let $v = new cardboard.Vault().ingest($CARDS);
 
-  let should_find_total = (q, n) =>
+  let should_find_total = (q, n) => {
+    it('should find '+(n == 0 ? 'nothing' : 'at least one card')+' for ('+q+') via .has_any()',
+      () => expect($v.has_any(q)).to.be.equal(n != 0));
     it('should find '+n.toString()+' card(s) for ('+q+')',
       () => expect($v.search(q, 1000).length).to.be.equal(n));
+  };
 
   let should_find_nothing = (q) => should_find_total(q, 0);
 
@@ -164,6 +167,16 @@ describe('Vault.search()', () => {
 
   should_find('set:MIR and =rare', 'Brushwagg');
   should_find('set:MIR and =r', 'Brushwagg');
+});
+
+describe('Vault.previous_set()', () => {
+  let $v = new cardboard.Vault().ingest($CARDS);
+  it('should find that VIS immediately preceded WTH', () =>
+    expect($v.previous_set('WTH')).to.be.equal('VIS'));
+  it('should find that MIR immediately preceded VIS', () =>
+    expect($v.previous_set('VIS')).to.be.equal('MIR'));
+  it('should find that nothing came before MIR', () =>
+    expect($v.previous_set('MIR')).to.be.undefined);
 });
 
 describe('Vault.clarify()', () => {

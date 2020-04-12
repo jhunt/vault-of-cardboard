@@ -126,6 +126,16 @@ class Vault {
     return this.index[id];
   }
 
+  previous_set(set) {
+    let sets = this.sets.sort((a,b) => parseInt(a.release) - parseInt(b.release));
+    for (let i = 1; i < sets.length; i++) {
+      if (sets[i].code == set) {
+        return sets[i-1].code;
+      }
+    }
+    return undefined;
+  }
+
   find(set, name) {
     for (let i = 0; i < this.cards[set].length; i++) {
       if (this.cards[set][i].name == name) {
@@ -168,6 +178,19 @@ class Vault {
 
     When.trigger(CollectionLoaded);
     return this;
+  }
+
+  has_any(q) {
+    var query = Query.parse(q);
+    var found = [];
+    for (var set in this.cards) {
+      for (var i = 0; i < this.cards[set].length; i++) {
+        if (query.match(this.cards[set][i])) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   search(q, limit) {
