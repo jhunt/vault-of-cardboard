@@ -534,7 +534,7 @@ Vue.component('login', {
       }).then(r => {
         if (!r.ok) { throw new Error('bad response'); }
         return r.json();
-      }).then((data) => {
+      }).then(data => {
         if (data.authenticated) {
           UI.vault.unload_collection();
 
@@ -966,7 +966,7 @@ Vue.component('transaction-form', {
         }).then(r => {
           if (!r.ok) { throw new Error('unable to update transaction'); }
           return r.json();
-        }).then((data) => {
+        }).then(data => {
           console.log("got response: ", data);
         });
 
@@ -986,7 +986,7 @@ Vue.component('transaction-form', {
         }).then(r => {
           if (!r.ok) { throw new Error('unable to create new transaction'); }
           return r.json();
-        }).then((data) => {
+        }).then(data => {
           console.log("got response: ", data);
           this.$emit('new-transaction', data);
         });
@@ -1166,7 +1166,7 @@ let UI = new Vue({
         fetch('/changelog.json').then(r => {
           if (!r.ok) { throw new Error('failed to get changelog...'); }
           return r.json();
-        }).then((data) => {
+        }).then(data => {
           UI.changes = data.changelog
           UI.redraw('changelog');
         });
@@ -1176,7 +1176,7 @@ let UI = new Vue({
           fetch('/docs.html').then(r => {
             if (!r.ok) { throw new Error('unable to load docs'); }
             return r.text();
-          }).then((text) => {
+          }).then(text => {
             UI.docs = text;
             UI.redraw('docs');
           });
