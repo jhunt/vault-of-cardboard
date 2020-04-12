@@ -1,7 +1,5 @@
 const fs     = require('fs'),
-      chai   = require('chai'),
-      expect = chai.expect,
-      assert = chai.assert;
+      expect = require('chai').expect;
 
 const cardboard = require('../index.js');
 
@@ -141,7 +139,7 @@ describe('Vault.search()', () => {
           return;
         }
       }
-      assert.fail('did not find "'+card+'" in '+r.length.toString()+' results...');
+      expect.fail('did not find "'+card+'" in '+r.length.toString()+' results...');
     });
 
   should_find_total('set:MIR', 350);

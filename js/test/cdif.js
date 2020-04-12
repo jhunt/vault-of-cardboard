@@ -1,11 +1,6 @@
-const fs     = require('fs'),
-      chai   = require('chai'),
-      expect = chai.expect,
-      assert = chai.assert;
+const expect = require('chai').expect;
 
 const cardboard = require('../index.js');
-
-let $CARDS = JSON.parse(fs.readFileSync('test/data/cards.json'));
 
 describe('CDIF Parser', () => {
   it('can handle empty input', () => {

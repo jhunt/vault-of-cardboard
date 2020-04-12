@@ -1,5 +1,6 @@
 JS_FILES := index.js
 JS_FILES += cdif.js
+JS_FILES += helpers.js
 JS_FILES += query.js
 JS_FILES += vault.js
 JS_FILES += when.js
