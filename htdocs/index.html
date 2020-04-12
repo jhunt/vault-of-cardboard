@@ -525,27 +525,17 @@ Vue.component('login', {
     colorize: cardboard.colorize,
     authenticate(username, password) {
       event.preventDefault();
-      fetch('/v1/authenticate', {
-        method: 'POST',
-        body:   JSON.stringify({
-          username: username,
-          password: password
-        })
-      }).then(r => {
-        if (!r.ok) { throw new Error('bad response'); }
-        return r.json();
-      }).then(data => {
+      cardboard.API.authenticate(username, password).then(data => {
         if (data.authenticated) {
           UI.session = data.authenticated;
           UI.vault.unload_collection();
           cardboard.When.trigger('authenticated');
 
           document.cookie = 'vcb_sesh='+UI.session.session+';max-age=7776000;samesite=strict';
-          fetch('/collectors/'+UI.session.uid+'/collections/_/collection.json').then(r => {
-            if (!r.ok) { throw new Error('HTTP request failed'); }
-            return r.json();
-          }).then(raw => UI.vault.load_collection(raw[0] || [], raw[1] || []));
+          cardboard.API.fetch_collection_for(UI.session.uid)
+            .then(c => UI.vault.load_collection(c.base, c.patches));
           UI.browse('/q/owned');
+
         } else {
           UI.error = data.response.message;
         }
@@ -579,6 +569,87 @@ Vue.component('login', {
       </div>
       <div>
         <button type="submit"class="default safe">Sign in</button>
+      </div>
+    </form>
+    <copyright-footer></copyright-footer>
+  </div>
+</div>
+`
+});
+
+Vue.component('signup', {
+  props: {
+    error: {
+      type: String,
+      required: false,
+    }
+  },
+  data() {
+    return {
+      username: '',
+      email:    '',
+      password: ''
+    };
+  },
+  mounted() {
+    $('[name=username]').focus();
+  },
+  methods: {
+    colorize: cardboard.colorize,
+    signup() {
+      event.preventDefault();
+      cardboard.API.signup(this.username, this.email, this.password)
+        .then(data => {
+          if (data.authenticated) {
+            UI.session = data.authenticated;
+            UI.vault.unload_collection();
+            cardboard.When.trigger('authenticated');
+
+            document.cookie = 'vcb_sesh='+UI.session.session+';max-age=7776000;samesite=strict';
+            cardboard.API.fetch_collection_for(UI.session.uid)
+              .then(c => UI.vault.load_collection(c.base, c.patches));
+            UI.browse('/q/owned');
+
+          } else {
+            UI.error = data.response.message;
+          }
+        });
+    }
+  },
+  template: `
+<div class="landing login">
+  <div><img src="/img/front.png"></div>
+  <div>
+    <p>Whether you're putting together <a href="#!/q/type:sliver">that Sliver deck,</a>
+    seeking out <a href="#!/q/type:legendary and type:creature">your next Commander,</a>
+    or <a href="#!/q/Didgeridoo or type:Minotaur">just looking for some jank</a>,
+    <em>Vault of Cardboard</em> has got you covered.</p>
+
+    <form id="signup" @submit="signup()">
+      <div class="oops" v-if="error == 'signup-failed'">
+        Invalid username or password.
+      </div>
+      <div class="oops" v-else-if="error">
+        Uh-oh, something broke pretty bad.  Tap {{ colorize("2UUU") }} and summon James, Fixer of Codes!
+        <!-- Uh-oh, something broke pretty bad.  Tap {{ colorize("4BR") }} to cast James Legendary Bug Fix -->
+      </div>
+      <div>
+        <label>Username</label>
+        <input type="text" name="username" autocomplete="off" v-model="username"
+               placeholder="Pick a memorable username">
+      </div>
+      <div>
+        <label>Email</label>
+        <input type="text" name="email" autocomplete="off" v-model="email"
+               placeholder="We'll neither spam nor sell you">
+      </div>
+      <div>
+        <label>Password</label>
+        <input type="password" name="password" v-model="password"
+               placeholder="Make it secret.  Make it secure.">
+      </div>
+      <div>
+        <button type="submit"class="default safe">Sign up!</button>
       </div>
     </form>
     <copyright-footer></copyright-footer>
@@ -763,7 +834,15 @@ Vue.component('timeline', {
   data: function () {
     return {
       target: '',
-      mode: 'view'
+      mode: 'view',
+
+      import_txn: {
+        summary: 'Collection Import',
+        dated:   (new Date()).toISOString().slice(0,10),
+        notes:   '',
+        gain:    '',
+        loss:    ''
+      }
     };
   },
   computed: {
@@ -836,20 +915,25 @@ Vue.component('timeline', {
       this.mode = 'edit';
     },
 
-    new_transaction(ev) {
-      console.log('new transaction');
-      console.log(ev);
+    create_transaction(ev) {
       this.transactions.push(ev.transaction);
       this.mode = 'view';
     },
 
-    updated_transaction(ev) {
-      console.log('update transaction');
-      console.log(ev);
-
+    update_transaction(ev) {
       for (var i = 0; i < this.transactions.length; i++) {
         if (this.transactions[i].id == ev.transaction.id) {
-          this.transactions[i] = ev.transaction;
+          Object.assign(this.transactions[i], ev.transaction);
+          break;
+        }
+      }
+      this.mode = 'view';
+    },
+
+    delete_transaction(id) {
+      for (var i = 0; i < this.transactions.length; i++) {
+        if (this.transactions[i].id == id) {
+          this.transactions.splice(i, 1);
           break;
         }
       }
@@ -873,21 +957,10 @@ Vue.component('timeline', {
     <p>We don't have a clue what's in your collection.<br>
        Why don't we fix that, and get to know one another better?</p>
 
-    <form id="buy" class="import">
-      <input type="hidden" name="summary" value="Initial import">
-      <input type="hidden" name="type"    value="import">
-      <div>
-        <label for="raw_gain">What Cards Do You Own?</label>
-        <textarea name="raw_gain" class="vif"
-                  data-validate="present;max=100k"># enter your list of cards here, i.e.:
-# 1x M19 Arcades, the Strategist
-
-</textarea>
-      </div>
-      <div>
-        <button class="default safe" data-in-progress="Saving..." type="submit">Save</button>
-      </div>
-    </form>
+    <transaction-form
+      @created-transaction="create_transaction($event)"
+      mode="import"
+      :transaction="import_txn"></transaction-form>
   </template>
   <template v-else>
     <h1>Your Magic Collection <em>Through Time!</em></h1>
@@ -901,7 +974,10 @@ Vue.component('timeline', {
         <div class="buttons" v-if="mode != 'new'">
           <button class="buy"  rel="new-buy" @click="start_new_transaction()">Buy / Sell / Trade</button>
         </div>
-        <transaction-form v-else mode="new" @new-transaction="new_transaction($event)"></transaction-form>
+        <transaction-form
+          v-else
+          @created-transaction="create_transaction($event)"
+          mode="new"></transaction-form>
       </div>
 
       <div v-for="d in monthly_bands" class="aggr">
@@ -909,7 +985,12 @@ Vue.component('timeline', {
         <ul>
           <li v-for="txn in d[1].transactions" :class="txn.type">
             <em :class="gainloss(txn.total_delta)">{{ sprintf("%+d", txn.total_delta) }}</em> cards in {{ txn.type }} <strong>{{ txn.summary }}</strong> ({{ txn.dated }}) <span class="actions"><a @click="start_edit_transaction(txn.id)">edit</a></span>
-            <transaction-form v-if="mode == 'edit' && target == txn.id" mode="edit" :transaction="txn"></transaction-form>
+            <transaction-form
+              v-if="mode == 'edit' && target == txn.id"
+              mode="edit"
+              @updated-transaction="update_transaction($event)"
+              @deleted-transaction="delete_transaction(txn.id)"
+              :transaction="Object.assign({}, txn)"></transaction-form>
           </li>
         </ul>
       </div>
@@ -948,94 +1029,82 @@ Vue.component('transaction-form', {
       event.preventDefault();
 
       if (this.transaction.id) {
-        fetch('/v1/collectors/'+UI.session.uid+'/collections/_/transactions/'+this.transaction.id, {
-          method: 'PATCH',
-          headers: new Headers({
-            'Authorization': 'Basic '+btoa(UI.session.session+':')
-          }),
-          body: JSON.stringify({
-            summary: this.transaction.summary,
-            notes:   this.transaction.notes,
-            dated:   this.transaction.dated,
-            gain:    this.transaction.gain,
-            loss:    this.transaction.loss
-          })
-        }).then(r => {
-          if (!r.ok) { throw new Error('unable to update transaction'); }
-          return r.json();
-        }).then(data => {
-          console.log("got response: ", data);
-        });
+        cardboard.API.patch_transaction(UI.session, this.transaction)
+          .then(data => this.$emit('updated-transaction', data));
 
       } else {
-        fetch('/v1/collectors/'+UI.session.uid+'/collections/_/transactions', {
-          method: 'POST',
-          headers: new Headers({
-            'Authorization': 'Basic '+btoa(UI.session.session+':')
-          }),
-          body: JSON.stringify({
-            summary: this.transaction.summary,
-            notes:   this.transaction.notes,
-            dated:   this.transaction.dated,
-            gain:    this.transaction.gain,
-            loss:    this.transaction.loss
-          })
-        }).then(r => {
-          if (!r.ok) { throw new Error('unable to create new transaction'); }
-          return r.json();
-        }).then(data => {
-          console.log("got response: ", data);
-          this.$emit('new-transaction', data);
-        });
-
+        cardboard.API.post_transaction(UI.session, this.transaction)
+          .then(data => this.$emit('created-transaction', data));
       }
     },
+    remove() {
+      event.preventDefault();
+
+      cardboard.API.delete_transaction(UI.session, this.transaction.id)
+        .then(data => this.$emit('deleted-transaction', this.transaction.id));
+    }
   },
   template: `
 <form :class="'transaction-form import ' + mode" @submit="save()">
   <h2 v-if="mode == 'new'">Buy / Sell / Trade Cards</h2>
-  <h2 v-else>Update Buy / Sell / Trade Details</h2>
+  <h2 v-else-if="mode == 'edit'">Update Buy / Sell / Trade Details</h2>
+  <template v-if="mode == 'import'">
+    <input type="hidden" name="summary" v-model="transaction.summary">
+    <input type="hidden" name="dated" v-model="transaction.dated">
+  </template>
+  <template v-else>
+    <div class="band">
+      <div class="control">
+        <label for="summary">Summary / Transaction Name</label>
+        <input type="text" name="summary" v-model="transaction.summary"
+               class="autofocus"
+               placeholder="A (unique-ish) name for this transaction"
+               data-validate="present;min=3;max=50"
+               data-error-if-missing="Please provide a name, which will be displayed in the timeline."
+               data-error-out-of-bounds="Names must be between 3 and 50 characters long."
+               autocomplete="off">
+      </div>
+    </div>
+    <div class="band">
+      <div class="control">
+        <label for="dated">Date of Transaction</label>
+        <input type="date" name="dated" v-model="transaction.dated"
+               data-validate="present;format=date;happened"
+               autocomplete="off">
+      </div>
+    </div>
+    <div class="band">
+      <div class="control">
+        <label for="notes">Notes</label>
+        <textarea name="notes" v-model="transaction.notes"
+                  placeholder="(notes, thoughts, context - only visible to you...)"
+                  data-validate="max=2000"></textarea>
+      </div>
+    </div>
+  </template>
   <div class="band">
-    <div class="control">
-      <label for="summary">Summary / Transaction Name</label>
-      <input type="text" name="summary" v-model="transaction.summary"
-             class="autofocus"
-             placeholder="A (unique-ish) name for this transaction"
-             data-validate="present;min=3;max=50"
-             data-error-if-missing="Please provide a name, which will be displayed in the timeline."
-             data-error-out-of-bounds="Names must be between 3 and 50 characters long."
-             autocomplete="off">
-    </div>
-  </div>
-  <div class="band">
-    <div class="control">
-      <label for="dated">Date of Transaction</label>
-      <input type="date" name="dated" v-model="transaction.dated"
-             data-validate="present;format=date;happened"
-             autocomplete="off">
-    </div>
-  </div>
-  <div class="band">
-    <div class="control">
-      <label for="notes">Notes</label>
-      <textarea name="notes" v-model="transaction.notes"
-                placeholder="(notes, thoughts, context - only visible to you...)"
-                data-validate="max=2000"></textarea>
-    </div>
-  </div>
-  <div class="band">
-    <div class="control gainloss gained">
-      <label for="vif">Gained Cards</label>
-      <textarea name="gain" v-model="transaction.gain"
-                class="vif"
-                data-validate="present;max=100k"></textarea>
-    </div>
-    <div class="control gainloss lost">
-      <label for="vif">Lost Cards</label>
-      <textarea name="loss" v-model="transaction.loss"
-                class="vif"
-                data-validate="present;max=100k"></textarea>
-    </div>
+    <template v-if="mode != 'import'">
+      <div class="control gainloss gained">
+        <label for="vif">Gained Cards</label>
+        <textarea name="gain" v-model="transaction.gain"
+                  class="vif"
+                  data-validate="present;max=100k"></textarea>
+      </div>
+      <div class="control gainloss lost">
+        <label for="vif">Lost Cards</label>
+        <textarea name="loss" v-model="transaction.loss"
+                  class="vif"
+                  data-validate="present;max=100k"></textarea>
+      </div>
+    </template>
+    <template v-else>
+      <div class="control import">
+        <label for="vif">What cards do you have?</label>
+        <textarea name="gain" v-model="transaction.gain"
+                  class="vif"
+                  data-validate="present;max=100k"></textarea>
+      </div>
+    </template>
     <div class="help">
       <p>VIF format is designed to be simple.<br>
          First, specify how many cards are gained or lost:</p>
@@ -1048,8 +1117,8 @@ Vue.component('transaction-form', {
   </div>
 
   <div>
-    <button class="default safe" data-in-progress="Saving..." type="submit">Update Collection</button>
-    <button v-if="mode == 'edit'" class="danger">Delete This Transaction</button>
+    <button class="default safe" type="submit">{{ mode == 'import' ? "Import" : "Update" }} Collection</button>
+    <button v-if="mode == 'edit'" @click="remove()" class="danger">Delete This Transaction</button>
   </div>
   </form>
 `
@@ -1098,21 +1167,11 @@ let UI = new Vue({
       return undefined;
     })();
 
-    fetch('/cards.json').then(r => {
-      if (!r.ok) { throw new Error("HTTP request failed"); }
-      return r.json();
-    }).then(cards => {
-      this.vault.ingest(cards)
-    }).catch(e => console.log('vaut:: failed to ingest card data from /cards.json: %s', e));
+    cardboard.API.fetch_cards().then(cards => this.vault.ingest(cards))
+      .catch(e => console.log('vaut:: failed to ingest card data from /cards.json: %s', e));
 
     if (session) {
-      fetch('/v1/whoami', {
-        method: 'POST',
-        body:   JSON.stringify(session)
-      }).then(r => {
-        if (!r.ok) { throw new Error("unable to retrieve session from /v1/whoami"); }
-        return r.json();
-      }).then(data => {
+      cardboard.API.whoami(session).then(data => {
         UI.session = data.authenticated;
         cardboard.When.trigger('authenticated');
 
@@ -1120,10 +1179,8 @@ let UI = new Vue({
           this.vault.no_collection();
           return;
         }
-        fetch('/collectors/'+UI.session.uid+'/collections/_/collection.json').then(r => {
-          if (!r.ok) { throw new Error('HTTP request failed'); }
-          return r.json();
-        }).then(raw => this.vault.load_collection(raw[0] || [], raw[1] || []));
+        cardboard.API.fetch_collection_for(UI.session.uid)
+          .then(c => this.vault.load_collection(c.base, c.patches));
       });
 
     } else {
@@ -1132,15 +1189,6 @@ let UI = new Vue({
     }
   },
   methods: {
-    logout() {
-      fetch('/v1/logout', {
-        method: 'POST'
-      }).then(r => {
-        UI.session = undefined;
-        document.cookie = 'vcb_sesh=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      });
-    },
-
     redraw(mode) {
       if (UI.mode != mode) {
         $('html, body').animate({ scrollTop: 0 }, 200);
@@ -1149,16 +1197,19 @@ let UI = new Vue({
     },
 
     browse(url) {
+      console.log('browsing to [%s]...');
       document.location.hash = '#!'+(url || '/');
       $(window).trigger('hashchange');
     },
 
     goto(sub) {
-      if (sub == "" || sub == "login") {
+      if (sub == "" || sub == "login" || sub == "signup") {
         UI.redraw(sub);
 
       } else if (sub == "logout") {
-        UI.logout();
+        UI.session = undefined;
+        document.cookie = 'vcb_sesh=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        this.browse();
 
       } else if (sub.match(/^changelog(\/.*)?$/)) {
         UI.redraw('loading');
@@ -1212,11 +1263,8 @@ let UI = new Vue({
         UI.redraw('loading');
         cardboard.When('authenticated', () => {
           if (UI.session && UI.session.uid) {
-            fetch('/v1/collectors/'+UI.session.uid+'/collections/_/transactions').then(r => {
-              if (!r.ok) { throw new Error('failed to fetch transactions'); }
-              return r.json();
-            }).then(data => {
-              UI.transactions = data.transactions;
+            cardboard.API.fetch_transactions_for(UI.session.uid).then(txns => {
+              UI.transactions = txns;
               UI.redraw('timeline');
             })
           } else {
@@ -1333,6 +1381,9 @@ let UI = new Vue({
        class="colors" :style="colorBandStyle(search.results)"></div>
   <div id="main">
     <loading v-if="mode == 'loading'"></loading>
+    <signup
+      v-else-if="mode == 'signup'"
+      :error="error"></signup>
     <login
       v-else-if="mode == 'login'"
       :error="error"></login>
@@ -1368,6 +1419,9 @@ let UI = new Vue({
         queries until you find <em>exactly</em> what you're looking for, and a
         <strong>buy / sell / trade</strong> model of <strong>collection management</strong>,
         you'll never again wonder what you have or what you need.</p>
+
+        <button class="default safe" @click="goto('signup')">Sign Up</button>
+        <button class="default safe" @click="goto('login')">Sign In</button>
 
         <copyright-footer></copyright-footer>
       </div>

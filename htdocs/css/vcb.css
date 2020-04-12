@@ -115,8 +115,10 @@ button:focus, input:focus { outline: 0; }
   bottom: 0;
   right: 2em;
   font-family: sans-serif;
-  font-size: 10pt;
-  opacity: 0.5;
+  font-size: 9pt;
+  opacity: 0.3;
+  line-height: 1.1em;
+  text-align: right;
 }
 
 .landing form {
@@ -1442,6 +1444,10 @@ body[data-cohort="preview"] nav li.cohort-preview a::after {
 }
 .transaction-form .control.gainloss {
   width: 30%;
+}
+.transaction-form .control.import {
+  width: 60%;
+  background-color: #e7f7ea;
 }
 .transaction-form .control.gainloss.gained {
   background-color: #e7f7ea;

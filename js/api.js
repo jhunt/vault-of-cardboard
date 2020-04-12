@@ -23,7 +23,7 @@ let API = {
         throw new Error('API issue trying to get /v1/whoami: got non-ok response '+r);
       }
       return r.json()
-    }).then(d => d.authenticated);
+    });
   },
 
   signup(username, email, password) {
@@ -39,7 +39,7 @@ let API = {
         throw new Error('API issue trying to get /v1/signup: got non-ok response '+r);
       }
       return r.json();
-    }).then(d => d.authenticated);
+    });
   },
 
   authenticate(username, password) {
