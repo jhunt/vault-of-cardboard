@@ -1,4 +1,5 @@
 JS_FILES := index.js
+JS_FILES += api.js
 JS_FILES += cdif.js
 JS_FILES += draft.js
 JS_FILES += helpers.js
