@@ -114,7 +114,8 @@ class Vault {
       threshold: 0.4
     });
 
-    return this.trigger(CardsLoaded);
+    When.trigger(CardsLoaded);
+    return this;
   }
 
   has(id) {
@@ -165,7 +166,8 @@ class Vault {
       });
     });
 
-    return this.trigger(CollectionLoaded);
+    When.trigger(CollectionLoaded);
+    return this;
   }
 
   search(q, limit) {
@@ -210,16 +212,6 @@ class Vault {
         type  : (set && r.item.set == set) ? 'in-set' : 'global'
       };
     }).sort((a, b) => { return a.score - b.score; });
-  }
-
-  when(events, fn) {
-    When(events, fn);
-    return this;
-  }
-
-  trigger(ev) {
-    When.trigger(ev);
-    return this;
   }
 };
 

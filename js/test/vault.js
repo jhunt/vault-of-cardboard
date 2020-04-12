@@ -323,61 +323,34 @@ describe('Vault.when()', () => {
     expect(cardboard.CollectionLoaded).to.equal('vault:collection-loaded');
   });
 
-  it('should handle awaiting callbacks registered before card ingestion', done => {
-    let $v = new cardboard.Vault().when('foo', done);
-    $v.trigger('foo');
-  });
-
-  it('should immediately invoke callbacks registered after card ingestion', done => {
-    let $v = new cardboard.Vault().trigger('foo');
-    $v.when('foo', done);
-  });
-
-  it('should handle multiple callbacks, post-registration', done => {
-    let $v = new cardboard.Vault().trigger('foo');
-    var next;
-    $v.when('foo', () => { next = done; });
-    $v.when('foo', () => { next(); });
-  });
-
-  it('should handle multiple callbacks, pre-registration', done => {
-    let $v = new cardboard.Vault();
-    var next;
-    $v.when('foo', () => { next = done; });
-    $v.when('foo', () => { next(); });
-    $v.trigger('foo');
-  });
-
-  it('should handle multiple callbacks, mid-registration', done => {
-    let $v = new cardboard.Vault();
-    var next;
-    $v.when('foo', () => { next = done; });
-    $v.trigger('foo');
-    $v.when('foo', () => { next(); });
-  });
-
   it('should handle the "cards loaded" callback', done => {
-    new cardboard.Vault().when(cardboard.CardsLoaded, done).ingest($EMPTY);
+    let $v = new cardboard.Vault();
+    cardboard.When(cardboard.CardsLoaded, done);
+    $v.ingest($EMPTY);
   });
 
   it('should handle the "collection loaded" callback', done => {
-    new cardboard.Vault().when(cardboard.CollectionLoaded, done).load_collection([], []);
+    let $v = new cardboard.Vault();
+    cardboard.When(cardboard.CollectionLoaded, done);
+    $v.load_collection([], []);
   });
 
   it('should handle the "collection loaded" callback, even if there is no collection', done => {
-    new cardboard.Vault().when(cardboard.CollectionLoaded, done).no_collection();
+    let $v = new cardboard.Vault();
+    cardboard.When(cardboard.CollectionLoaded, done);
+    $v.no_collection();
   });
 
   it('should handle callbacks waiting for multiple events', done => {
     let $v = new cardboard.Vault();
-    $v.when([cardboard.CardsLoaded, cardboard.CollectionLoaded], done);
+    cardboard.When([cardboard.CardsLoaded, cardboard.CollectionLoaded], done);
     $v.ingest($EMPTY);
     $v.no_collection();
   });
 
   it('should not care what order event list is specified in', done => {
     let $v = new cardboard.Vault();
-    $v.when([cardboard.CollectionLoaded, cardboard.CardsLoaded], done);
+    cardboard.When([cardboard.CollectionLoaded, cardboard.CardsLoaded], done);
     $v.ingest($EMPTY);
     $v.no_collection();
   });
