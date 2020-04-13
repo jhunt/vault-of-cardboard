@@ -13,10 +13,10 @@ tempdir = "0.3"
 error-chain = "0.12"
 clap = "2.33"
 
-uuid = { version = "0.7", features = ["v4"] }
+uuid = { version = "0.8", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 serde_json = "1.0"
-diesel = { version = "1.0.0", features = ["postgres", "uuidv07", "chrono", "serde_json"] }
+diesel = { version = "1.4", features = ["postgres", "uuidv07", "chrono", "serde_json"] }
 diesel_migrations = { version = "1.4" }
 serde = { version = "1.0", features = ["derive"] }
 redis = "0.13"

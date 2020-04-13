@@ -12,3 +12,6 @@
 /.git
 /.gitignore
 .*.swp
+/js
+/sass
+/local

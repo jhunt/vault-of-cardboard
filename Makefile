@@ -1,7 +1,11 @@
 VERSION ?= 0.0.1
 TAG     ?= dev
 
+REGISTRY ?= docker.zyxl.xyz/vcb
+
 default: test
+build:
+	cargo build
 
 htdocs/changelog.json: changelog.yml
 	spruce json $< >$@
@@ -27,13 +31,11 @@ watch-and-test:
 	&& ./test/unit/setup \
 	&& cargo watch -x 'test --lib'
 
-docker: rescry-docker api-docker
-base-docker:
-	docker build -t vault-of-cardboard-base:$(TAG) -f Dockerfile.base .
-rescry-docker: base-docker
-	docker build -t vault-of-cardboard-rescry:$(TAG) -f Dockerfile.rescry .
-api-docker:
-	docker build -t vault-of-cardboard-api:$(TAG) -f Dockerfile.api .
+docker:
+	docker build -t cardboard:$(TAG) .
 
+push:
+	docker build -t $(REGISTRY)/cardboard:$(TAG) .
+	docker push $(REGISTRY)/cardboard:$(TAG)
 
 .PHONY: default test unit-tests integration-tests watch-and-test
