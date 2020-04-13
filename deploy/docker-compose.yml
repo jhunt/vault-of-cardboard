@@ -23,23 +23,23 @@ services:
       - /bin/sh
       - -c
       - /cardboard migrate && /cardboard api
-        # docker exec -it deploy_api_1 /cardboard rescry -r /cache -c /data/cards.json -p /data/prices.json -l /data/lookup.json
+        # docker exec -it deploy_api_1 /cardboard rescry -r /cache/dat -c /data/cards.json -p /data/prices.json -l /data/lookup.json
     volumes:
       - data:/data
       - cache:/cache
 
   web:
     depends_on: [api]
-    image: perimeter:dev
+    image: docker.zyxl.xyz/vcb/perimeter:latest
     network_mode: 'service:api' # can't co-exist with ports:[]
     volumes:
       - data:/data
 
   proxycache:
-    image: proxycache:dev
+    image: docker.zyxl.xyz/vcb/proxycache:latest
 
   ingest:
-    image: ingester:dev
+    image: docker.zyxl.xyz/vcb/ingester:latest
     environment:
       - CACHE=/cache
       - http_proxy=http://127.0.0.1:3128

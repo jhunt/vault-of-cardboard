@@ -1,0 +1,47 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: vcb
+  generateName: ingest-
+  name: ingest
+spec:
+  template:
+    metadata:
+      labels:
+        k8s.vaultofcardboard.com/job: ingester
+    spec:
+      restartPolicy: OnFailure
+
+      volumes:
+        - name: vault
+          hostPath:
+            path: /srv/vcb
+
+      imagePullSecrets:
+        - name: docker-zyxl-key
+
+      containers:
+        - name: ingester
+          image: docker.zyxl.xyz/vcb/ingester:latest
+          imagePullPolicy: Always
+          env:
+            - name:  CACHE
+              value: /cache
+          command:
+            - ingest
+            - 3ED
+            - 4ED
+            - 5ED
+            - 6ED
+            - MIR
+            - VIS
+            - WTH
+            - STH
+            - TMP
+            - MMQ
+
+          volumeMounts:
+            - name: vault
+              subPath: cache
+              mountPath: /cache
