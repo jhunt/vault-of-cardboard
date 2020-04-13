@@ -43,7 +43,7 @@ docker:
 push: docker
 	docker tag cardboard:$(TAG)  $(REGISTRY)/cardboard:$(TAG)
 	docker tag ingester:$(TAG)   $(REGISTRY)/ingester:$(TAG)
-	docker tag perimiter:$(TAG)  $(REGISTRY)/perimiter:$(TAG)
+	docker tag perimeter:$(TAG)  $(REGISTRY)/perimeter:$(TAG)
 	docker tag proxycache:$(TAG) $(REGISTRY)/proxycache:$(TAG)
 	
 	docker push $(REGISTRY)/cardboard:$(TAG)
