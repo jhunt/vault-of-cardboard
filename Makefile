@@ -31,6 +31,9 @@ watch-and-test:
 	&& ./test/unit/setup \
 	&& cargo watch -x 'test --lib'
 
+schema:
+	./util/schema > src/schema.rs
+
 docker:
 	docker build -t cardboard:$(TAG) .
 	docker build -t ingester:$(TAG)   -f docker/ingester/Dockerfile   docker/ingester
@@ -59,4 +62,4 @@ compose-up: docker
 compose-down:
 	docker-compose -p vcb -f deploy/docker-compose.yml down
 
-.PHONY: default test unit-tests integration-tests watch-and-test docker push compose-up compose-down
+.PHONY: default test unit-tests integration-tests watch-and-test schema docker push compose-up compose-down

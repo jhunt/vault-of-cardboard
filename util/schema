@@ -1,0 +1,32 @@
+#!/bin/bash
+set -eu
+exec 3>&1 1>&2
+
+pg=$(docker run --rm -d -p 5432 -e POSTGRES_PASSWORD=foo postgres)
+port=$(docker inspect $pg -f '{{. | json}}' | jq -r '.NetworkSettings.Ports["5432/tcp"][0].HostPort')
+ok=no
+echo "waiting 30s for postgres (container $pg) to come up..."
+n=300
+while [[ $n -gt 0 ]]; do
+  if docker exec $pg psql -U postgres -c 'select 1;' > /dev/null 2>&1; then
+    ok=yes
+    break
+  fi
+  n=$(( n - 1 ))
+  sleep 0.1;
+
+  if docker exec $pg psql -U postgres -c 'select 1;' > /dev/null 2>&1; then
+    ok=yes
+    break
+  fi
+done
+if [[ $ok != "yes" ]]; then
+  echo >&2 "psql did not come up fast enough...";
+  exit 1
+fi
+
+export DATABASE_URL=postgres://postgres:foo@127.0.0.1:$port/migratory
+diesel setup
+diesel print-schema >&3
+docker stop $pg
+exit 0
