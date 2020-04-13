@@ -1,0 +1,1551 @@
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+  display: block;
+}
+body {
+  line-height: 1;
+}
+ol, ul {
+  list-style: none;
+}
+blockquote, q {
+  quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+  content: '';
+  content: none;
+}
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+/**/
+
+body .if-not-authed, body[data-user-id] .if-authed     { display: block; }
+body .if-authed,     body[data-user-id] .if-not-authed { display: none; }
+
+body {
+  min-height: 100vh;
+  position: relative;
+}
+
+/* for chrome */
+button:focus, input:focus { outline: 0; }
+
+#main > .changes {
+  margin: 5vh 10vw;
+  border-radius: 0.7em;
+  padding: 0.7em;
+  background-color: paleturquoise;
+  color: #000;
+  font-weight: bold;
+  font-size: 13.5pt;
+}
+#main > .changes a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted #000;
+  float: right;
+}
+.landing {
+  margin: 5vh 10vw;
+  padding-bottom: 3em;
+  overflow: none;
+  display: flex;
+  flex-flow: row wrap;
+}
+.landing img {
+  max-width: 700px;
+  width: 100%;
+}
+.landing > div {
+  width: 50%;
+}
+.landing > div:nth-child(2) {
+  font-size: 16pt;
+  line-height: 1.4em;
+  padding: 8em 0 0 4em;
+  box-sizing: border-box;
+}
+.landing div p {
+  margin-bottom: 1em;
+}
+.landing div a {
+  text-decoration: none;
+  color: #0071bc;
+  border-bottom: 1px dotted #0071bc;
+}
+.landing div strong {
+  font-weight: bold;
+  font-family: sans-serif;
+  font-size: 90%;
+  padding: 2px 6px;
+  background-image: url(/img/hili.png);
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+.landing div em {
+  font-style: italic;
+  font-weight: bold;
+}
+.landing div footer {
+  position: absolute;
+  bottom: 0;
+  right: 2em;
+  font-family: sans-serif;
+  font-size: 9pt;
+  opacity: 0.3;
+  line-height: 1.1em;
+  text-align: right;
+}
+
+.landing form {
+  margin: 2em auto;
+  max-width: 44ex;
+}
+.landing form div {
+  margin: 1em;
+  position: relative;
+}
+.landing form div a {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  font-size: 11pt;
+  border: none;
+  line-height: 1.1em;
+  visibility: hidden;
+}
+.landing form div:hover a {
+  visibility: visible;
+}
+.landing form label {
+  display: block;
+  line-height: 1.333em;
+  font-size: 10pt;
+  font-family: sans-serif;
+  text-transform: lowercase;
+  font-weight: bold;
+}
+.landing form input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 24pt;
+  padding: 0.3em;
+  border: 2px solid dodgerblue;
+  border-radius: 5px;
+  background-color: #fff;
+  color: dodgerblue;
+}
+.landing form input:focus {
+  background-color: dodgerblue;
+  color: #fff;
+}
+.landing form button {
+  cursor: pointer;
+  font-weight: bold;
+  box-sizing: border-box;
+  font-size: 16pt;
+  padding: 0.3em 0.9em;
+  border: 2px solid dodgerblue;
+  border-radius: 5px;
+}
+.landing form button.safe {
+  background-color: dodgerblue;
+  color: #fff;
+}
+.landing form > div:last-child {
+  display: flex;
+  flex-flow: row-reverse;
+}
+
+header {
+  background-color: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+
+  display: flex;
+  justify-content: space-between;
+
+  box-shadow: 2px 3px 17px #000;
+}
+header h1 {
+  padding: 16px;
+  text-indent: -5000px;
+  background-image: url(/img/logo.png);
+  background-size: cover;
+  width: 160px;
+  height: 73px;
+  padding: 0;
+  margin: 8px 0 0 16px;
+}
+header > nav {
+  list-style: none;
+  display: flex;
+}
+header > nav > li {
+  align-self: flex-end;
+}
+header > nav > li:hover {
+    background-color: forestgreen;
+}
+header > nav > li > a {
+  display: block;
+  padding: 16px;
+}
+header li nav {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: #444;
+  box-shadow: 5px 5px 5px #666;
+}
+header > nav > li:hover > nav {
+  display: block;
+  z-index: 500;
+}
+header nav a {
+  text-decoration: none;
+  color: inherit;
+}
+header nav li nav li.separator {
+  height: 1px;
+  background-color: #fff;
+  margin: 8px 0;
+  opacity: 0.4;
+}
+header nav li nav li a {
+  padding: 12px 24px;
+  display: block;
+}
+header nav li nav li:hover {
+  background-color: #000;
+  color: yellow;
+}
+header input {
+  margin: 1em;
+  color: #fff;
+  background-color: #555;
+  border: none;
+  border-radius: 5px;
+  font-size: 24px;
+  padding: 8px;
+  flex: auto;
+  height: 1.2em;
+  vertical-align: middle;
+}
+body > .colors {
+  position: sticky;
+  height: 14px;
+  width: 100%;
+  top: 0px;
+  z-index: 100;
+  box-shadow: 2px 3px 17px #000;
+
+  visibility: hidden;
+}
+.meta-results {
+  width: 97vw;
+  margin: 16px auto;
+  color: #777;
+  font-style: italic;
+}
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  width: 97vw;
+  margin: 8px auto;
+}
+.grid.results > span {
+  position: relative;
+}
+.grid.results > span .card {
+  width: 18vw;
+  height: 25.14vw;
+  margin: 0.69vw;
+  border-radius: 0.9vw; /* chop off some of the terrible backgrounds */
+  overflow: hidden;
+  display: inline-block;
+}
+.grid.results > span .card.face {
+  transform: rotate(5deg);
+  cursor: pointer;
+  background-image: url(/img/mtgblank.jpg);
+  background-size: cover;
+}
+.grid.results > span .back {
+  position: absolute;
+}
+.grid.results > span[data-own="0"] .card.back img {
+  visibility: hidden;
+}
+.grid.results .card img {
+  width: 100%;
+  transform-origin: 50% 50%;
+}
+.card.face img.flipped {
+  transform: rotate(180deg);
+}
+.card a[rel=flip] {
+  display: block;
+  position: absolute;
+  z-index: 6;
+  background-image: url(/flip.png);
+  background-size: cover;
+  background-color: #ffffffb3;
+  border-radius: 100%;
+  width: 17%;
+  height: 12%;
+  right: 3%;
+  bottom: 8%;
+}
+.card:hover a[rel=flip] {
+  background-color: #ffff00b3;
+}
+.cardable {
+  margin: 0; padding: 0;
+  position: relative;
+}
+.cardable > div {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+}
+.cardable > div .card {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+}
+.modal-bg,
+.modal-fg {
+  position: fixed;
+  top: 0px; left: 0px; width: 100vw; height: 100vh;
+}
+.modal-bg {
+  background-color: rgba(0,0,0, 0.7);
+  z-index: 100;
+}
+.modal-fg {
+  z-index: 110;
+}
+.modal-fg img {
+  height: 80%;
+  transform: translate(100px, 100px) rotate(5deg);
+  transform-origin: 50% 50%;
+  border-radius: 4%; /* chop off some of the terrible backgrounds */
+  border: 4px solid rgba(255,255,255, 0);;
+  z-index: 5;
+}
+.modal-fg .card.back img {
+  border-color: #fff;
+}
+.modal-fg img.flipped {
+  transform: translate(100px, 100px) rotate(185deg);
+  transform-origin: 50% 50%;
+}
+.modal-fg div.cardable > div {
+  height: 100vmin;
+  width: 71.5vmin;
+}
+.modal-fg div.detail {
+  background-color: #fff;
+  display: block;
+  position: fixed;
+  box-sizing: border-box;
+  top:  20vh; min-height: 60vh;
+  left: 15vw; width:  70vw;
+  z-index: 110;
+  padding: 24px 24px 24px 35vw;
+  border-radius: 12px;
+}
+.modal-fg a.close {
+  background-color: #000;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 100%;
+  font-family: sans-serif;
+  text-align: center;
+  height: 32px;
+  width: 32px;
+  display: block;
+  line-height: 34px;
+  position: absolute;
+  right: 4px;
+  top: 4px;
+}
+.modal-fg div h1 {
+  font-size: 180%;
+  font-family: sans-serif;
+  font-weight: bold;
+}
+.modal-fg div.detail {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  z-index: -5;
+}
+.modal-fg .detail .where {
+  flex-grow: 1;
+  flex-basis: auto;
+}
+.modal-fg .detail .tags {
+  display: flex;
+  flex-flow: row wrap;
+}
+
+.modal-fg .detail {
+  font-size: 14pt;
+  font-family: sans-serif;
+}
+.modal-fg .detail ul {
+  margin: 0 0 1em 0;
+}
+
+.modal-fg .detail .tags li {
+  background-color: #ba1fba;
+  border-radius: 4px;
+  padding: 4px 8px;
+  color: #fff;
+  font-size: 90%;
+  font-family: monospace;
+  font-weight: bold;
+  margin: 2px;
+}
+.modal-fg .detail .price {
+  font-size: 48pt;
+  align-self: flex-end;
+  font-family: sans-serif;
+  font-weight: bold;
+  color: #888;
+}
+.modal-fg .detail em     { font-style:  italic; }
+.modal-fg .detail strong { font-weight: bold; }
+.modal-fg li p {
+  margin: 8pt;
+}
+
+.modal-fg .price .w1,
+.modal-fg .price .w2,
+.modal-fg .price .w3 {
+  font-style: italic;
+  font-size: 9pt;
+  display: block;
+  text-align: right;
+  opacity: 0.7;
+}
+.modal-fg .price .w1 { color: darkred; }
+.modal-fg .price .w2 { color: #ba6c2a; }
+.modal-fg .price .w3 { color: inherit; }
+
+
+#main .loading h1 {
+  font-size: 24pt;
+  font-style: italic;
+  text-align: left;
+  width: 50vw;
+  margin: 30vh auto 0em;
+}
+#main .loading .marquee {
+  line-height: 1.25em;
+  text-indent: -1ex;
+  font-size: 18pt;
+  font-style: italic;
+  width: 50vw;
+  color: #777;
+  margin: 10vh auto;
+}
+#main .loading .marquee cite {
+  display: block;
+  text-align: right;
+}
+
+
+.oops {
+  font-weight: normal;
+  font-size: 12pt;
+
+  border-radius: 4pt;
+  padding: 1em 2em;
+  width: 90%;
+  box-sizing: border-box;
+  font-family: sans-serif;
+  color: #fff;
+  background: firebrick;
+
+}
+.oops ul {
+  padding: 1em;
+  list-style: inside;
+}
+.oops ul li {
+  line-height: 1.2em;
+}
+.oops ul li a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted #fff;
+}
+.oops ul li.suppress {
+  display: none;
+}
+
+
+.prose {
+  min-width: 50vw;
+  max-width: 80vw;
+  margin: 80px auto;
+  font-family: sans-serif;
+  font-size: 14pt;
+  line-height: 1.4em;
+}
+
+.prose h1 {
+  font-size: 24pt;
+  font-weight: bold;
+  margin: 3em 0 0.6em 0;
+}
+.prose h2 {
+  font-size: 21pt;
+  font-weight: bold;
+  margin: 3em 0 0.6em 0;
+}
+
+.changelog h2 { margin-top: 6em; }
+.changelog h2 img {
+  display: block;
+  margin-bottom: 8px;
+  max-width: 100%;
+  padding-bottom: 3px;
+  border-bottom: 5px solid #000;
+}
+
+.changelog h2 a {
+  font-size: 11pt;
+  color: #aaa;
+  font-weight: normal;
+  text-decoration: none;
+  border-bottom: none;
+}
+
+.changelog h2 span {
+  display: block;
+  color: #778;
+  font-size: 12pt;
+}
+
+.changelog ul {
+  list-style: disc;
+  margin-left: 3em;
+}
+
+.prose a {
+  text-decoration: none;
+  color: #0071bc;
+  border-bottom: 1px dotted #0071bc;
+}
+
+.prose p {
+  max-width: 40em;
+  margin: 1.4em 0;
+}
+
+.prose em, .prose i { font-style: italic; }
+.prose strong, .prose b { font-weight: bold; }
+
+.docs kbd,
+.docs pre code {
+  color: #fff;
+  background-color: #555;
+  border-radius: 5px;
+  padding: 4px 8px;
+}
+.docs kbd {
+  height: 1.2em;
+  vertical-align: middle;
+}
+.docs pre code {
+  padding: 1em;
+  display: block;
+  font-family: monospace;
+}
+
+.prose table thead th {
+  font-weight: bold;
+  color: #112;
+  border-bottom: 1px solid #11112233;
+  font-size: 90%;
+  padding: 8px 32px 2px 8px;
+  text-align: left;
+}
+.prose table tbody td {
+  padding: 8px 8px 4px 8px;
+}
+.prose table tbody tr:nth-child(2n) {
+  background-color: #00000008;
+}
+.prose table tbody tr:hover {
+  background-color: #00000018;
+}
+.prose table tbody td a {
+  color: #448;
+  text-decoration: none;
+  border-bottom: 1px dotted #888;
+}
+.prose table tbody td p {
+  margin-top: 0;
+}
+
+.docs table.keywords tbody tr td:nth-child(1),
+.docs table.shorthand tbody tr td:nth-child(1),
+.docs table.shorthand tbody tr td:nth-child(2) {
+  font-family: monospace;
+  color: darkblue;
+}
+.docs table.keywords tbody tr td ul {
+  list-style: circle;
+  padding: 1em 1em 1em 2em;
+}
+
+table th.sortable {
+  cursor: pointer;
+}
+table th.sortable.asc ::before,
+table th.sortable.desc ::before {
+  margin-left: 4px;
+  content: "\25b4";
+  display: inline-block;
+  opacity: 0.4;
+  font-size: 11pt;
+}
+table th.sortable.asc ::before {
+  transform: rotate(180deg);
+}
+
+.buys table.buys tbody tr td:nth-child(3) p {
+  font-size: 80%;
+  font-style: italic;
+}
+
+.prose table.listing,
+.sets table.sets {
+  min-width: 80%;
+}
+.sets table.sets tbody tr td:nth-child(2) {
+  font-size: 70%;
+  color: #00000088;
+}
+.sets table td:first-child {
+  text-align: center;
+}
+
+form.import div {
+  margin: 1em 0;
+}
+form.import div label {
+  display: block;
+  font-size: 11pt;
+  line-height: 10pt;
+  font-weight: bold;
+}
+form.import div input,
+form.import div textarea {
+  width: 75%;
+  font-size: 14pt;
+  outline: none;
+  padding: 8px 4px;
+  font-weight: bold;
+
+  box-sizing: border-box;
+  border: 2px solid dodgerblue;
+  border-radius: 5px;
+  background-color: #fff;
+  color: dodgerblue;
+}
+form.import input:focus,
+form.import textarea:focus {
+  background-color: dodgerblue;
+  color: #fff;
+}
+form.import div textarea {
+  font-size: 11pt;
+  font-weight: normal;
+}
+form.import div input::placeholder,
+form.import div textarea::placeholder {
+  font-weight: normal;
+  font-style: italic;
+}
+form.import div.extra {
+  display: none;
+}
+form.import a[rel=toggle-extra]    .on,
+form.import a[rel=toggle-extra].on .off { display: none; }
+form.import a[rel=toggle-extra].on .on,
+form.import a[rel=toggle-extra]    .off { display: block; }
+form.import textarea {
+  display: block;
+  width: 60%;
+}
+form.import textarea.vif {
+  min-height: 20em;
+}
+form.import textarea[name=notes] {
+  min-height: 6em;
+}
+
+form.import {
+  position: relative;
+}
+form.import .advanced-options {
+  text-align: right;
+  position: absolute;
+  top: 0;
+  margin: 0;
+
+  width: 74%;
+  max-width: none;
+  font-size: 11pt;
+  line-height: 10pt;
+}
+form.import .advanced-options a {
+  display: inline-block;
+  text-decoration: none;
+  font-size: 11pt;
+  font-style: italic;
+  color: #0071bc;
+  border-bottom: 1px dotted #0071bc80;
+}
+
+form.import div.form-validation-failed input,
+form.import div.form-validation-failed textarea {
+  background-color: firebrick;
+}
+form.import div.form-validation-failed .form-validation-error {
+  display: block;
+  color: firebrick;
+  font-size: 10pt;
+}
+.clarify .ok {
+  color: forestgreen;
+  font-size: 10pt;
+  font-style: italic;
+}
+
+.clarify .clarif {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  padding-top: 27%;
+  z-index: 5;
+  text-align: center;
+  font-size: 50px;
+  box-sizing: border-box;
+  transform: rotate(5deg);
+  left: 0; top: 0;
+}
+
+.clarify .results {
+  width: 100%;
+}
+.clarify .clarif a {
+  color: inherit;
+  text-decoration: none;
+  font-size: 80%;
+}
+.clarify .clarif .band {
+  display: inline-block;
+  width: 100%;
+  line-height: 1;
+  background-color: rgba(255,255,255, 0.7);
+  padding: 0.5em 0;
+}
+
+.clarify .clarif {
+  visibility: hidden;
+}
+.clarify .results > span:hover .clarif,
+.clarify .results > span[data-n] .clarif {
+  visibility: visible;
+}
+
+.clarify .problem .lineno {
+  font-weight: bold;
+  border-bottom: 2px solid #000;
+}
+
+.clarify .problem .line {
+  color: #fff;
+  font-family: monospace;
+  font-weight: bold;
+  background-color: firebrick;
+  padding: 2px 8px;
+}
+
+.clarify .problem .problem {
+  color: firebrick;
+  font-style: italic;
+}
+.clarify .changes {
+  width: 50%;
+}
+.clarify .changes ins,
+.clarify .changes del {
+  display: block;
+  padding: 2px 8px;
+  font-family: monospace;
+  font-weight: bold;
+  white-space: pre;
+  overflow: hidden;
+  text-decoration: none;
+}
+.clarify .changes ins {
+  background-color: lightgreen;
+  color: darkgreen;
+}
+.clarify .changes del {
+  background-color: salmon;
+  color: firebrick;
+  text-decoration: line-through;
+}
+
+button {
+  display: block;
+  margin: 4px 8px 4px 0;
+
+  background-color: dodgerblue;
+  color: #fff;
+  font-size: 18pt;
+  font-weight: bold;
+  cursor: pointer;
+  bordeR: none;
+  border-radius: 8px;
+  padding: 4pt 12pt;
+}
+button:hover {
+  color: yellow;
+}
+form button {
+  cursor: pointer;
+  font-weight: bold;
+  box-sizing: border-box;
+  font-size: 16pt;
+  padding: 0.3em 0.9em;
+  border: 2px solid dodgerblue;
+  border-radius: 5px;
+}
+form button.safe {
+  background-color: dodgerblue;
+  color: #fff;
+}
+button.danger {
+  background-color: firebrick;
+  color: #fff;
+}
+
+
+.timeline {
+  margin: 1em;
+  position:relative;
+  font-family: Arial, sans-serif;
+  font-size: 1rem;
+}
+
+.timeline::after {
+  background-color: #0a8ab5e3;
+  width: 2px;
+  height: 100%;
+  display: block;
+  content: ' ';
+  position: absolute;
+  top: 20px;
+  left: 0px;
+}
+.timeline > div::after {
+  border: 4px solid #fff;
+  background-color: #166f8c;
+  content: ' ';
+  height: 12px;
+  width: 12px;
+  border-radius: 100%;
+  display: block;
+  position: absolute;
+  left: -39px;
+  z-index:5;
+  top: 2px;
+}
+
+.timeline > div {
+  margin: 0 0 5em 0;
+  position: relative;
+  left: 30px;
+}
+.timeline em {
+  font-weight: bold; 
+  color: #b44537;
+  color: #0071bc;
+}
+.timeline .aggr .gain { color: forestgreen; }
+.timeline .aggr .loss { color: #b44537; }
+.timeline strong {
+  font-size: 110%;
+  font-weight: bold;
+  border-bottom: 2px dotted #888;
+}
+
+.timeline h2 {
+  font-size: 1.35rem;
+  font-family: Arial, sans-serif;
+}
+.timeline h2 > span {
+  font-size: 60%;
+}
+.timeline ul {
+  display: flex;
+  flex-flow: column wrap;
+  padding-left: 1em;
+  line-height: 1.6em;
+  margin: 1em 0;
+}
+.timeline .summary ul {
+  line-height: 1em;
+  margin: 2em 0;
+}
+.timeline .summary li {
+  font-size: 140%;
+  line-height: 1.3em;
+}
+.timeline .aggr li em:first-child {
+  width: 5.5ex;
+  display: inline-block;
+  text-align: right;
+}
+.timeline .aggr li em:nth-child(2) {
+  width: 2.2ex;
+  display: inline-block;
+  text-align: right;
+}
+.timeline .buttons {
+  display: flex;
+  flex-flow: row nowrap;
+  margin: 0 1em;
+}
+.timeline a {
+  color: #0071BC;
+  text-decoration: none;
+}
+.timeline .actions {
+  font-size: 80%;
+  visibility: hidden;
+  display: inline-block;
+  padding-left: 0.5em;
+}
+.timeline > div:hover .actions { visibility: visible; }
+
+
+
+body:not([data-cohort="preview"]) .cohort-preview { display: none; }
+body[data-cohort="preview"] nav li.cohort-preview a::after {
+  font-size: 9pt;
+  content: "(new)";
+  position: relative;
+  top: -0.5em;
+  padding-left: 0.5ex;
+  color: lime;
+}
+
+.deck .title span {
+  font-size: 9pt;
+  font-family: monospace;
+  color: #fff;
+  background-color: purple;
+  padding: 0.5em;
+  border-radius: 0.4em;
+}
+.deck .title h1 {
+  display: block;
+  margin: 4pt 0 1em 0;
+}
+.deck .buttons {
+  display: flex;
+  flex-direction: row;
+}
+.deck .rawlist {
+  font-size: 11pt;
+  font-family: monospace;
+}
+
+.play {
+  padding-bottom: 14vw;
+}
+.play .board {
+  display: flex;
+  flex-direction: row;
+}
+.play .hand {
+  position: fixed;
+  z-index: 5;
+  height: 3.733vw;
+  border-top: 2px solid #000;
+  bottom: 0; left: 0; right: 0;
+  padding: 0.5vw;
+
+  display: flex;
+  justify-content: center;
+
+  background: url(/play/bg.jpg);
+  background-size: cover;
+}
+.play .board img,
+.play .hand  img {
+  width: 8vw; height: 11.2vw;
+  margin: 0.05vw;
+  border-radius: 0.35vw;
+}
+.play .strip img {
+  border-radius: 0.35vw;
+}
+.play .board .zones {
+  padding: 0 0.5vw;
+}
+.play .board .battlefield {
+  flex-grow: 1;
+  /* 1.45 aspect ratio... */
+}
+.play .board .inspect img {
+  width: 24vw; height: 33.5vw;
+  padding: 0 0.25vw;
+  visibility: hidden;
+}
+.play .board img.t {
+  transform: rotate(60deg);
+}
+.play .zones > * {
+  position: relative;
+}
+.play .zones > * img.c {
+  position: absolute;
+}
+.play .zones .exile img,
+.play .zones .graveyard img {
+  visibility: hidden;
+}
+.play .zones .exile img.c,
+.play .zones .graveyard img.c {
+  opacity: 0.5;
+}
+.play .zones .empty img {
+  visibility: visible;
+}
+.play .zones .empty ul {
+  visibility: hidden;
+}
+.play .zones .exile img:last-child,
+.play .zones .graveyard img:last-child {
+  visibility: visible;
+}
+.play .zones .library .placeholder,
+.play .zones .empty.library .back {
+  display: none;
+}
+.play .zones .library .back,
+.play .zones .empty.library .placeholder {
+  display: block;
+}
+.play .zones ul {
+  position: absolute;
+  right: -1vw;
+  top: 2vh;
+  display: none;
+}
+.play .zones > *:hover ul {
+  display: block;
+  z-index: 5;
+}
+.play ul.button li a,
+.play .zones ul li a {
+  display: block;
+  background-color: #333;
+  color: #fff;
+  margin: 0 0 1vh 0;
+  font-size: 9pt;
+  text-decoration: none;
+  text-transform: uppercase;
+  font-family: sans-serif;
+  padding: 4pt;
+  text-align: right;
+  white-space: pre;
+}
+.play .battlefield { position: relative; }
+.play .battlefield img { position: absolute; }
+.play .battlefield img:hover {
+  box-shadow: 0 0 5px purple;
+}
+
+.play .strip {
+  position: fixed;
+  top: 20vh; bottom: 20vh; left: 0; right: 0;
+  border: 3px solid #000; border-width: 3px 0;
+  background-color: #fff;
+  padding: 2vh 0;
+  z-index: 2;
+  overflow-x: auto;
+}
+.play .strip .cards {
+  display: flex;
+  justify-content: center;
+  height: 100%;
+}
+.play .strip img {
+  height: 100%;
+  margin: 0 0.7vw;
+  border-radius: 2vh;
+}
+.play .strip,
+.play .wash {
+  display: none;
+}
+.play .wash {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0,0,0, 0.7);
+  z-index: 1;
+}
+
+.play .h2h {
+  width: 24vw;
+  background-color: #ccc;
+  border-radius: 10pt;
+  margin: 1vw 0.25vw;
+  overflow: hidden;
+  box-shadow: 0 0 12px #707070;
+}
+.play .h2h .p:first-child {
+  border-bottom: 1px solid #aaa;
+}
+.play .h2h .p.ap  { cursor: pointer; background-color: #f0ffeb; }
+.play .h2h .p.nap { cursor: alias;   background-color: #fcfaff; }
+.play .h2h .p.nap span.active { display: none; }
+.play .h2h .p .ap,
+.play .h2h .p .nap {
+}
+.play .h2h .sep {
+  position: relative;
+  top: -0.6em;
+  height: 0;
+  text-align: center;
+}
+.play .h2h .sep span {
+  background-color: #fff;
+  border-radius: 100%;
+  border: 1px solid #aaa;
+  padding: 2px 12px;
+  display: inline-block;
+  margin: 0 auto;
+}
+.play .h2h .p {
+  padding: 20px;
+  font-family: sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+.play .h2h .p .stats {
+  display: flex;
+  flex-direction: row;
+}
+.play .h2h .p .stats .details {
+  flex-grow: 1;
+}
+.play .h2h .p h2 {
+  font-weight: bold;
+  font-size: 16pt;
+  position: relative;
+}
+.play .h2h .p h2 .active {
+  display: block;
+  position: absolute;
+  top: -8pt; right: -8pt;
+
+  font-size: 6pt;
+  font-family: monospace;
+  text-align: right;
+  font-weight: normal;
+  background-color: #333;
+  color: #fff;
+  display: block;
+  float: right;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.play .h2h .p .details {
+  padding: 0 4pt 0 0;
+}
+.play .h2h .p .details p {
+  font-size: 10pt;
+  font-style: italic;
+  margin: 1pt 0 2pt 2pt;
+}
+.play .h2h .p .side {
+  padding: 4pt;
+  text-align: right;
+}
+.play .h2h .p .side .life.total {
+  display: flex;
+  flex-direction: column;
+}
+.play .h2h .p .side .life.total span {
+  font-size: 40pt;
+  font-weight: bold;
+}
+.play .h2h .p .side .life.total label {
+  line-height: 1em;
+  font-size: 11pt;
+  text-transform: uppercase;
+  color: #777;
+  font-weight: bold;
+  position: relative;
+  top: -0.6em;
+}
+.play .h2h .p .side .counters {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: right;
+}
+.play .h2h .p .side .counters span {
+  font-size: 30pt;
+  font-weight: bold;
+}
+.play .h2h .p .side .counters label {
+  text-indent: 5000px;
+  overflow: hidden;
+  display: inline-block;
+  width: 0; height: 0;
+  background-size: cover;
+  opacity: 0.5;
+}
+.play .h2h .p .side .counters:hover label {
+  opacity: 1;
+}
+.play .h2h .p .side .energy.counters label {
+  background-image: url(/play/counters-energy.png);
+  width: 20px; height: 20px;
+}
+.play .h2h .p .side .xp.counters label {
+  background-image: url(/play/counters-xp.png);
+  width: 20px; height: 25px;
+}
+
+.play .details .gauge {
+  height: 2.5em;
+  position: relative;
+  padding: 0.1em 0 0.1em 2em;
+  box-sizing: border-box;
+  margin: 0.5em 0;
+}
+.play .details .gauge .n {
+  background-color: blue;
+  border-radius: 100%;
+  width: 2.5em; height: 2.5em;
+  display: block;
+  text-align: center;
+  line-height: 2.5em;
+  font-weight: bold;
+  color: #fff;
+  position: absolute;
+  top: 0; left: 0;
+}
+.play .details .gauge .fill {
+  height: 1em;
+  margin-top: 0.6em;
+  margin-bottom: 0.1em;
+  width: 100%;
+  border-right: 0.2em solid #000;
+  background: linear-gradient(90deg, #00f, #00f 50%, rgba(0, 0, 255, 0.1) 50%);
+}
+.play .details .gauge label {
+  padding-left: 0.6em;
+  font-weight: bold;
+}
+
+.curve {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: center;
+}
+.curve > div {
+  max-width: 15vw;
+  max-width: 12vw;
+}
+.curve > div ul {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  margin: 0 2pt;
+}
+.curve > div ul li {
+  height: 2vw;
+}
+.curve > div p {
+  text-align: center;
+  font-size: 24pt;
+  color: #888;
+  border-top: 3px solid #000;
+  width: 100%;
+  padding-top: 0.5em;
+  margin: 0 0 1em 0;
+}
+.curve img {
+  width: 100%;
+  border-radius: 8pt;
+}
+
+.hand {
+  margin-bottom: 1em;
+}
+.hand ul {
+  display: flex;
+  flex-direction: row;
+}
+.hand ul li {
+  padding: 8pt 4pt 0pt 4pt;
+}
+.hand img {
+  width: 100%;
+  border-radius: 8pt;
+}
+.hand li.open {
+  xbackground-color: purple;
+}
+.hand li.draw {
+  background-color: #aaa;
+}
+
+/*
+
+   ########  ########  ######  ########   #######  ##    ##  ######  #### ##     ## ########
+   ##     ## ##       ##    ## ##     ## ##     ## ###   ## ##    ##  ##  ##     ## ##
+   ##     ## ##       ##       ##     ## ##     ## ####  ## ##        ##  ##     ## ##
+   ########  ######    ######  ########  ##     ## ## ## ##  ######   ##  ##     ## ######
+   ##   ##   ##             ## ##        ##     ## ##  ####       ##  ##   ##   ##  ##
+   ##    ##  ##       ##    ## ##        ##     ## ##   ### ##    ##  ##    ## ##   ##
+   ##     ## ########  ######  ##         #######  ##    ##  ######  ####    ###    ########
+
+ */
+
+@media only screen and (max-width: 1030px) {
+  .landing {
+    margin: 1em;
+  }
+  .landing > div:nth-child(2) {
+    padding: 1em;
+  }
+}
+
+@media only screen and (max-width: 720px) {
+  header {
+    flex-direction: column;
+  }
+  header h1 {
+    height: 32px;
+    width: 70px;
+    margin: 16px 0 0 16px;
+  }
+  header input {
+    margin: 12px;
+  }
+  header nav {
+    display: none; /* FIXME: temporary */
+  }
+
+  .landing {
+    flex-flow: column wrap;
+    margin: 1em;
+  }
+  .landing.login {
+    flex-direction: column-reverse;
+  }
+  .landing > div {
+    width: 100%;
+  }
+  .landing div {
+    padding: 0;
+    margin: 1em 0 0 0;
+  }
+
+  .grid.results > span .card {
+    width: 85vw;
+    height: 118vw;
+    margin: 5vw;
+    border-radius: 3.9vw;
+  }
+  .grid.results > span .card.face {
+    transform: rotate(0deg);
+  }
+  .grid.results > span .back {
+    transform: rotate(-5deg);
+  }
+
+  .modal-fg .cardable {
+    display: none;
+  }
+  .modal-fg div.detail {
+    top:  5vh; height: 90vh;
+    left: 5vw; width:  90vw;
+    padding: 12px;
+    overflow: auto;
+  }
+}
+
+.play .h2h { display: none; }
+
+
+
+
+.deck-form,
+.transaction-form {
+  padding-bottom: 5rem;
+}
+.deck-form .band,
+.transaction-form .band {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+.deck-form .control,
+.transaction-form .control {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  overflow: hidden;
+  padding: 5px;
+  width: 60%;
+  box-sizing: border-box;
+  margin-top: 0;
+}
+.transaction-form .control.gainloss {
+  width: 30%;
+}
+.deck-form .control.main,
+.transaction-form .control.import {
+  width: 60%;
+  background-color: #e7f7ea;
+}
+.transaction-form .control.gainloss.gained {
+  background-color: #e7f7ea;
+}
+.transaction-form .control.gainloss.lost {
+  background-color: #f2f2f2;
+}
+.transaction-form .control.gainloss:nth-of-type(1) {
+  border-radius: 5px 0 0 5px;
+  border-right: 0;
+}
+.transaction-form .control.gainloss:nth-of-type(2) {
+  border-radius: 0 5px 5px 0;
+}
+.deck-form .control label,
+.transaction-form .control label {
+  color: #333;
+  font-size: 0.75rem;
+  line-height: 1em;
+}
+.deck-form .control input,
+.deck-form .control textarea,
+.transaction-form .control input,
+.transaction-form .control textarea {
+  color: #000;
+  width: 100%;
+  border-radius: 0;
+  border-width: 0;
+  background-color: inherit;
+  color: inherit;
+}
+.deck-form .control input:focus,
+.deck-form .control textarea:focus,
+.transaction-form .control input:focus,
+.transaction-form .control textarea:focus {
+  background-color: inherit;
+  color: inherit;
+}
+.deck-form .control input::placeholder,
+.deck-form .control textarea::placeholder,
+.transaction-form .control input::placeholder,
+.transaction-form .control textarea::placeholder {
+  opacity: 0.2;
+}
+.deck-form .control input:focus::placeholder,
+.deck-form .control textarea:focus::placeholder,
+.transaction-form .control input:focus::placeholder,
+.transaction-form .control textarea:focus::placeholder {
+  opacity: 0.6;
+}
+.deck-form .help,
+.transaction-form .help {
+  font-size: 0.85rem;
+  line-height: 1.1em;
+  width: 40%;
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
+.deck-form .help p:nth-of-type(1),
+.transaction-form .help p:nth-of-type(1) {
+  margin-top: 0;
+}
+.deck-form .help p.example,
+.transaction-form .help p.example {
+  padding-left: 1em;
+}
+.deck-form .help p span.segment,
+.transaction-form .help p span.segment {
+  border: 2px dashed #ccc;
+  border-radius: 4px;
+  padding: 4px;
+  background-color: #eee;
+}
+.deck-form .help p span.segment.highlight,
+.transaction-form .help p span.segment.highlight {
+  background-color: #c0eaec;
+  border-color: #2fb9b3;
+}
+.deck-form button,
+.transaction-form button {
+  font-size: 1rem;
+  display: inline-block;
+}
+.deck-form button.safe,
+.transaction-form button.safe {
+}
+.deck-form button.danger,
+.transaction-form button.danger {
+  background: inherit;
+  font-weight: normal;
+  color: #777;
+  border: none;
+}
+.deck-form button.danger:hover,
+.transaction-form button.danger:hover {
+  color: firebrick;
+}
