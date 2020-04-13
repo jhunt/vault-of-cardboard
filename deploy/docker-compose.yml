@@ -1,0 +1,59 @@
+version: '3'
+services:
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_PASSWORD=foo
+      - POSTGRES_DB=vcb
+  redis:
+    image: redis
+
+  api:
+    depends_on: [db, redis]
+    image: docker.zyxl.xyz/vcb/cardboard:latest
+    entrypoint: ''
+    ports:
+      - '8090:3001'
+    environment:
+      - VCB_DATABASE_URL=postgres://postgres:foo@db/vcb
+      - VCB_REDIS_URL=redis://redis
+      - VCB_FS_ROOT=/data
+      - VCB_LISTEN=127.0.0.1:3000
+    command:
+      - /bin/sh
+      - -c
+      - /cardboard migrate && /cardboard api
+        # docker exec -it deploy_api_1 /cardboard rescry -r /cache -c /data/cards.json -p /data/prices.json -l /data/lookup.json
+    volumes:
+      - data:/data
+      - cache:/cache
+
+  web:
+    depends_on: [api]
+    image: perimeter:dev
+    network_mode: 'service:api' # can't co-exist with ports:[]
+    volumes:
+      - data:/data
+
+  proxycache:
+    image: proxycache:dev
+
+  ingest:
+    image: ingester:dev
+    environment:
+      - CACHE=/cache
+      - http_proxy=http://127.0.0.1:3128
+      - https_proxy=http://127.0.0.1:3128
+    network_mode: 'service:proxycache' # can't co-exist with ports:[]
+    entrypoint: ''
+    command:
+      - /bin/sh
+      - -c
+      - 'sleep 86400'
+        # docker exec -it deploy_ingest_1 /bin/sh -c 'ingest $(curl -sL https://www.vaultofcardboard.com/sets.json | jq -r ".[].code") C19 ELD TBD IKO'
+    volumes:
+      - cache:/cache
+
+volumes:
+  cache:
+  data:

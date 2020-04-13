@@ -1,0 +1,65 @@
+#!/bin/sh
+set -eu
+
+# REQUIRED environment variables:
+#
+#  CACHE  -  Where to store the cached JSON files.
+#
+
+if [[ -z "${CACHE:-}" ]]; then
+  echo >&2 "Missing required environment variable CACHE;"
+  echo >&2 "Please set CACHE to the absolute path of the cache"
+  echo >&2 "directory, where I should store JSON fragments."
+  exit 1
+fi
+
+mkdir -p $CACHE
+rm -rf $CACHE/work
+
+for code in "$@"; do
+  echo "INGESTING set $code..."
+  mkdir -p $CACHE/scry/$code/
+  if [[ ! -f $CACHE/scry/$code/set.json ]]; then
+    echo " - fetching set metadata from Scryfall API..."
+    curl -s https://api.scryfall.com/sets/$code -H Accept:application/json > $CACHE/scry/$code/set.json
+  fi
+
+  n=1
+  next=`jq -r .search_uri < $CACHE/scry/$code/set.json`
+  more="true"
+  while [[ $more == "true" ]]; do
+    if [[ ! -f $CACHE/scry/$code/cards$n.json ]]; then
+      echo "  - fetching card results page $n from Scryfall API..."
+      curl -s $next -H Accept:application/json > $CACHE/scry/$code/cards$n.json
+    fi
+    more=`jq -r .has_more  < $CACHE/scry/$code/cards$n.json`
+    next=`jq -r .next_page < $CACHE/scry/$code/cards$n.json`
+    n=`expr $n + 1`
+  done
+  n=`expr $n - 1`
+
+  mkdir -p $CACHE/work/$code
+  cp $CACHE/scry/$code/set.json \
+     $CACHE/work/$code/set.json
+
+  echo '{"cards":[]}' > $CACHE/work/$code/cards.json
+  for n in `seq 1 $n`; do
+    jq -r '{ cards: .data }' $CACHE/scry/$code/cards$n.json > $CACHE/work/$code/next.json
+    jq -n --argfile a $CACHE/work/$code/cards.json \
+          --argfile b $CACHE/work/$code/next.json \
+          '{"cards": [ $a.cards[], $b.cards[] ]}' > $CACHE/work/$code/out.json
+    mv $CACHE/work/$code/out.json \
+       $CACHE/work/$code/cards.json
+  done
+
+  mkdir -p $CACHE/dat
+  jq -n --argfile a $CACHE/scry/$code/set.json \
+        --argfile b $CACHE/work/$code/cards.json \
+        '$a * $b' > $CACHE/dat/$code.json
+
+  if [[ ${DEBUG:-no} = "yes" ]]; then
+    echo "scry:"; ls -l $CACHE/scry/$code/
+    echo "work:"; ls -l $CACHE/work/$code/
+    echo "final:"; jq -Mr . $CACHE/dat/$code.json
+  fi
+done
