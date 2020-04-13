@@ -327,6 +327,64 @@ cmp_deeply(
 
 ######################################################################
 ###
+###   DECK MANAGEMENT
+###
+###   These tests exercise the creation, retrieval, update, and delete
+###   logic of user-owned deck lists.
+###
+
+my $res = get("/v1/collectors/$UID/decks");
+ok($res->is_success, "should be able to retrieve the (empty) deck list, as JSON")
+	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
+cmp_deeply(
+	from_json($res->content),
+	{
+		decks => [],
+	},
+	"without creating any decks, we should get an empty deck list");
+
+my $res = post("/v1/collectors/$UID/decks", as => $SID, payload => {
+	title       => 'Mono Red Burn',
+	description => 'ouch ouch ouch it burns!',
+	main        => "20x MIR Mountain\n".
+	               "20x MIR Incinerate\n",
+	side        => "15x MIR Mountain\n",
+	maybe       => "15x MIR Incinerate\n",
+});
+ok($res->is_success, "should be able to post a new deck, as JSON")
+	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
+
+my $res = get("/v1/collectors/$UID/decks");
+ok($res->is_success, "should be able to retrieve the (now-populated) deck list, as JSON")
+	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
+cmp_deeply(
+	from_json($res->content),
+	{
+		decks => [
+			{
+				id          => is_uuid(),
+				collector   => $UID,
+				created_at  => ignore(),
+				updated_at  => ignore(),
+				lineage     => is_uuid(),
+				ordinal     => 0,
+				title       => 'Mono Red Burn',
+				description => 'ouch ouch ouch it burns!',
+				main        => "20x MIR Mountain\n".
+				               "20x MIR Incinerate\n",
+				side        => "15x MIR Mountain\n",
+				maybe       => "15x MIR Incinerate\n",
+			},
+		],
+	},
+	"without creating any decks, we should get an empty deck list");
+
+
+######################################################################
+###
 ###   AUTHORIZATION
 ###
 ###   These tests validate that authenticated users can only access and

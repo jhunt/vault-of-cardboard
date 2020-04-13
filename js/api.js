@@ -116,7 +116,64 @@ let API = {
       }
       return r.json();
     });
-  }
+  },
+
+  fetch_decks_for(uid) {
+    return fetch_the_json('/v1/collectors/'+uid+'/decks')
+      .then(d => d.decks);
+  },
+
+  patch_deck(auth, deck) {
+    let did = deck.id;
+    return fetch('/v1/collectors/'+auth.uid+'/decks/'+did, {
+      method: 'PATCH',
+      headers: authorized(auth.session),
+      body: JSON.stringify({
+        title:       deck.title       || '',
+        description: deck.description || '',
+        main:        deck.main        || '',
+        side:        deck.side        || '',
+        maybe:       deck.maybe       || ''
+      })
+    }).then(r => {
+      if (!r.ok) {
+        throw new Error('API issue trying to patch /v1/collectors/'+auth.uid+'/decks/'+did+': got non-ok response '+r);
+      }
+      return r.json();
+    });
+  },
+
+  post_deck(auth, deck) {
+    return fetch('/v1/collectors/'+auth.uid+'/decks', {
+      method: 'POST',
+      headers: authorized(auth.session),
+      body: JSON.stringify({
+        title:       deck.title       || '',
+        description: deck.description || '',
+        main:        deck.main        || '',
+        side:        deck.side        || '',
+        maybe:       deck.maybe       || ''
+      })
+    }).then(r => {
+      if (!r.ok) {
+        throw new Error('API issue trying to post /v1/collectors/'+auth.uid+'/decks: got non-ok response '+r);
+      }
+      return r.json();
+    });
+  },
+
+  delete_deck(auth, did) {
+    return fetch('/v1/collectors/'+auth.uid+'/decks/'+did, {
+      method: 'DELETE',
+      headers: authorized(auth.session)
+    }).then(r => {
+      if (!r.ok) {
+        throw new Error('API issue trying to delete /v1/collectors/'+auth.uid+'/decks/'+did+': got non-ok response '+r);
+      }
+      return r.json();
+    });
+  },
+
 };
 
 module.exports.API = API;

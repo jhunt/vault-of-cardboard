@@ -161,217 +161,6 @@
   </div>
 </script><!-- }}} -->
 
-<script type="text/html" id="template:decks"><!-- {{{ -->
-  <div class="decks prose">
-    <h1>Your Decks</h1>
-    [[ if (_.decks && _.decks.length > 0) { ]]
-      <button rel="new-deck">New Deck</button>
-      <table class="decks sortable listing">
-        <thead><tr>
-          <th class="sortable">Code</th>
-          <th class="sortable">Name</th>
-          <th class="sortable" data-sort-as="number">Created</th>
-          <th class="sortable" data-sort-as="number">Last Updated</th>
-        </tr></thead>
-        <tbody>
-        [[ $.each(_.decks, function (i, deck) { ]]
-          <tr>
-            <td><a href="#!/deck/[[= deck.code ]]">[[= deck.code ]]</a></td>
-            <td><a href="#!/deck/[[= deck.code ]]">[[= deck.name ]]</a></td>
-            <td data-sort="[[= deck.created_at ]]">[[= strftime("%B %Oe, %Y", dated(deck.created_at)) ]]</td>
-            <td data-sort="[[= deck.updated_at ]]">[[= strftime("%B %Oe, %Y", dated(deck.updated_at)) ]]</td>
-          </tr>
-        [[ }); ]]
-        </tbody>
-      </table>
-    [[ } else { ]]
-      <p>You have no decks!</p>
-
-      [[ include("import-deck"); ]]
-    [[ } ]]
-  </div>
-</script><!-- }}} -->
-<script type="text/html" id="template:import-deck"><!-- {{{ -->
-  <div class="prose">
-    <h1>Import a Deck</h1>
-    <form id="deck" class="import">
-      <div><label for="code">Internal Identifier</label>
-           <input type="text" name="code"
-                  class="autofocus"
-                  placeholder="A unique ID to use with 'in:...' queries"
-                  data-validate="present;min=2;max=40"
-                  data-error-if-missing="Please provide an internal identifier, for use in querying the contents of this deck."
-                  data-error-out-of-bounds="Identifiers must be between 2 and 40 characters long."
-                  autocomplete="off">
-      </div>
-
-      <div><label for="name">Deck Name</label>
-           <input type="text" name="name"
-                  class="autofocus"
-                  placeholder="A name for this deck, which will be displayed to others."
-                  data-validate="present;min=2"
-                  data-error-if-missing="Please provide a name for this deck."
-                  data-error-out-of-bounds="Deck names must be at least two characters long."
-                  autocomplete="off">
-
-      </div>
-
-      <div><label for="notes">Notes</label>
-           <textarea name="notes" placeholder="(feel free to expound on the premise and power of your deck...)"
-                     data-validate="max=2000"></textarea>
-      </div>
-      <div><label for="cardlist">Cards List</label>
-           <textarea name="cardlist" class="vif"
-                     data-validate="present;max=100k"
-># enter your deck list here, using the following format:
-# 4x NPH Darksteel Relic
-
-</textarea>
-      </div>
-      <div class="oops" style="display: none"></div>
-      <div class="clarify"></div>
-      <div>
-        <button class="default safe" data-in-progress="Importing..." type="submit">Import</button></form>
-      </div>
-    </form>
-  </div>
-</script><!-- }}} -->
-<script type="text/html" id="template:edit-deck"><!-- {{{ -->
-  <div class="prose">
-    <h1>Import a Deck</h1>
-    <form id="deck" class="import">
-      <input type="hidden" name="id" value="[[= _.deck.code ]]">
-      <div><label for="code">Internal Identifier</label>
-           <input type="text" name="code"
-                  value="[[= _.deck.code ]]"
-                  class="autofocus"
-                  placeholder="A unique ID to use with 'in:...' queries"
-                  data-validate="present;min=2;max=40"
-                  data-error-if-missing="Please provide an internal identifier, for use in querying the contents of this deck."
-                  data-error-out-of-bounds="Identifiers must be between 2 and 40 characters long."
-                  autocomplete="off">
-      </div>
-
-      <div><label for="name">Deck Name</label>
-           <input type="text" name="name"
-                  value="[[= _.deck.name ]]"
-                  class="autofocus"
-                  placeholder="A name for this deck, which will be displayed to others."
-                  data-validate="present;min=2"
-                  data-error-if-missing="Please provide a name for this deck."
-                  data-error-out-of-bounds="Deck names must be at least two characters long."
-                  autocomplete="off">
-
-      </div>
-
-      <div><label for="notes">Notes</label>
-           <textarea name="notes" placeholder="(feel free to expound on the premise and power of your deck...)"
-                     data-validate="max=2000">[[= _.deck.notes ]]</textarea>
-      </div>
-      <div><label for="cardlist">Cards List</label>
-           <textarea name="cardlist" class="vif"
-                     data-validate="present;max=100k">[[= _.deck.cardlist ]]</textarea>
-      </div>
-      <div class="oops" style="display: none"></div>
-      <div class="clarify"></div>
-      <div>
-        <button class="default safe" data-in-progress="Saving..." type="submit">Save</button></form>
-      </div>
-    </form>
-  </div>
-</script><!-- }}} -->
-<script type="text/html" id="template:deck"><!-- {{{ -->
-  <div class="deck prose" data-uuid="[[= _.deck.id ]]" data-id="[[= _.deck.code ]]">
-    <div class="title">
-      <span>in:[[= _.deck.code ]]</span>
-      <h1>[[= _.deck.name ]]</h1>
-    </div>
-    <div class="buttons">
-      <button rel="playtest">Play!</button>
-      <button rel="edit-deck">Edit</button>
-      <button class="danger" rel="delete-deck">Delete</button>
-    </div>
-
-    [[ if (_.deck.notes.replace(/(^\s+|\s+$)/, '') != "") { ]]
-    <h2>Notes</h2>
-    <div>[[= _.deck.notes ]]</div>
-    [[ } ]]
-
-    <h2>Mana Curve</h2>
-    [[ var curve = [];
-       var max = 0,
-           min = undefined;
-       for (var i = 0; i < _.deck.cards.cards.length; i++) {
-         var card = _.deck.cards.oracle[_.deck.cards.cards[i].replace(/\/.*/,'' )];
-         if (card.type.match(/\bLand\b/)) {
-           continue;
-         }
-         if (!(card.cmc in curve)) {
-           curve[card.cmc] = [];
-         }
-         curve[card.cmc].push(card);
-         if (card.cmc > max) {
-           max = card.cmc;
-         }
-         if (typeof min === 'undefined' || card.cmc < min) {
-           min = card.cmc;
-         }
-       }
-
-       for (var i = 0; i <= max; i++) {
-         if (!curve[i]) {
-           curve[i] = [];
-         }
-       }
-    ]]
-    <div class="curve">
-      [[ for (var i = min; i < curve.length; i++) { ]]
-      <div>
-        <ul>
-        [[ for (var j = 0; j < curve[i].length; j++) {
-             var c = curve[i][j];
-             var alt = c.name + ' [' + c.set.code + ']'; ]]
-          <li><img data-id="[[= c.id ]]"
-                   src="[[= $CONFIG.imgroot ]]/cards/[[= c.image ]]"
-                   alt="[[= alt ]]" title="[[= alt ]]"></li>
-        [[ } ]]
-        </ul>
-        <p>[[= i ]]</p>
-      </div>
-      [[ } ]]
-    </div>
-
-    <h2>Sample Hand</h2>
-    <button rel="mulligan">Mulligan!</button>
-    [[ var lib = [];
-       for (var i = 0; i < _.deck.cards.cards.length; i++) {
-         lib.push(_.deck.cards.oracle[_.deck.cards.cards[i].replace(/\/.*/,'' )]);
-       }
-    ]]
-    [[ for (var cards = 7; cards > 2; cards--) { ]]
-      [[ lib = window.shuffle(lib); ]]
-    <div class="hand">[[ include('deck-hand', { n: 14, hand: cards, lib: lib }); ]]</div>
-    [[ } ]]
-
-    <h2>What's In It?</h2>
-    <pre class="rawlist"><code>[[= _.deck.cardlist ]]</code></pre>
-
-  </div>
-</script><!-- }}} -->
-<script type="text/html" id="template:deck-hand"><!-- {{{ -->
-  [[ var lib = window.shuffle(_.lib); ]]
-  <ul>
-    [[ for (var i = 0; i < Math.min(_.n, lib.length); i++) { ]]
-      [[ if (i % 7 == 0) { ]]</ul><ul>[[ } ]]
-      [[ var alt = lib[i].name + ' [' + lib[i].set.code + ']'; ]]
-      <li class="[[= i >= _.hand ? 'draw' : 'open' ]]">
-        <img data-id="[[= lib[i].id ]]"
-             src="[[= $CONFIG.imgroot ]]/cards/[[= lib[i].image ]]"
-             alt="[[= alt ]]" title="[[= alt ]]"></li>
-    [[ } ]]
-  </ul>
-</script><!-- }}} -->
-
 <script type="text/javascript">
   var $CONFIG = {
     imgroot: "//vault-of-cardboard.s3.amazonaws.com"
@@ -382,11 +171,8 @@
 <script type="text/javascript" src="js/util.js"></script>
 <script type="text/javascript" src="js/table.js"></script>
 <script type="text/javascript" src="js/lens.js"></script>
-<script type="text/javascript" src="js/forms.js"></script>
-<script type="text/javascript" src="js/diff.js"></script>
 <script type="text/javascript" src="js/clarify.js"></script>
 <script type="text/javascript" src="js/play.js"></script>
-<script type="text/javascript" src="config.js"></script>
 <script type="text/javascript" src="/js/cardboard.min.js"></script>
 <script type="text/javascript">
 Vue.component('copyright-footer', {
@@ -733,6 +519,284 @@ Vue.component('set-list', {
 </div>
 `
 })
+
+Vue.component('deck-list', {
+  props: ['decks'],
+  data: function () {
+    return {
+      mode: 'view',
+    }
+  },
+  mounted() {
+    $('#main table.sortable').sortableTable();
+  },
+  methods: {
+    dated:    dated,
+    strftime: strftime,
+
+    start_new_deck() {
+      event.preventDefault();
+      this.mode = 'new';
+    },
+
+    show_deck(deck) {
+      UI.deck = deck;
+      UI.redraw('deck');
+    },
+
+    create_deck(ev) {
+      this.decks.push(ev.deck);
+      this.mode = 'view';
+    },
+
+    update_deck(ev) {
+      for (var i = 0; i < this.decks.length; i++) {
+        if (this.decks[i].id == ev.deck.id) {
+          Object.assign(this.decks[i], ev.deck);
+          break;
+        }
+      }
+      this.mode = 'view';
+    },
+
+    delete_deck(id) {
+      for (var i = 0; i < this.decks.length; i++) {
+        if (this.decks[i].id == id) {
+          this.decks.splice(i, 1);
+          break;
+        }
+      }
+      this.mode = 'view';
+    },
+
+  },
+  template: `
+<div class="decks prose">
+  <h1>Your Magic: the Gathering Decks</h1>
+  <div class="buttons" v-if="mode == 'view'">
+    <button class="create" @click="start_new_deck()">Craft New Deck</button>
+  </div>
+  <deck-form
+    v-else
+    @created-deck="create_deck($event)"
+    mode="new"></deck-form>
+
+  <table class="decks sortable listing">
+    <thead><tr>
+      <th class="sortable">ID</th>
+      <th class="sortable">Name</th>
+      <th class="sortable" data-sort-as="number">Created</th>
+      <th class="sortable" data-sort-as="number">Last Updated</th>
+    </tr></thead>
+    <tbody>
+      <tr v-for="deck in decks" :key="deck.id">
+        <td><a href="#" @click="show_deck(deck)">{{ deck.id }}</a></td>
+        <td><a href="#" @click="show_deck(deck)">{{ deck.title }}</a></td>
+        <td :data-sort="deck.created_at">{{ strftime("%B %Oe, %Y", dated(deck.created_at)) }}</td>
+        <td :data-sort="deck.updated_at">{{ strftime("%B %Oe, %Y", dated(deck.updated_at)) }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+`
+})
+
+Vue.component('deck-form', {
+  props: {
+    mode: String,
+    deck: {
+      type: Object,
+      default: function() {
+        return {
+          title:       '',
+          description: '',
+          main:        '',
+          side:        '',
+          maybe:       ''
+        };
+      }
+    }
+  },
+  data() {
+    return {
+    };
+  },
+  methods: {
+    save() {
+      event.preventDefault();
+
+      if (this.deck.id) {
+        cardboard.API.patch_deck(UI.session, this.deck)
+          .then(data => this.$emit('updated-deck', data));
+
+      } else {
+        cardboard.API.post_deck(UI.session, this.deck)
+          .then(data => this.$emit('created-deck', data));
+      }
+    },
+    remove() {
+      event.preventDefault();
+
+      cardboard.API.delete_deck(UI.session, this.deck.id)
+        .then(data => this.$emit('deleted-deck', this.deck.id));
+    }
+  },
+  template: `
+<form :class="'deck-form import ' + mode" @submit="save()">
+  <h2 v-if="mode == 'new'">Craft a New Deck</h2>
+  <h2 v-else="mode == 'edit'">Update an Existing Deck</h2>
+  <!--
+  <div><label for="code">Internal Identifier</label>
+       <input type="text" name="code"
+              class="autofocus"
+              placeholder="A unique ID to use with 'in:...' queries"
+              data-validate="present;min=2;max=40"
+              data-error-if-missing="Please provide an internal identifier, for use in querying the contents of this deck."
+              data-error-out-of-bounds="Identifiers must be between 2 and 40 characters long."
+              autocomplete="off">
+  </div>
+  -->
+
+  <div class="band">
+    <div class="control">
+      <label for="title">Title of Deck</label>
+      <input type="text" name="title" v-model="deck.title"
+             class="autofocus"
+             placeholder="A name for this deck, which will be displayed to others."
+             data-validate="present;min=2"
+             data-error-if-missing="Please provide a name for this deck."
+             data-error-out-of-bounds="Deck names must be at least two characters long."
+             autocomplete="off">
+    </div>
+  </div>
+
+  <div class="band">
+    <div class="control">
+      <label for="description">Description / Notes</label>
+      <textarea name="description" v-model="deck.description"
+                placeholder="(feel free to expound on the premise and power of your deck...)"
+                data-validate="max=2000"></textarea>
+    </div>
+  </div>
+
+  <div class="band">
+    <div class="control">
+      <label for="main">Maindeck</label>
+      <textarea name="main" v-model="deck.main"
+                class="vif"
+                data-validate="present;max=100k"
+># enter your deck list here, using the following format:
+# 4x NPH Darksteel Relic
+
+</textarea>
+    </div>
+    <div class="help">
+      <p>VIF format is designed to be simple.<br>
+         First, specify how many cards are gained or lost:</p>
+      <p class="example"><span class="segment highlight">4x</span> <span class="segment">MIR</span> <span class="segment">Lion's Eye Diamond</span></p>
+      <p>Then, what set the printed cards are from:</p>
+      <p class="example"><span class="segment">4x</span> <span class="segment highlight">MIR</span> <span class="segment">Lion's Eye Diamond</span></p>
+      <p>Then the full card oracle name:</p>
+      <p class="example"><span class="segment">4x</span> <span class="segment">MIR</span> <span class="segment highlight">Lion's Eye Diamond</span></p>
+    </div>
+  </div>
+
+  <div>
+    <button class="default safe" type="submit">{{ mode == 'new' ? "Create" : "Update" }} Deck</button>
+    <button v-if="mode == 'edit'" @click="remove()" class="danger">Delete This Deck</button>
+  </div>
+</form>
+`
+});
+
+Vue.component('deck', {
+  props: ['deck'],
+  data: function () {
+    return {
+      imgroot: $CONFIG.imgroot,
+    }
+  },
+  computed: {
+    cards() {
+      return UI.vault.resolve(this.deck.main);
+    },
+
+    curve() {
+      let min = undefined,
+          max = 0;
+      let curve = [];
+
+      UI.vault.filter(this.cards, '!type:land').forEach(card => {
+        if (!(card.cmc in curve)) {
+          curve[card.cmc] = [];
+        }
+        curve[card.cmc].push(card);
+        if (card.cmc > max) { max = card.cmc; }
+        if (typeof(min) === 'undefined' || card.cmc < min) { min = card.cmc; }
+      });
+
+      for (let i = 0; min && i < min; i++) {
+        curve[i] = [];
+      }
+      return curve;
+    },
+
+    library() {
+      return cardboard.shuffle([...this.cards]);
+    },
+
+    sample_hand() {
+      return this.library.slice(0,7);
+    },
+  },
+  methods: {
+    next_draws(n) {
+      return this.library.slice(8,n+8);
+    }
+  },
+  template: `
+<div class="deck prose" :data-uuid="deck.id">
+  <div class="title">
+    <span>in:{{ deck.id }}</span>
+    <h1>{{ deck.name }}</h1>
+  </div>
+  <div class="buttons">
+    <button rel="playtest">Play!</button>
+    <button rel="edit-deck">Edit</button>
+    <button rel="edit-deck" class="danger">Delete Deck</button>
+  </div>
+
+  <h2>Description / Notes</h2>
+  <div>{{ deck.notes }}</div>
+
+  <h2>Mana Curve</h2>
+  <div class="curve">
+    <div v-for="(stack, cmc) in curve">
+      <ul>
+        <li v-for="card in stack">
+           <img :src="imgroot + '/cards/' + card.image"
+                :alt="card.name + ' [' + card.set.code + ']'"
+                :title="card.name + ' [' + card.set.code + ']'"></li>
+        <li><img src="/img/mtgback.jpg"></li>
+      </ul>
+      <p>{{ cmc }}</p>
+    </div>
+  </div>
+
+  <h2>Sample Hand</h2>
+  <button rel="mulligan">Mulligan!</button>
+  <div class="hand"><card-grid :cards="sample_hand"></card-grid></div>
+
+  <h2>Next 10 Draws</h2>
+  <button rel="mulligan">Mulligan!</button>
+  <div class="hand"><card-grid :cards="next_draws(10)"></card-grid></div>
+
+  <h2>What's In It?</h2>
+  <pre class="rawlist"><code>{{ deck.main }}</code></pre>
+</div>
+`
+});
+
 Vue.component('card-grid', {
   props: ['q', 'oops', 'cards'],
   template: `
@@ -1142,6 +1206,7 @@ let UI = new Vue({
     modal: false,
 
     sets: [],
+    decks: [],
 
     transactions: [],
 
@@ -1240,6 +1305,14 @@ let UI = new Vue({
           UI.sets = UI.vault.sets;
           UI.redraw('sets');
         });
+
+      } else if (sub == "decks") {
+        UI.redraw('loading');
+        cardboard.When('authenticated', () =>
+          cardboard.API.fetch_decks_for(UI.session.uid).then(decks => {
+            UI.decks = decks;
+            UI.redraw('decks');
+          }));
 
       } else if (sub.match(/^draft(\/.*)?$/)) {
         var set = sub.replace(/^draft\//, '')
@@ -1372,7 +1445,7 @@ let UI = new Vue({
       <li v-if="session"><a class="-username">{{ session.username }}</a>
         <nav>
           <li><a href="#!/timeline">My Collection</a></li>
-          <li v-if="session.cohort == 'preview'"><a href="#!/decks">Decks</a></li>
+          <li v-if="session.cohort != 'stable'"><a href="#!/decks">Decks</a></li>
           <li><a href="#!/logout" rel="logout">Sign out</a></li>
         </nav></li>
     </nav>
@@ -1401,6 +1474,12 @@ let UI = new Vue({
     <set-list
       v-else-if="mode == 'sets'"
       :sets="sets"></set-list>
+    <deck-list
+      v-else-if="mode == 'decks'"
+      :decks="decks"></deck-list>
+    <deck
+      v-else-if="mode == 'deck'"
+      :deck="deck"></deck>
     <docs
       v-else-if="mode == 'docs'"
       :docs="docs"></docs>
@@ -1470,53 +1549,6 @@ function tparse(d) { // {{{
 var $INDEX = {};
 
 $(function () {
-  function goto(sub) {
-    return;
-    if (sub.match(/^play(\/.*)?$/)) {
-      var id = sub.replace(/.*play\//, '');
-
-      $('#main').template('play');
-      new TabletopAlpha(id, $('#main .play'));
-      return;
-    }
-
-    if (sub.match(/^decks(\/.*)?$/)) {
-      $.ajax({
-        type: 'GET',
-        url:  '/my/decks',
-        success: function (data) {
-          if (data.authn == 'required') {
-            document.location.hash = '#!/login';
-            return;
-          }
-          $('#main').template('decks', { decks: data });
-        }
-      });
-      return;
-    }
-    if (sub.match(/^import\/deck$/)) {
-      $('#main').template('import-deck');
-      return;
-    }
-
-    if (sub.match(/^deck\/(.*)(\/.*)?$/)) {
-      sub = sub.replace(/^deck\//, '');
-      var id = decodeURIComponent(sub.replace(/\/.*/, ''));
-      $.ajax({
-        type: 'GET',
-        url:  '/my/decks/'+id,
-        success: function (data) {
-          if (sub.match(/\/edit$/)) {
-            $('#main').template('edit-deck', { deck: data });
-          } else {
-            $('#main').template('deck', { deck: data });
-          }
-        }
-      });
-      return;
-    }
-  }
-
   $(window).on('hashchange', function (event) {
     if (document.location.hash.match(/^#!/)) {
       UI.goto(document.location.hash.replace(/^#!\/?/, ''));
@@ -1560,29 +1592,9 @@ $(function () {
     document.location.hash = '#!/';
     goto('');
   })
-  .on('click', 'button[rel="new-deck"]', function (event) {
-    document.location.hash = "#!/import-deck";
-    event.preventDefault();
-    $('#main').template("import-deck")
-              .autofocus();
-  })
-  .on('click', 'button[rel="edit-deck"]', function (event) {
-    event.preventDefault();
-    document.location.hash = "#!/deck/"+($(event.target).closest('.deck').attr('data-id'))+"/edit";
-  })
   .on('click', 'button[rel="playtest"]', function (event) {
     event.preventDefault();
     document.location.hash = "#!/play/"+($(event.target).closest('.deck').attr('data-uuid'));
-  })
-  .on('click', 'button[rel="delete-deck"]', function (event) {
-    event.preventDefault();
-    if (confirm("Are you sure you want to remove this deck?")) {
-      $.ajax({
-        type: 'DELETE',
-        url:  '/my/decks/'+$(event.target).closest('.deck').attr('data-id'),
-        success: function () { document.location.hash = "#!/decks/"+now(); }
-      });
-    }
   })
   .on('submit', 'form#buy, form#sell, form#import', function (event) {
     event.preventDefault();
@@ -1640,63 +1652,6 @@ $(function () {
           success: function () {
             console.log('changes posted; redirecting to the timeline...');
             document.location.hash = '#!/timeline/'+now();
-          }
-        });
-      }
-    });
-  })
-  .on('submit', 'form#deck', function (event) {
-    event.preventDefault();
-    var $form = $(event.target);
-    var $oops = $form.find('.oops');
-
-    if (!$form.validate('reset').validate('validate')) {
-      $oops.html('There were problems with this deck import...').show();
-      return;
-    }
-
-    var $save = $form.find('button[data-in-progress]');
-    $save.attr('data-original', $save.text())
-         .text($save.attr('data-in-progress'))
-         .addClass('in-progress');
-
-    Clarifier.check($form.find('textarea.vif').val(), {
-      update: function (vif) {
-        $form.find('textarea.vif').val(vif);
-      },
-
-      failed: function (clarifier, error) {
-        $save.removeClass('in-progress')
-             .text($save.attr('data-original'));
-
-        $oops.hide();
-        if (clarifier) {
-          $oops.html('There were some problems with your import').fadeIn();
-          clarifier.mount($form.closest('div').find('.clarify'));
-
-          if (clarifier.interactive()) {
-            $form.find('button[type=submit]').hide();
-          } else {
-            $form.find('button[type=submit]').show();
-          }
-
-        } else {
-          $oops.html(error).fadeIn();
-        }
-      },
-
-      ok: function () {
-        $('.clarify').empty().append('<div class="ok">Everything looks good!  Importing your deck...</div>');
-
-        var data = $form.serializeObject();
-        $.ajax({
-          type: (data.id ? 'PUT'                : 'POST'),
-          url:  (data.id ? '/my/decks/'+data.id : '/my/decks'),
-          contentType: 'application/json',
-          data: JSON.stringify(data),
-          success: function () {
-            console.log('changes posted; redirecting to the deck list...');
-            document.location.hash = '#!/decks/'+now();
           }
         });
       }

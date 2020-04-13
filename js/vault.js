@@ -1,4 +1,5 @@
-const Query = require('./query.js').Query,
+const CDIF  = require('./cdif.js').CDIF,
+      Query = require('./query.js').Query,
       When  = require('./when.js').When,
       Fuse  = require('fuse.js');
 
@@ -193,6 +194,17 @@ class Vault {
     return false;
   }
 
+  filter(cards, q) {
+    var query = Query.parse(q);
+    var found = [];
+    cards.forEach(card => {
+      if (query.match(card)) {
+        found.push(card);
+      }
+    });
+    return found;
+  }
+
   search(q, limit) {
     var query = Query.parse(q);
     var found = [];
@@ -214,6 +226,18 @@ class Vault {
     });
 
     return found;
+  }
+
+  resolve(cdif) {
+    let pile = [];
+    CDIF.parse(cdif).forEach(line => {
+      let card = this.find(line.set, line.oracle);
+      if (!card) {
+        throw new Error('card ['+line.set+'] "'+line.oracle+'" not found in vault.');
+      }
+      Array.from({ length: line.quantity }).forEach(() => pile.push(card));
+    });
+    return pile;
   }
 
   clarify(set, name) {

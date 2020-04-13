@@ -1424,15 +1424,18 @@ body[data-cohort="preview"] nav li.cohort-preview a::after {
 
 
 
+.deck-form,
 .transaction-form {
   padding-bottom: 5rem;
 }
+.deck-form .band,
 .transaction-form .band {
   width: 100%;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
 }
+.deck-form .control,
 .transaction-form .control {
   border: 1px solid #ccc;
   border-radius: 5px;
@@ -1445,6 +1448,7 @@ body[data-cohort="preview"] nav li.cohort-preview a::after {
 .transaction-form .control.gainloss {
   width: 30%;
 }
+.deck-form .control.main,
 .transaction-form .control.import {
   width: 60%;
   background-color: #e7f7ea;
@@ -1462,11 +1466,14 @@ body[data-cohort="preview"] nav li.cohort-preview a::after {
 .transaction-form .control.gainloss:nth-of-type(2) {
   border-radius: 0 5px 5px 0;
 }
+.deck-form .control label,
 .transaction-form .control label {
   color: #333;
   font-size: 0.75rem;
   line-height: 1em;
 }
+.deck-form .control input,
+.deck-form .control textarea,
 .transaction-form .control input,
 .transaction-form .control textarea {
   color: #000;
@@ -1476,19 +1483,26 @@ body[data-cohort="preview"] nav li.cohort-preview a::after {
   background-color: inherit;
   color: inherit;
 }
+.deck-form .control input:focus,
+.deck-form .control textarea:focus,
 .transaction-form .control input:focus,
 .transaction-form .control textarea:focus {
   background-color: inherit;
   color: inherit;
 }
+.deck-form .control input::placeholder,
+.deck-form .control textarea::placeholder,
 .transaction-form .control input::placeholder,
 .transaction-form .control textarea::placeholder {
   opacity: 0.2;
 }
+.deck-form .control input:focus::placeholder,
+.deck-form .control textarea:focus::placeholder,
 .transaction-form .control input:focus::placeholder,
 .transaction-form .control textarea:focus::placeholder {
   opacity: 0.6;
 }
+.deck-form .help,
 .transaction-form .help {
   font-size: 0.85rem;
   line-height: 1.1em;
@@ -1496,34 +1510,42 @@ body[data-cohort="preview"] nav li.cohort-preview a::after {
   padding: 0 1rem;
   box-sizing: border-box;
 }
+.deck-form .help p:nth-of-type(1),
 .transaction-form .help p:nth-of-type(1) {
   margin-top: 0;
 }
+.deck-form .help p.example,
 .transaction-form .help p.example {
   padding-left: 1em;
 }
+.deck-form .help p span.segment,
 .transaction-form .help p span.segment {
   border: 2px dashed #ccc;
   border-radius: 4px;
   padding: 4px;
   background-color: #eee;
 }
+.deck-form .help p span.segment.highlight,
 .transaction-form .help p span.segment.highlight {
   background-color: #c0eaec;
   border-color: #2fb9b3;
 }
+.deck-form button,
 .transaction-form button {
   font-size: 1rem;
   display: inline-block;
 }
+.deck-form button.safe,
 .transaction-form button.safe {
 }
+.deck-form button.danger,
 .transaction-form button.danger {
   background: inherit;
   font-weight: normal;
   color: #777;
   border: none;
 }
+.deck-form button.danger:hover,
 .transaction-form button.danger:hover {
   color: firebrick;
 }

@@ -1,15 +1,4 @@
 ;(function (jQuery, exported, document, undefined) {
-  exported.now = function () {
-    var d = new Date();
-    return d.getTime();
-  };
-
-  exported.time = function (ts) {
-    var d = new Date();
-    d.setTime(parseInt(ts) * 1000);
-    return d;
-  };
-
   exported.clean = function (s) {
     return (s || '').replace(/\xe2\x80\x94/g, '&mdash;')
                     .replace(/\xe2\x88\x92/g, '-');
@@ -31,16 +20,6 @@
     return this;
   };
 
-  exported.yyyymmdd = function(d) {
-    var yyyy = (d.getUTCFullYear()).toString(),
-          mm = (d.getUTCMonth() + 1).toString(),
-          dd = (d.getUTCDate()).toString();
-
-    if (mm.length == 1) { mm = "0"+mm; }
-    if (dd.length == 1) { dd = "0"+dd; }
-    return yyyy+mm+dd;
-  };
-
   exported.dated = function (yyyymmdd, unknown) {
     yyyymmdd = (yyyymmdd || '').toString();
     if (yyyymmdd.length == 4) { yyyymmdd += '0101'; }
@@ -51,10 +30,6 @@
     var mm   = (yyyymmdd -          dd) /   100 % 100;
     var yyyy = (yyyymmdd - mm*100 - dd) / 10000;
     return new Date(yyyy, mm - 1, dd);
-  };
-
-  exported.datev = function(yyyymmdd) {
-    return exported.strftime('%Y-%m-%d', dated(yyyymmdd));
   };
 
   exported.strftime = function (fmt, d) {

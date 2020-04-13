@@ -169,6 +169,67 @@ describe('Vault.search() and Vault.has_any()', () => {
   should_find('set:MIR and =r', 'Brushwagg');
 });
 
+describe('Vault.filter()', () => {
+  let $v = new cardboard.Vault().ingest($CARDS);
+  let $mir = $v.search('set:MIR and =rare and @blue', 1000);
+
+  it('should have found all the MIR blue rares to start with', () => {
+    expect($mir.length).to.be.equal(16);
+  });
+
+  it('should be able to filter to just the instants', () => {
+    let subset = $v.filter($mir, 'type:instant');
+    expect(subset.length).to.be.equal(2);
+    expect(subset.map(c => c.name)).to.include('Prismatic Lace', 'Flash');
+  });
+
+  it('should be able to filter to the empty set', () => {
+    let subset = $v.filter($mir, 'set:VIS');
+    expect(subset.length).to.be.equal(0);
+  });
+});
+
+describe('Vault.resolve(cdif)', () => {
+  let $v = new cardboard.Vault().ingest($CARDS);
+
+  it('should be able to resolve an empty CDIF', () => {
+    let pile = $v.resolve('');
+    expect(pile.length).to.be.equal(0);
+  });
+
+  it('should be able to resolve a bunch of 1x entries', () => {
+    let pile = $v.resolve(
+                  "1x MIR Marble Diamond\n"+
+                  "1x MIR Sky Diamond\n"+
+                  "1x MIR Fire Diamond\n"+
+                  "1x MIR Moss Diamond\n"+
+                  "1x MIR Charcoal Diamond\n");
+    expect(pile.length).to.be.equal(5);
+    expect($v.filter(pile, '@white') .map(c => c.name)).to.include('Marble Diamond');
+    expect($v.filter(pile, '@blue')  .map(c => c.name)).to.include('Sky Diamond');
+    expect($v.filter(pile, '@black') .map(c => c.name)).to.include('Charcoal Diamond');
+    expect($v.filter(pile, '@red')   .map(c => c.name)).to.include('Fire Diamond');
+    expect($v.filter(pile, '@green') .map(c => c.name)).to.include('Moss Diamond');
+  });
+
+  it('should be able to resolve multiple identical 1x entries', () => {
+    let pile = $v.resolve(
+                  "1x MIR Crystal Golem\n"+
+                  "1x MIR Crystal Golem\n");
+    expect(pile.length).to.be.equal(2);
+    expect(pile.map(c => c.name)).to.include('Crystal Golem', 'Crystal Golem');
+  });
+
+  it('should be able to resolve multi-quantity entries', () => {
+    let pile = $v.resolve(
+                  "4x MIR Cursed Totem\n"+
+                  "3x MIR Grinning Totem\n");
+    expect(pile.length).to.be.equal(7);
+    expect(pile.map(c => c.name)).to.include('Cursed Totem', 'Cursed Totem', 'Cursed Totem', 'Cursed Totem',
+                                             'Grinning Totem', 'Grinning Totem', 'Grinning Totem');
+  });
+});
+
 describe('Vault.previous_set()', () => {
   let $v = new cardboard.Vault().ingest($CARDS);
   it('should find that VIS immediately preceded WTH', () =>

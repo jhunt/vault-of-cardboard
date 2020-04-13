@@ -8,5 +8,16 @@ module.exports = {
         found.toLowerCase().split('/')
           .map(sym => sym == 't' ? 'tap' : sym == 'q' ? 'untap' : sym))),
 
-  colorize: (s) => s.split('').map(c => manasym([c])).join('')
+  colorize: (s) => s.split('').map(c => manasym([c])).join(''),
+
+  shuffle: (cards) => {
+    /* Fisher-Yates shuffle */
+    for (let i = cards.length - 1; i > 0; i--) {
+      let j = Math.floor(Math.random() * (i+1));
+      let tmp = cards[i];
+      cards[i] = cards[j];
+      cards[j] = tmp;
+    }
+    return cards;
+  }
 };
