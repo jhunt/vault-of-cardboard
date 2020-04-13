@@ -168,7 +168,6 @@
 <script type="text/javascript" src="js/jquery.js"></script>
 <script type="text/javascript" src="js/util.js"></script>
 <script type="text/javascript" src="js/table.js"></script>
-<script type="text/javascript" src="js/lens.js"></script>
 <script type="text/javascript" src="js/clarify.js"></script>
 <script type="text/javascript" src="js/play.js"></script>
 <script type="text/javascript" src="/js/cardboard.min.js"></script>
@@ -1008,9 +1007,7 @@ Vue.component('timeline', {
 
     heading(d) {
       return parseInt(d) ? strftime("%B %Y", dated(d)) : "The Beginning";
-    },
-
-    sprintf: sprintf
+    }
   },
   template: `
 <div class="prose">
@@ -1043,10 +1040,10 @@ Vue.component('timeline', {
       </div>
 
       <div v-for="d in monthly_bands" class="aggr">
-        <h2>{{ heading(d[0]) }} <span :class="gainloss(d[1].total_delta)">{{ sprintf("%+d", d[1].total_delta) }} cards <span :class="gainloss(d[1].unique_delta)">({{ sprintf("%+d", d[1].unique_delta) }} unique)</span></span></h2>
+        <h2>{{ heading(d[0]) }} <span :class="gainloss(d[1].total_delta)">{{ d[1].total_delta }} cards <span :class="gainloss(d[1].unique_delta)">({{ d[1].unique_delta }} unique)</span></span></h2>
         <ul>
           <li v-for="txn in d[1].transactions" :class="txn.type">
-            <em :class="gainloss(txn.total_delta)">{{ sprintf("%+d", txn.total_delta) }}</em> cards in {{ txn.type }} <strong>{{ txn.summary }}</strong> ({{ txn.dated }}) <span class="actions"><a @click="start_edit_transaction(txn.id)">edit</a></span>
+            <em :class="gainloss(txn.total_delta)">{{ txn.total_delta }}</em> cards in {{ txn.type }} <strong>{{ txn.summary }}</strong> ({{ txn.dated }}) <span class="actions"><a @click="start_edit_transaction(txn.id)">edit</a></span>
             <transaction-form
               v-if="mode == 'edit' && target == txn.id"
               mode="edit"
