@@ -659,93 +659,6 @@ table th.sortable.asc ::before {
   text-align: center;
 }
 
-form.import div {
-  margin: 1em 0;
-}
-form.import div label {
-  display: block;
-  font-size: 11pt;
-  line-height: 10pt;
-  font-weight: bold;
-}
-form.import div input,
-form.import div textarea {
-  width: 75%;
-  font-size: 14pt;
-  outline: none;
-  padding: 8px 4px;
-  font-weight: bold;
-
-  box-sizing: border-box;
-  border: 2px solid dodgerblue;
-  border-radius: 5px;
-  background-color: #fff;
-  color: dodgerblue;
-}
-form.import input:focus,
-form.import textarea:focus {
-  background-color: dodgerblue;
-  color: #fff;
-}
-form.import div textarea {
-  font-size: 11pt;
-  font-weight: normal;
-}
-form.import div input::placeholder,
-form.import div textarea::placeholder {
-  font-weight: normal;
-  font-style: italic;
-}
-form.import div.extra {
-  display: none;
-}
-form.import a[rel=toggle-extra]    .on,
-form.import a[rel=toggle-extra].on .off { display: none; }
-form.import a[rel=toggle-extra].on .on,
-form.import a[rel=toggle-extra]    .off { display: block; }
-form.import textarea {
-  display: block;
-  width: 60%;
-}
-form.import textarea.vif {
-  min-height: 20em;
-}
-form.import textarea[name=notes] {
-  min-height: 6em;
-}
-
-form.import {
-  position: relative;
-}
-form.import .advanced-options {
-  text-align: right;
-  position: absolute;
-  top: 0;
-  margin: 0;
-
-  width: 74%;
-  max-width: none;
-  font-size: 11pt;
-  line-height: 10pt;
-}
-form.import .advanced-options a {
-  display: inline-block;
-  text-decoration: none;
-  font-size: 11pt;
-  font-style: italic;
-  color: #0071bc;
-  border-bottom: 1px dotted #0071bc80;
-}
-
-form.import div.form-validation-failed input,
-form.import div.form-validation-failed textarea {
-  background-color: firebrick;
-}
-form.import div.form-validation-failed .form-validation-error {
-  display: block;
-  color: firebrick;
-  font-size: 10pt;
-}
 .clarify .ok {
   color: forestgreen;
   font-size: 10pt;
@@ -771,6 +684,7 @@ form.import div.form-validation-failed .form-validation-error {
 .clarify .clarif a {
   color: inherit;
   text-decoration: none;
+  border-bottom: none;
   font-size: 80%;
 }
 .clarify .clarif .band {
@@ -785,7 +699,7 @@ form.import div.form-validation-failed .form-validation-error {
   visibility: hidden;
 }
 .clarify .results > span:hover .clarif,
-.clarify .results > span[data-n] .clarif {
+.clarify .results > span:not([data-n="0"]) .clarif {
   visibility: visible;
 }
 
@@ -1420,132 +1334,3 @@ body[data-cohort="preview"] nav li.cohort-preview a::after {
 }
 
 .play .h2h { display: none; }
-
-
-
-
-.deck-form,
-.transaction-form {
-  padding-bottom: 5rem;
-}
-.deck-form .band,
-.transaction-form .band {
-  width: 100%;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-}
-.deck-form .control,
-.transaction-form .control {
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  overflow: hidden;
-  padding: 5px;
-  width: 60%;
-  box-sizing: border-box;
-  margin-top: 0;
-}
-.transaction-form .control.gainloss {
-  width: 30%;
-}
-.deck-form .control.main,
-.transaction-form .control.import {
-  width: 60%;
-  background-color: #e7f7ea;
-}
-.transaction-form .control.gainloss.gained {
-  background-color: #e7f7ea;
-}
-.transaction-form .control.gainloss.lost {
-  background-color: #f2f2f2;
-}
-.transaction-form .control.gainloss:nth-of-type(1) {
-  border-radius: 5px 0 0 5px;
-  border-right: 0;
-}
-.transaction-form .control.gainloss:nth-of-type(2) {
-  border-radius: 0 5px 5px 0;
-}
-.deck-form .control label,
-.transaction-form .control label {
-  color: #333;
-  font-size: 0.75rem;
-  line-height: 1em;
-}
-.deck-form .control input,
-.deck-form .control textarea,
-.transaction-form .control input,
-.transaction-form .control textarea {
-  color: #000;
-  width: 100%;
-  border-radius: 0;
-  border-width: 0;
-  background-color: inherit;
-  color: inherit;
-}
-.deck-form .control input:focus,
-.deck-form .control textarea:focus,
-.transaction-form .control input:focus,
-.transaction-form .control textarea:focus {
-  background-color: inherit;
-  color: inherit;
-}
-.deck-form .control input::placeholder,
-.deck-form .control textarea::placeholder,
-.transaction-form .control input::placeholder,
-.transaction-form .control textarea::placeholder {
-  opacity: 0.2;
-}
-.deck-form .control input:focus::placeholder,
-.deck-form .control textarea:focus::placeholder,
-.transaction-form .control input:focus::placeholder,
-.transaction-form .control textarea:focus::placeholder {
-  opacity: 0.6;
-}
-.deck-form .help,
-.transaction-form .help {
-  font-size: 0.85rem;
-  line-height: 1.1em;
-  width: 40%;
-  padding: 0 1rem;
-  box-sizing: border-box;
-}
-.deck-form .help p:nth-of-type(1),
-.transaction-form .help p:nth-of-type(1) {
-  margin-top: 0;
-}
-.deck-form .help p.example,
-.transaction-form .help p.example {
-  padding-left: 1em;
-}
-.deck-form .help p span.segment,
-.transaction-form .help p span.segment {
-  border: 2px dashed #ccc;
-  border-radius: 4px;
-  padding: 4px;
-  background-color: #eee;
-}
-.deck-form .help p span.segment.highlight,
-.transaction-form .help p span.segment.highlight {
-  background-color: #c0eaec;
-  border-color: #2fb9b3;
-}
-.deck-form button,
-.transaction-form button {
-  font-size: 1rem;
-  display: inline-block;
-}
-.deck-form button.safe,
-.transaction-form button.safe {
-}
-.deck-form button.danger,
-.transaction-form button.danger {
-  background: inherit;
-  font-weight: normal;
-  color: #777;
-  border: none;
-}
-.deck-form button.danger:hover,
-.transaction-form button.danger:hover {
-  color: firebrick;
-}

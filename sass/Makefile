@@ -1,5 +1,5 @@
 build:
-	sass ui.scss > vcb.css
+	sass main.scss > vcb.css
 
 install: build
 	npx minify vcb.css > ../htdocs/css/vcb.css
