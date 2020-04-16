@@ -73,11 +73,12 @@ let API = {
       method: 'PATCH',
       headers: authorized(auth.session),
       body: JSON.stringify({
-        summary: txn.summary || '',
-        notes:   txn.notes   || '',
-        dated:   txn.dated   || '',
-        gain:    txn.gain    || '',
-        loss:    txn.loss    || ''
+        disposition: txn.disposition || '',
+        summary:     txn.summary     || '',
+        notes:       txn.notes       || '',
+        dated:       txn.dated       || '',
+        gain:        txn.gain        || '',
+        loss:        txn.loss        || ''
       })
     }).then(r => {
       if (!r.ok) {
@@ -92,11 +93,12 @@ let API = {
       method: 'POST',
       headers: authorized(auth.session),
       body: JSON.stringify({
-        summary: txn.summary || '',
-        notes:   txn.notes   || '',
-        dated:   txn.dated   || '',
-        gain:    txn.gain    || '',
-        loss:    txn.loss    || ''
+        disposition: txn.disposition || '',
+        summary:     txn.summary     || '',
+        notes:       txn.notes       || '',
+        dated:       txn.dated       || '',
+        gain:        txn.gain        || '',
+        loss:        txn.loss        || ''
       })
     }).then(r => {
       if (!r.ok) {
@@ -129,6 +131,7 @@ let API = {
       method: 'PATCH',
       headers: authorized(auth.session),
       body: JSON.stringify({
+        code:        deck.code        || '',
         title:       deck.title       || '',
         description: deck.description || '',
         main:        deck.main        || '',
@@ -148,6 +151,7 @@ let API = {
       method: 'POST',
       headers: authorized(auth.session),
       body: JSON.stringify({
+        code:        deck.code        || '',
         title:       deck.title       || '',
         description: deck.description || '',
         main:        deck.main        || '',

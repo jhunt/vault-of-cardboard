@@ -139,6 +139,7 @@ pub struct Transaction {
     pub dated: NaiveDate,
     pub summary: String,
     pub notes: String,
+    pub disposition: String,
     pub gain: String,
     pub loss: String,
     pub metadata: serde_json::Value,
@@ -183,6 +184,7 @@ pub struct NewTransaction<'a> {
     pub summary: &'a str,
     pub notes: &'a str,
     pub dated: &'a NaiveDate,
+    pub disposition: &'a str,
     pub gain: &'a str,
     pub loss: &'a str,
 }
@@ -193,6 +195,7 @@ pub struct UpdateTransaction {
     pub summary: Option<String>,
     pub notes: Option<String>,
     pub dated: Option<NaiveDate>,
+    pub disposition: Option<String>,
     pub gain: Option<String>,
     pub loss: Option<String>,
 }
@@ -202,6 +205,7 @@ pub struct Deck {
     pub id: Uuid,
     pub collector: Uuid,
     pub title: String,
+    pub code: String,
     pub description: String,
     pub main: String,
     pub side: String,
@@ -217,6 +221,7 @@ pub struct Deck {
 pub struct NewDeck<'a> {
     pub collector: Uuid,
     pub title: &'a str,
+    pub code: &'a str,
     pub description: &'a str,
     pub main: &'a str,
     pub side: &'a str,
@@ -227,6 +232,7 @@ pub struct NewDeck<'a> {
 #[table_name = "decks"]
 pub struct UpdateDeck {
     pub title: Option<String>,
+    pub code: Option<String>,
     pub description: Option<String>,
     pub main: Option<String>,
     pub side: Option<String>,

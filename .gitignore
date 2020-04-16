@@ -4,4 +4,7 @@
 /local
 /nginx.conf
 /htdocs/changelog.json
+/htdocs/js/cardboard.min.js
+/htdocs/css
+/htdocs/fonts
 /docker/perimeter/htdocs

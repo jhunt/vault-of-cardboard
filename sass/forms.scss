@@ -111,14 +111,14 @@ form.data-entry {
       }
 
       &.main, &.import {
-        width: 60%;
+        width: 100%;
         background-color: #e7f7ea;
       }
     }
 
-      .control {
-        &.gained { background-color: #e7f7ea; }
-        &.lost   { background-color: #f2f2f2; }
+    .control {
+      &.gained { background-color: #e7f7ea; }
+      &.lost   { background-color: #f2f2f2; }
     }
 
     .help {

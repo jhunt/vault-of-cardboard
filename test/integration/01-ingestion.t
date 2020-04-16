@@ -181,10 +181,22 @@ cmp_deeply(
 ###   it's time to import cards in via our first transaction.
 ###
 
+my $res = get("/v1/collectors/$UID/collections/_/transactions");
+ok($res->is_success, "should be able to retrieve initial (empty) transactions log, as JSON")
+	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
+cmp_deeply(
+	from_json($res->content),
+	{
+		transactions => []
+	},
+	"initial transactions log should be completely empty");
+
 my $res = post("/v1/collectors/$UID/collections/_/transactions", as => $SID, payload => {
 	summary => 'Initial Import',
 	notes => 'This is all that\'s left of my old card collection.',
 	dated => '2020-01-25',
+	disposition => 'buy',
 	gain => '# initial import of collection
 1x MIR Enlightened Tutor
 1x MIR Mystical Tutor
@@ -233,6 +245,7 @@ my $res = post("/v1/collectors/$UID/collections/_/transactions", as => $SID, pay
 	summary => 'More Tutoring',
 	notes => 'I liked the tutors so much, I bought some more!',
 	dated => '2020-01-26',
+	disposition => 'buy',
 	gain => '# decided to buy a bunch more
 10x MIR Enlightened Tutor
 20x MIR Mystical Tutor
@@ -346,6 +359,7 @@ cmp_deeply(
 
 my $res = post("/v1/collectors/$UID/decks", as => $SID, payload => {
 	title       => 'Mono Red Burn',
+	code        => 'burrn',
 	description => 'ouch ouch ouch it burns!',
 	main        => "20x MIR Mountain\n".
 	               "20x MIR Incinerate\n",
@@ -372,6 +386,7 @@ cmp_deeply(
 				lineage     => is_uuid(),
 				ordinal     => 0,
 				title       => 'Mono Red Burn',
+				code        => 'burrn',
 				description => 'ouch ouch ouch it burns!',
 				main        => "20x MIR Mountain\n".
 				               "20x MIR Incinerate\n",
@@ -421,6 +436,7 @@ my $COLLECTION = from_json($res->content);
 
 my $res = post("/v1/collectors/$UID/collections/_/transactions", as => undef, payload => {
 	dated => '2020-01-26',
+	disposition => 'loss',
 	gain => '# mwuahahahaha',
 	loss => '# and now they are gone!
 99x MIR Enlightened Tutor
@@ -438,6 +454,7 @@ cmp_deeply(from_json($res->content), $COLLECTION, "collection should remain unto
 
 my $res = post("/v1/collectors/$UID/collections/_/transactions", as => $OTHER_SID, payload => {
 	dated => '2020-01-26',
+	disposition => 'sell',
 	gain => '# mwuahahahaha',
 	loss => '# and now they are gone!
 99x MIR Enlightened Tutor

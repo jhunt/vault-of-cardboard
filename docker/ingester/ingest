@@ -14,7 +14,6 @@ if [[ -z "${CACHE:-}" ]]; then
 fi
 
 mkdir -p $CACHE
-rm -rf $CACHE/work
 
 for code in "$@"; do
   echo "INGESTING set $code..."
@@ -23,21 +22,28 @@ for code in "$@"; do
     echo " - fetching set metadata from Scryfall API..."
     curl -s https://api.scryfall.com/sets/$code -H Accept:application/json > $CACHE/scry/$code/set.json
   fi
+  if [[ ! -f $CACHE/scry/$code/tok.json ]]; then
+    echo " - fetching (token) set metadata from Scryfall API..."
+    curl -s https://api.scryfall.com/sets/T$code -H Accept:application/json > $CACHE/scry/$code/tok.json || echo '{}' > $CACHE/scry/$code/tok.json
+  fi
 
   n=1
-  next=`jq -r .search_uri < $CACHE/scry/$code/set.json`
-  more="true"
-  while [[ $more == "true" ]]; do
-    if [[ ! -f $CACHE/scry/$code/cards$n.json ]]; then
-      echo "  - fetching card results page $n from Scryfall API..."
-      curl -s $next -H Accept:application/json > $CACHE/scry/$code/cards$n.json
-    fi
-    more=`jq -r .has_more  < $CACHE/scry/$code/cards$n.json`
-    next=`jq -r .next_page < $CACHE/scry/$code/cards$n.json`
-    n=`expr $n + 1`
+  for t in 'set' tok; do
+    next=`jq -r .search_uri < $CACHE/scry/$code/$t.json`
+    more="true"
+    while [[ $next != "null" && $more == "true" ]]; do
+      if [[ ! -f $CACHE/scry/$code/cards$n.json ]]; then
+        echo "  - fetching card results page $n from Scryfall API..."
+        curl -s $next -H Accept:application/json > $CACHE/scry/$code/cards$n.json
+      fi
+      more=`jq -r .has_more  < $CACHE/scry/$code/cards$n.json`
+      next=`jq -r .next_page < $CACHE/scry/$code/cards$n.json`
+      n=`expr $n + 1`
+    done
   done
   n=`expr $n - 1`
 
+  rm -rf $CACHE/work/$code
   mkdir -p $CACHE/work/$code
   cp $CACHE/scry/$code/set.json \
      $CACHE/work/$code/set.json

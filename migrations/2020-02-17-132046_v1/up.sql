@@ -23,6 +23,7 @@ CREATE TABLE transactions (
 
     summary      TEXT     NOT NULL DEFAULT '',
     notes        TEXT     NOT NULL DEFAULT '',
+    disposition  VARCHAR  NOT NULL DEFAULT 'trade',
     gain         TEXT     NOT NULL DEFAULT '',
     loss         TEXT     NOT NULL DEFAULT '',
 
@@ -38,6 +39,7 @@ CREATE TABLE decks (
       REFERENCES collectors (id) ON DELETE CASCADE,
 
     title        VARCHAR  NOT NULL,
+    code         VARCHAR  NOT NULL DEFAULT '',
     description  TEXT     NOT NULL DEFAULT '',
 
     main         TEXT     NOT NULL DEFAULT '',

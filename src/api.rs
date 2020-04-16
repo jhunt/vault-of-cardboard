@@ -102,6 +102,7 @@ pub struct TransactionCreationAttempt {
     pub summary: String,
     pub notes: String,
     pub dated: NaiveDate,
+    pub disposition: String,
     pub gain: String,
     pub loss: String,
 }
@@ -111,6 +112,7 @@ pub struct TransactionUpdateAttempt {
     pub summary: Option<String>,
     pub notes: Option<String>,
     pub dated: Option<NaiveDate>,
+    pub disposition: Option<String>,
     pub gain: Option<String>,
     pub loss: Option<String>,
 }
@@ -122,6 +124,7 @@ pub struct Transaction {
     pub summary: String,
     pub notes: String,
     pub dated: NaiveDate,
+    pub disposition: String,
     pub gain: String,
     pub loss: String,
 
@@ -145,6 +148,7 @@ impl std::convert::From<db::Transaction> for Transaction {
             unique_card_gain: other.unique_card_gain(),
             unique_card_loss: other.unique_card_loss(),
 
+            disposition: other.disposition.to_string(),
             gain: other.gain,
             loss: other.loss,
         }
@@ -154,6 +158,7 @@ impl std::convert::From<db::Transaction> for Transaction {
 #[derive(Deserialize)]
 pub struct DeckCreationAttempt {
     pub title: String,
+    pub code: String,
     pub description: String,
     pub main: String,
     pub side: String,
@@ -163,6 +168,7 @@ pub struct DeckCreationAttempt {
 #[derive(Deserialize)]
 pub struct DeckUpdateAttempt {
     pub title: Option<String>,
+    pub code: Option<String>,
     pub description: Option<String>,
     pub main: Option<String>,
     pub side: Option<String>,
@@ -174,6 +180,7 @@ pub struct Deck {
     pub id: String,        // uuid
     pub collector: String, // uuid
     pub title: String,
+    pub code: String,
     pub description: String,
     pub main: String,
     pub side: String,
@@ -190,6 +197,7 @@ impl std::convert::From<db::Deck> for Deck {
             id: other.id.to_string(),
             collector: other.collector.to_string(),
             title: other.title,
+            code: other.code,
             description: other.description,
             main: other.main,
             side: other.side,
@@ -351,6 +359,7 @@ impl API {
                 summary: &new.summary,
                 notes: &new.notes,
                 dated: &new.dated,
+                disposition: &new.disposition,
                 gain: &new.gain,
                 loss: &new.loss,
             },
@@ -421,6 +430,7 @@ impl API {
                 summary: upd.summary,
                 notes: upd.notes,
                 dated: upd.dated,
+                disposition: upd.disposition,
                 gain: upd.gain,
                 loss: upd.loss,
             },
@@ -477,6 +487,7 @@ impl API {
             db::NewDeck {
                 collector: collector.id,
                 title: &new.title,
+                code: &new.code,
                 description: &new.description,
                 main: &new.main,
                 side: &new.side,
@@ -516,6 +527,7 @@ impl API {
             &deck,
             db::UpdateDeck {
                 title: upd.title,
+                code: upd.code,
                 description: upd.description,
                 main: upd.main,
                 side: upd.side,

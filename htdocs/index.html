@@ -116,49 +116,6 @@
   </div>
 </script><!-- }}} -->
 
-<script type="text/html" id="template:cardface"><!-- {{{ -->
-  [[ var alt = _.card.name + ' [' + _.card.set.code + ']'; ]]
-  <span data-own="[[= _.owned ]]">
-    [[ if (!_.noback) { ]]<span class="card back"><img src="/img/mtgback.jpg"></span>[[ } ]]
-    <span class="card face [[= _.card.layout]]">
-      [[ if (_.card.layout == 'transform') { ]]<a href="#" rel="flip"></a>[[ } ]]
-      <img data-id="[[= _.card.id ]]" src="[[= $CONFIG.imgroot ]]/cards/[[= _.card.image ]]"
-           [[ if (_.card.layout == 'transform') { ]]data-flip-src="[[= $CONFIG.imgroot ]]/cards/[[= _.card.back ]]"[[ } ]]
-           alt="[[= alt ]]" title="[[= alt ]]">
-    </span>
-  </span>
-</script><!-- }}} -->
-
-<script type="text/html" id="template:clarify"><!-- {{{ -->
-  [[
-    $.each(_.problems, function (i, problem) {
-      include('problem', $.extend({ i: i }, problem));
-    });
-  ]]
-</script><!-- }}} -->
-<script type="text/html" id="template:problem"><!-- {{{ -->
-  <div class="problem" data-problem="[[= _.i ]]">
-    <p>line <span class="lineno">[[= _.wanted.lineno ]]</span>:
-            <span class="line">[[= _.wanted.card ]][[ if (_.wanted.set) { ]] (in [[= _.wanted.set ]])[[ } ]]</span>:
-            <span class="problem">[[= _.description ]]</span></p>
-    <div class="grid results">
-    [[ $.each(_.candidates, function (j, candidate) {
-         var card = $INDEX[candidate];
-         if (!card) {
-           console.log("unable to locate card id %s in $INDEX... skipping!", candidate);
-           return;
-         } ]]
-      <span data-vif="[[= card.set.code ]] [[= card.name ]]">
-        [[ include('cardface', { owned: 0, card: card }); ]]
-        <span class="clarif"><span class="band"><a href="#" rel="dec">◀</a> <span>0</span> <a href="#" rel="inc">▶</a></span></span>
-      </span>
-    [[ }); ]]
-    </div>
-    <ul class="changes"></ul>
-    [[ if (_.candidates.length > 0) { ]]<button rel="re-validate">Apply Changes</button>[[ } ]]
-  </div>
-</script><!-- }}} -->
-
 <script type="text/javascript">
   var $CONFIG = {
     imgroot: "//vault-of-cardboard.s3.amazonaws.com"
@@ -168,7 +125,6 @@
 <script type="text/javascript" src="js/jquery.js"></script>
 <script type="text/javascript" src="js/util.js"></script>
 <script type="text/javascript" src="js/table.js"></script>
-<script type="text/javascript" src="js/clarify.js"></script>
 <script type="text/javascript" src="js/play.js"></script>
 <script type="text/javascript" src="/js/cardboard.min.js"></script>
 <script type="text/javascript">
@@ -606,6 +562,7 @@ Vue.component('deck-form', {
       default: function() {
         return {
           title:       '',
+          code:        '',
           description: '',
           main:        '',
           side:        '',
@@ -616,6 +573,7 @@ Vue.component('deck-form', {
   },
   data() {
     return {
+      problems: []
     };
   },
   methods: {
@@ -636,69 +594,93 @@ Vue.component('deck-form', {
 
       cardboard.API.delete_deck(UI.session, this.deck.id)
         .then(data => this.$emit('deleted-deck', this.deck.id));
+    },
+
+    validate() {
+      this.problems = cardboard.CDIF.validate(this.deck.main, UI.vault, 1);
+    },
+
+    clarified($event) {
+      let lines = this.deck.main.split("\n");
+      lines.splice($event.problem.line - 1, 1, $event.replacements.map(r => r[0]+'x '+r[1]));
+      this.deck.main = lines.join("\n");
+
+      this.validate();
     }
   },
   template: `
-<form :class="'deck-form import ' + mode" @submit="save()">
+<form :class="'deck data-entry ' + mode" @submit="save()">
   <h2 v-if="mode == 'new'">Craft a New Deck</h2>
   <h2 v-else="mode == 'edit'">Update an Existing Deck</h2>
-  <!--
-  <div><label for="code">Internal Identifier</label>
-       <input type="text" name="code"
-              class="autofocus"
-              placeholder="A unique ID to use with 'in:...' queries"
-              data-validate="present;min=2;max=40"
-              data-error-if-missing="Please provide an internal identifier, for use in querying the contents of this deck."
-              data-error-out-of-bounds="Identifiers must be between 2 and 40 characters long."
-              autocomplete="off">
-  </div>
-  -->
-
   <div class="band">
-    <div class="control">
-      <label for="title">Title of Deck</label>
-      <input type="text" name="title" v-model="deck.title"
-             class="autofocus"
-             placeholder="A name for this deck, which will be displayed to others."
-             data-validate="present;min=2"
-             data-error-if-missing="Please provide a name for this deck."
-             data-error-out-of-bounds="Deck names must be at least two characters long."
-             autocomplete="off">
+    <div>
+      <div class="control">
+        <label for="code">Internal Identifier</label>
+         <input type="text" name="code"
+                class="autofocus"
+                placeholder="A unique ID to use with 'in:...' queries"
+                data-validate="present;min=2;max=40"
+                data-error-if-missing="Please provide an internal identifier, for use in querying the contents of this deck."
+                data-error-out-of-bounds="Identifiers must be between 2 and 40 characters long."
+                autocomplete="off">
+
+      </div>
     </div>
   </div>
 
   <div class="band">
-    <div class="control">
-      <label for="description">Description / Notes</label>
-      <textarea name="description" v-model="deck.description"
-                placeholder="(feel free to expound on the premise and power of your deck...)"
-                data-validate="max=2000"></textarea>
+    <div>
+      <div class="control">
+        <label for="title">Title of Deck</label>
+        <input type="text" name="title" v-model="deck.title"
+               class="autofocus"
+               placeholder="A name for this deck, which will be displayed to others."
+               data-validate="present;min=2"
+               data-error-if-missing="Please provide a name for this deck."
+               data-error-out-of-bounds="Deck names must be at least two characters long."
+               autocomplete="off">
+      </div>
     </div>
   </div>
 
   <div class="band">
-    <div class="control">
-      <label for="main">Maindeck</label>
-      <textarea name="main" v-model="deck.main"
-                class="vif"
-                data-validate="present;max=100k"
-># enter your deck list here, using the following format:
-# 4x NPH Darksteel Relic
-
-</textarea>
-    </div>
-    <div class="help">
-      <p>VIF format is designed to be simple.<br>
-         First, specify how many cards are gained or lost:</p>
-      <p class="example"><span class="segment highlight">4x</span> <span class="segment">MIR</span> <span class="segment">Lion's Eye Diamond</span></p>
-      <p>Then, what set the printed cards are from:</p>
-      <p class="example"><span class="segment">4x</span> <span class="segment highlight">MIR</span> <span class="segment">Lion's Eye Diamond</span></p>
-      <p>Then the full card oracle name:</p>
-      <p class="example"><span class="segment">4x</span> <span class="segment">MIR</span> <span class="segment highlight">Lion's Eye Diamond</span></p>
+    <div>
+      <div class="control">
+        <label for="description">Description / Notes</label>
+        <textarea name="description" v-model="deck.description"
+                  placeholder="(feel free to expound on the premise and power of your deck...)"
+                  data-validate="max=2000"></textarea>
+      </div>
     </div>
   </div>
 
-  <div>
+  <div class="band">
+    <div>
+      <div class="control">
+        <label for="main">Maindeck</label>
+        <textarea name="main" v-model="deck.main"
+                  @blur="validate()"
+                  class="cdif"
+                  data-validate="present;max=100k"></textarea>
+      </div>
+    </div>
+    <div>
+      <div class="help no-frills">
+        <p>VIF format is designed to be simple.<br>
+           First, specify how many cards are gained or lost:</p>
+        <p class="example"><span class="segment highlight">4x</span> <span class="segment">MIR</span> <span class="segment">Lion's Eye Diamond</span></p>
+        <p>Then, what set the printed cards are from:</p>
+        <p class="example"><span class="segment">4x</span> <span class="segment highlight">MIR</span> <span class="segment">Lion's Eye Diamond</span></p>
+        <p>Then the full card oracle name:</p>
+        <p class="example"><span class="segment">4x</span> <span class="segment">MIR</span> <span class="segment highlight">Lion's Eye Diamond</span></p>
+      </div>
+    </div>
+  </div>
+  <clarifier v-for="problem in problems" :key="problem.id"
+             @clarified="clarified($event)"
+             :problem="problem"></clarifier>
+
+  <div v-if="problems.length == 0">
     <button class="default safe" type="submit">{{ mode == 'new' ? "Create" : "Update" }} Deck</button>
     <button v-if="mode == 'edit'" @click="remove()" class="danger">Delete This Deck</button>
   </div>
@@ -901,6 +883,7 @@ Vue.component('timeline', {
         summary: 'Collection Import',
         dated:   (new Date()).toISOString().slice(0,10),
         notes:   '',
+        disposition: 'buy',
         gain:    '',
         loss:    ''
       }
@@ -1070,13 +1053,19 @@ Vue.component('transaction-form', {
           dated: (new Date()).toISOString().slice(0,10),
           notes:       '',
           gain:        '',
-          loss:        ''
+          loss:        '',
+          disposition: 'buy',
         };
       }
     }
   },
   data() {
     return {
+      ok: true,
+      problems: {
+        gain: [],
+        loss: []
+      }
     };
   },
   methods: {
@@ -1084,6 +1073,29 @@ Vue.component('transaction-form', {
       // YYYY-MM-DD format = the first 10 chars in ISO format
       return (new Date()).toISOString().slice(0,10);
     },
+
+    validate(bucket) {
+      if (bucket == 'gain') {
+        this.problems.gain = cardboard.CDIF.validate(this.transaction.gain, UI.vault ,1);
+      } else {
+        this.problems.loss = cardboard.CDIF.validate(this.transaction.loss, UI.vault ,1);
+      }
+      this.ok = this.can_we_submit();
+    },
+
+    can_we_submit() {
+      if (this.transaction.disposition == 'buy') {
+        return this.problems.gain.length == 0;
+      }
+      if (this.transaction.disposition == 'sell') {
+        return this.problems.loss.length == 0;
+      }
+      if (this.transaction.disposition == 'trade') {
+        return this.problems.gain +
+               this.problems.loss == 0;
+      }
+    },
+
     save() {
       event.preventDefault();
 
@@ -1101,10 +1113,24 @@ Vue.component('transaction-form', {
 
       cardboard.API.delete_transaction(UI.session, this.transaction.id)
         .then(data => this.$emit('deleted-transaction', this.transaction.id));
+    },
+
+    clarified(type, $event) {
+      let lines = this.transaction[type].split("\n");
+      lines.splice($event.problem.line - 1, 1, $event.replacements.map(r => r[0]+'x '+r[1]));
+      this.transaction[type] = lines.join("\n");
+
+      if (type == 'gain') {
+        this.problems.gain = [];
+      } else {
+        this.problems.loss = [];
+      }
+
+      this.validate(type);
     }
   },
   template: `
-<form :class="'transaction-form import ' + mode" @submit="save()">
+<form :class="'transaction data-entry ' + mode" @submit="save()">
   <h2 v-if="mode == 'new'">Buy / Sell / Trade Cards</h2>
   <h2 v-else-if="mode == 'edit'">Update Buy / Sell / Trade Details</h2>
   <template v-if="mode == 'import'">
@@ -1113,77 +1139,263 @@ Vue.component('transaction-form', {
   </template>
   <template v-else>
     <div class="band">
-      <div class="control">
-        <label for="summary">Summary / Transaction Name</label>
-        <input type="text" name="summary" v-model="transaction.summary"
-               class="autofocus"
-               placeholder="A (unique-ish) name for this transaction"
-               data-validate="present;min=3;max=50"
-               data-error-if-missing="Please provide a name, which will be displayed in the timeline."
-               data-error-out-of-bounds="Names must be between 3 and 50 characters long."
-               autocomplete="off">
+      <div>
+        <div class="control">
+          <label for="summary">Summary / Transaction Name</label>
+          <input type="text" name="summary" v-model="transaction.summary"
+                 class="autofocus"
+                 placeholder="A (unique-ish) name for this transaction"
+                 data-validate="present;min=3;max=50"
+                 data-error-if-missing="Please provide a name, which will be displayed in the timeline."
+                 data-error-out-of-bounds="Names must be between 3 and 50 characters long."
+                 autocomplete="off">
+        </div>
       </div>
     </div>
     <div class="band">
-      <div class="control">
-        <label for="dated">Date of Transaction</label>
-        <input type="date" name="dated" v-model="transaction.dated"
-               data-validate="present;format=date;happened"
-               autocomplete="off">
+      <div>
+        <div class="control">
+          <label for="dated">Date of Transaction</label>
+          <input type="date" name="dated" v-model="transaction.dated"
+                 data-validate="present;format=date;happened"
+                 autocomplete="off">
+        </div>
       </div>
     </div>
     <div class="band">
-      <div class="control">
-        <label for="notes">Notes</label>
-        <textarea name="notes" v-model="transaction.notes"
-                  placeholder="(notes, thoughts, context - only visible to you...)"
-                  data-validate="max=2000"></textarea>
+      <div>
+        <div class="control">
+          <label for="notes">Notes</label>
+          <textarea name="notes" v-model="transaction.notes"
+                    placeholder="(notes, thoughts, context - only visible to you...)"
+                    data-validate="max=2000"></textarea>
+        </div>
       </div>
     </div>
   </template>
-  <div class="band">
-    <template v-if="mode != 'import'">
-      <div class="control gainloss gained">
-        <label for="vif">Gained Cards</label>
+  <div class="band" v-if="mode != 'import'">
+    <div>
+      <div class="control">
+        <label>Type of Transaction</label>
+
+        <ul><li>
+          <input type="radio" name="disposition" value="buy" v-model="transaction.disposition">
+          <label><strong>Buy</strong> &mdash; this transaction <em>adds</em> cards to the collection.</label>
+        </li><li>
+          <input type="radio" name="disposition" value="sell" v-model="transaction.disposition">
+          <label><strong>Sell</strong> &mdash; this transaction <em>removes</em> cards from the collection.</label>
+        </li><li>
+          <input type="radio" name="disposition" value="trade" v-model="transaction.disposition">
+          <label><strong>Trade</strong> &mdash; this transaction does <em>both</em>.</label>
+        </li></ul>
+      </div>
+    </div>
+  </div>
+  <div class="band" v-if="transaction.disposition == 'buy'">
+    <div v-if="mode != 'import'"
+         class="gainloss">
+      <div class="control gained">
+        <label for="gain">Gained Cards</label>
         <textarea name="gain" v-model="transaction.gain"
-                  class="vif"
+                  class="cdif"
+                  @blur="validate('gain')"
                   data-validate="present;max=100k"></textarea>
       </div>
-      <div class="control gainloss lost">
-        <label for="vif">Lost Cards</label>
+    </div>
+    <div v-else
+         class="gainloss">
+      <div class="control import gained">
+        <label for="gain">What cards do you have?</label>
+        <textarea name="gain" v-model="transaction.gain"
+                  class="cdif"
+                  @blur="validate('gain')"
+                  data-validate="present;max=100k"></textarea>
+      </div>
+    </div>
+    <div>
+      <div class="help no-frills">
+        <p>VIF format is designed to be simple.<br>
+           First, specify how many cards are gained or lost:</p>
+        <p class="example"><span class="segment highlight">4x</span> <span class="segment">MIR</span> <span class="segment">Lion's Eye Diamond</span></p>
+        <p>Then, what set the printed cards are from:</p>
+        <p class="example"><span class="segment">4x</span> <span class="segment highlight">MIR</span> <span class="segment">Lion's Eye Diamond</span></p>
+        <p>Then the full card oracle name:</p>
+        <p class="example"><span class="segment">4x</span> <span class="segment">MIR</span> <span class="segment highlight">Lion's Eye Diamond</span></p>
+      </div>
+    </div>
+  </div>
+  <clarifier v-if="transaction.disposition == 'buy'"
+             v-for="problem in problems.gain" :key="problem.id"
+             @clarified="clarified('gain', $event)"
+             :problem="problem"></clarifier>
+
+  <div class="band" v-else-if="transaction.disposition == 'sell'">
+    <div class="gainloss">
+      <div class="control lost">
+        <label for="vif">Cards Sold &mdash; these will be removed from your collection.</label>
         <textarea name="loss" v-model="transaction.loss"
-                  class="vif"
+                  class="cdif"
+                  @blur="validate('loss')"
                   data-validate="present;max=100k"></textarea>
       </div>
-    </template>
-    <template v-else>
-      <div class="control import">
-        <label for="vif">What cards do you have?</label>
-        <textarea name="gain" v-model="transaction.gain"
-                  class="vif"
-                  data-validate="present;max=100k"></textarea>
+      <clarifier v-for="problem in problems.loss" :key="problem.id"
+                 @clarified="clarified('loss', $event)"
+                 :problem="problem"></clarifier>
+    </div>
+    <div>
+      <div class="help no-frills">
+        <p>VIF format is designed to be simple.<br>
+           First, specify how many cards are gained or lost:</p>
+        <p class="example"><span class="segment highlight">4x</span> <span class="segment">MIR</span> <span class="segment">Lion's Eye Diamond</span></p>
+        <p>Then, what set the printed cards are from:</p>
+        <p class="example"><span class="segment">4x</span> <span class="segment highlight">MIR</span> <span class="segment">Lion's Eye Diamond</span></p>
+        <p>Then the full card oracle name:</p>
+        <p class="example"><span class="segment">4x</span> <span class="segment">MIR</span> <span class="segment highlight">Lion's Eye Diamond</span></p>
       </div>
-    </template>
-    <div class="help">
-      <p>VIF format is designed to be simple.<br>
-         First, specify how many cards are gained or lost:</p>
-      <p class="example"><span class="segment highlight">4x</span> <span class="segment">MIR</span> <span class="segment">Lion's Eye Diamond</span></p>
-      <p>Then, what set the printed cards are from:</p>
-      <p class="example"><span class="segment">4x</span> <span class="segment highlight">MIR</span> <span class="segment">Lion's Eye Diamond</span></p>
-      <p>Then the full card oracle name:</p>
-      <p class="example"><span class="segment">4x</span> <span class="segment">MIR</span> <span class="segment highlight">Lion's Eye Diamond</span></p>
     </div>
   </div>
 
-  <div>
-    <button class="default safe" type="submit">{{ mode == 'import' ? "Import" : "Update" }} Collection</button>
-    <button v-if="mode == 'edit'" @click="remove()" class="danger">Delete This Transaction</button>
-  </div>
-  </form>
+  <template v-else-if="transaction.disposition == 'trade'">
+    <div class="band">
+      <div class="gainloss">
+        <div class="control gained">
+          <label for="vif">Cards Gained In Trade&mdash; these will be added to your collection.</label>
+          <textarea name="loss" v-model="transaction.loss"
+                    class="cdif"
+                    @blur="validate('gain')"
+                    data-validate="present;max=100k"></textarea>
+        </div>
+        <clarifier v-for="problem in problems.loss" :key="problem.id"
+                   @clarified="clarified('loss', $event)"
+                   :problem="problem"></clarifier>
+      </div>
+      <div>
+        <div class="help no-frills">
+          <p>VIF format is designed to be simple.<br>
+             First, specify how many cards are gained or lost:</p>
+          <p class="example"><span class="segment highlight">4x</span> <span class="segment">MIR</span> <span class="segment">Lion's Eye Diamond</span></p>
+          <p>Then, what set the printed cards are from:</p>
+          <p class="example"><span class="segment">4x</span> <span class="segment highlight">MIR</span> <span class="segment">Lion's Eye Diamond</span></p>
+          <p>Then the full card oracle name:</p>
+          <p class="example"><span class="segment">4x</span> <span class="segment">MIR</span> <span class="segment highlight">Lion's Eye Diamond</span></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="band">
+      <div class="gainloss">
+        <div class="control lost">
+          <label for="vif">Cards Given In Trade &mdash; these will be removed from your collection.</label>
+          <textarea name="loss" v-model="transaction.loss"
+                    class="cdif"
+                    @blur="validate('loss')"
+                    data-validate="present;max=100k"></textarea>
+        </div>
+      </div>
+      <div>
+        <div class="help no-frills">
+          <p>VIF format is designed to be simple.<br>
+             First, specify how many cards are gained or lost:</p>
+          <p class="example"><span class="segment highlight">4x</span> <span class="segment">MIR</span> <span class="segment">Lion's Eye Diamond</span></p>
+          <p>Then, what set the printed cards are from:</p>
+          <p class="example"><span class="segment">4x</span> <span class="segment highlight">MIR</span> <span class="segment">Lion's Eye Diamond</span></p>
+          <p>Then the full card oracle name:</p>
+          <p class="example"><span class="segment">4x</span> <span class="segment">MIR</span> <span class="segment highlight">Lion's Eye Diamond</span></p>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template>
+    <div v-if="ok">
+      <button class="default safe" type="submit">{{ mode == 'import' ? "Import" : "Update" }} Collection</button>
+      <button v-if="mode == 'edit'" @click="remove()" class="danger">Delete This Transaction</button>
+    </div>
+  </template>
+</form>
 `
 });
 
-let UI = new Vue({
+Vue.component('clarifier', {
+  props: ['problem'], //, 'line', 'cards', 'value', 'error', 'target'],
+  data: function () {
+    return {
+      replacements: [], // [[n, card], [n, card] ...]
+      //counts: new Map()
+      counts: {}
+    };
+  },
+  created() {
+    this.problem.cards.forEach(card => {
+      this.counts[card.id] = 0;
+    });
+  },
+  methods: {
+    replace(n, card) {
+      let o = {}; o[card.id] = n;
+      Object.assign(this.counts, o);
+      let spec = card.set.code + ' ' + card.name;
+      for (let i = 0; i < this.replacements.length; i++) {
+        if (this.replacements[i][1] == spec) {
+          if (n == 0) {
+            this.replacements.splice(i,1);
+          } else {
+            this.replacements[i][0] = n;
+          }
+          this.replacements = [...this.replacements];
+          return;
+        }
+      }
+      if (n > 0) {
+        this.replacements.push([n, spec]);
+      }
+    },
+
+    increment(card) {
+      event.preventDefault();
+      this.replace(this.counts[card.id] + 1, card);
+    },
+
+    decrement(card) {
+      event.preventDefault();
+      this.replace(Math.max(0, this.counts[card.id] - 1), card);
+    },
+
+    apply() {
+      event.preventDefault();
+      this.$emit('clarified', {
+        problem: this.problem,
+        replacements: this.replacements
+      });
+    }
+  },
+  template: `
+<div class="clarify">
+  <div class="problem">
+    <p>line <span class="lineno">{{ problem.line }}</span>:
+            <span class="line">{{ problem.target }}</span>:
+            <span class="problem">{{ problem.error }}</span></p>
+    <div class="resolution" v-if="replacements.length > 0">
+      <ul class="changes">
+        <li><del>{{ problem.value }}</del></li>
+        <li v-for="r in replacements"><ins>{{ r[0] }}x {{ r[1] }}</ins></li> 
+      </ul>
+      <div>
+        <button @click="apply()" rel="apply">✔</button>
+      </div>
+    </div>
+    <div class="grid results">
+      <span v-for="card in problem.cards" :data-n="counts[card.id]">
+        <card :key="card.id" :card="card"></card>
+        <span class="clarif"><span class="band"><a href="#" rel="dec" @click="decrement(card)">◀</a> <span>{{ counts[card.id] }}</span> <a href="#" rel="inc" @click="increment(card)">▶</a></span></span>
+      </span>
+    </div>
+  </div>
+</div>
+`
+});
+
+window.UI = new Vue({
   el: '#app',
   data: {
     // A general error, to be propagated down to all interested
@@ -1448,6 +1660,84 @@ let UI = new Vue({
   <div v-if="mode == 'search' && search.results.length > 0"
        class="colors" :style="colorBandStyle(search.results)"></div>
   <div id="main">
+    <!--
+    <div class="prose"><form class="data-entry">
+      <h2>Title of the Form</h2>
+      <div class="band">
+        <div>
+          <div class="control">
+            <label for="control-1">A Text Input</label>
+            <input type="text" name="control-1" class="autofocus" autocomplete="off">
+          </div>
+        </div>
+      </div>
+      <div class="band error">
+        <div>
+          <div class="control">
+            <label for="control-2">A Date Input</label>
+            <input type="date" name="control-2">
+            <div class="error">Excepteur sint occaecat cupidatat non proident</div>
+          </div>
+        </div>
+        <div>
+          <div class="help">
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+            <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.</p>
+          </div>
+        </div>
+      </div>
+      <div class="band">
+        <div>
+          <div class="control">
+            <label for="control-3">A Text Area</label>
+            <textarea name="control-3"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="band">
+        <div>
+          <div class="control">
+            <label for="control-4">A Text Input</label>
+            <input type="text" name="control-4" class="autofocus" autocomplete="off">
+          </div>
+        </div>
+        <div>
+          <div class="help">
+            <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.</p>
+          </div>
+        </div>
+      </div>
+      <div class="band">
+        <div>
+          <div class="control">
+            <label for="control-5">A Date Input</label>
+            <input type="date" name="control-5">
+          </div>
+        </div>
+        <div>
+          <div class="help">
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+            <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.</p>
+          </div>
+        </div>
+      </div>
+      <div class="band error">
+        <div>
+          <div class="control">
+            <label for="control-6">A Text Area</label>
+            <textarea name="control-6" rows="12"></textarea>
+            <div class="error">Excepteur sint occaecat cupidatat non proident</div>
+          </div>
+        </div>
+        <div>
+          <div class="help">
+            <p>Consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+          </div>
+        </div>
+      </div>
+    </form></div>
+    -->
     <loading v-if="mode == 'loading'"></loading>
     <signup
       v-else-if="mode == 'signup'"
@@ -1586,71 +1876,6 @@ $(function () {
     event.preventDefault();
     document.location.hash = '#!/';
     goto('');
-  })
-  .on('click', 'button[rel="playtest"]', function (event) {
-    event.preventDefault();
-    document.location.hash = "#!/play/"+($(event.target).closest('.deck').attr('data-uuid'));
-  })
-  .on('submit', 'form#buy, form#sell, form#import', function (event) {
-    event.preventDefault();
-    var $form = $(event.target);
-    var $oops = $form.find('.oops');
-
-    if (!$form.validate('reset').validate('validate')) {
-      $oops.html('There were problems with this change to the collection...').show();
-      return;
-    }
-
-    var $save = $form.find('button[data-in-progress]');
-    $save.attr('data-original', $save.text())
-         .text($save.attr('data-in-progress'))
-         .addClass('in-progress');
-
-    Clarifier.check($form.find('textarea.vif').val(), {
-      update: function (vif) {
-        $form.find('textarea.vif').val(vif);
-      },
-
-      failed: function (clarifier, error) {
-        $save.removeClass('in-progress')
-             .text($save.attr('data-original'));
-
-        $oops.hide();
-
-        if (clarifier) {
-          $oops.html('There were some problems with your import').fadeIn();
-          clarifier.mount($form.closest('div').find('.clarify'));
-
-          if (clarifier.interactive()) {
-            $form.find('button[type=submit]').hide();
-          } else {
-            $form.find('button[type=submit]').show();
-          }
-
-        } else {
-          $oops.html(error).fadeIn();
-        }
-      },
-
-      ok: function () {
-        $('.clarify').empty().append('<div class="ok">Everything looks good!  Updating  your collection...</div>');
-
-        var data = $form.serializeObject(true);
-        data.occurred_at = data.occurred_at || strftime("%Y-%m-%d", new Date());
-
-        var url = '/v1/collectors/'+$USER.uid+'/collections/_/transactions';
-        $.ajax({
-          type: (data.id ? 'PATCH'         : 'POST'),
-          url:  (data.id ? url+'/'+data.id : url),
-          contentType: 'application/json',
-          data: JSON.stringify(data),
-          success: function () {
-            console.log('changes posted; redirecting to the timeline...');
-            document.location.hash = '#!/timeline/'+now();
-          }
-        });
-      }
-    });
   })
   .on('click', '.face a[rel=flip]', function (event) {
     event.preventDefault();

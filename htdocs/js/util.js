@@ -1,18 +1,4 @@
 ;(function (jQuery, exported, document, undefined) {
-  exported.clean = function (s) {
-    return (s || '').replace(/\xe2\x80\x94/g, '&mdash;')
-                    .replace(/\xe2\x88\x92/g, '-');
-  };
-
-  jQuery.fn.serializeObject = function (all) {
-    var o = {};
-    var sel = 'input[type="hidden"], [name]' + (all ? '' : ':visible');
-    this.find(sel).each(function (_, e) {
-      o[$(e).attr('name')] = $(e).val();
-    });
-    return o;
-  };
-
   jQuery.fn.autofocus = function () {
     if (this.is(':visible')) {
       this.find('.autofocus:visible').first().focus();

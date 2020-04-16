@@ -429,3 +429,33 @@ describe('Vault.when()', () => {
     $v.no_collection();
   });
 });
+
+describe('CDIF.validate()', () => {
+  it('should find no problems with an empty CDIF', () => {
+    let $v = new cardboard.Vault().ingest($CARDS);
+    let problems = cardboard.CDIF.validate('', $v);
+    expect(problems).to.be.an('array');
+    expect(problems.length).to.be.equal(0);
+  });
+
+  it('should find some problems for a completely bad CDIF', () => {
+    let $v = new cardboard.Vault().ingest($CARDS);
+    let problems = cardboard.CDIF.validate('1 mir shield', $v);
+    expect(problems).to.be.an('array');
+    expect(problems.length).to.be.equal(1);
+  });
+
+  it('should ignore perfectly good lines in a partially bad CDIF', () => {
+    let $v = new cardboard.Vault().ingest($CARDS);
+    let problems = cardboard.CDIF.validate("4x MIR Island\n1 mir shield\n", $v);
+    expect(problems).to.be.an('array');
+    expect(problems.length).to.be.equal(1);
+  });
+
+  it('should find all problems in a partially bad CDIF', () => {
+    let $v = new cardboard.Vault().ingest($CARDS);
+    let problems = cardboard.CDIF.validate("4x MIR Island\n1 mir shield\n1 mir askari\n", $v);
+    expect(problems).to.be.an('array');
+    expect(problems.length).to.be.equal(2);
+  });
+});

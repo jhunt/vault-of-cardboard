@@ -21,6 +21,7 @@ describe('CDIF Parser', () => {
   it('can handle simple, single-digit quantity lines', () => {
     expect(cardboard.CDIF.parse('1 MIR Island')).to.be.an('array').that.deep.equals([{
       line     : 1,
+      src      : '1 MIR Island',
       quantity : 1,
       set      : 'MIR',
       oracle   : 'Island'
@@ -30,6 +31,7 @@ describe('CDIF Parser', () => {
   it('can handle simple, single-digit quantity lines with the "x" suffix', () => {
     expect(cardboard.CDIF.parse('1x MIR Island')).to.be.an('array').that.deep.equals([{
       line     : 1,
+      src      : '1x MIR Island',
       quantity : 1,
       set      : 'MIR',
       oracle   : 'Island'
@@ -39,11 +41,13 @@ describe('CDIF Parser', () => {
   it('can handle simple, double-digit quantity lines suffix', () => {
     expect(cardboard.CDIF.parse("40x MIR Island\n40x MIR Mountain\n")).to.be.an('array').that.deep.equals([{
       line     : 1,
+      src      : '40x MIR Island',
       quantity : 40,
       set      : 'MIR',
       oracle   : 'Island'
     }, {
       line     : 2,
+      src      : '40x MIR Mountain',
       quantity : 40,
       set      : 'MIR',
       oracle   : 'Mountain'
@@ -53,6 +57,7 @@ describe('CDIF Parser', () => {
   it('can handle interior whitespace between the quantity and the set code', () => {
     expect(cardboard.CDIF.parse("4x   MIR Island")).to.be.an('array').that.deep.equals([{
       line     : 1,
+      src      : '4x   MIR Island',
       quantity : 4,
       set      : 'MIR',
       oracle   : 'Island'
@@ -62,6 +67,7 @@ describe('CDIF Parser', () => {
   it('can handle interior whitespace between the set code and oracle name', () => {
     expect(cardboard.CDIF.parse("4x MIR    Island")).to.be.an('array').that.deep.equals([{
       line     : 1,
+      src      : '4x MIR    Island',
       quantity : 4,
       set      : 'MIR',
       oracle   : 'Island'
@@ -71,6 +77,7 @@ describe('CDIF Parser', () => {
   it('can handle lower-case set codes and oracle names', () => {
     expect(cardboard.CDIF.parse("4x mir island")).to.be.an('array').that.deep.equals([{
       line     : 1,
+      src      : '4x mir island',
       quantity : 4,
       set      : 'mir',
       oracle   : 'island'
@@ -80,6 +87,7 @@ describe('CDIF Parser', () => {
   it('can handle set codes with leading numeric digits', () => {
     expect(cardboard.CDIF.parse("18x 1AZ Island")).to.be.an('array').that.deep.equals([{
       line     : 1,
+      src      : '18x 1AZ Island',
       quantity : 18,
       set      : '1AZ',
       oracle   : 'Island'
@@ -89,6 +97,7 @@ describe('CDIF Parser', () => {
   it('can handle set codes with embedded numeric digits', () => {
     expect(cardboard.CDIF.parse("18x M19 Island")).to.be.an('array').that.deep.equals([{
       line     : 1,
+      src      : '18x M19 Island',
       quantity : 18,
       set      : 'M19',
       oracle   : 'Island'
@@ -98,6 +107,7 @@ describe('CDIF Parser', () => {
   it('can handle oracle names with embedded numeric digits', () => {
     expect(cardboard.CDIF.parse("8x UNS 2 4 The Show")).to.be.an('array').that.deep.equals([{
       line     : 1,
+      src      : '8x UNS 2 4 The Show',
       quantity : 8,
       set      : 'UNS',
       oracle   : '2 4 The Show'
@@ -107,6 +117,7 @@ describe('CDIF Parser', () => {
   it('can handle end-of-line comments', () => {
     expect(cardboard.CDIF.parse("1 MIR Island # the best one")).to.be.an('array').that.deep.equals([{
       line     : 1,
+      src      : '1 MIR Island # the best one',
       quantity : 1,
       set      : 'MIR',
       oracle   : 'Island'
@@ -117,6 +128,7 @@ describe('CDIF Parser', () => {
     expect(cardboard.CDIF.parse("1 MIR Island | foil SDCC 2legit2quit"))
       .to.be.an('array').that.deep.equals([{
         line     : 1,
+        src      : '1 MIR Island | foil SDCC 2legit2quit',
         quantity : 1,
         set      : 'MIR',
         oracle   : 'Island'
@@ -128,6 +140,7 @@ describe('CDIF Parser', () => {
     expect(cardboard.CDIF.parse("1 MIR Island | foil SDCC 2legit2quit     # super special"))
       .to.be.an('array').that.deep.equals([{
         line     : 1,
+        src      : "1 MIR Island | foil SDCC 2legit2quit     # super special",
         quantity : 1,
         set      : 'MIR',
         oracle   : 'Island'
@@ -138,6 +151,7 @@ describe('CDIF Parser', () => {
     expect(cardboard.CDIF.parse("1 MIR Island | (signed: SDCC '01) (MISPRINT: double)  (00: 007)"))
       .to.be.an('array').that.deep.equals([{
         line     : 1,
+        src      : "1 MIR Island | (signed: SDCC '01) (MISPRINT: double)  (00: 007)",
         quantity : 1,
         set      : 'MIR',
         oracle   : 'Island'
@@ -148,6 +162,7 @@ describe('CDIF Parser', () => {
     expect(cardboard.CDIF.parse("1 MIR Island | (signed: SDCC '01) (MISPRINT: double)  (00: 007)# wtf"))
       .to.be.an('array').that.deep.equals([{
         line     : 1,
+        src      : "1 MIR Island | (signed: SDCC '01) (MISPRINT: double)  (00: 007)# wtf",
         quantity : 1,
         set      : 'MIR',
         oracle   : 'Island'
