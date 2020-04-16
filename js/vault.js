@@ -229,13 +229,14 @@ class Vault {
   }
 
   resolve(cdif) {
+    let n = 1;
     let pile = [];
     CDIF.parse(cdif).forEach(line => {
       let card = this.find(line.set, line.oracle);
       if (!card) {
         throw new Error('card ['+line.set+'] "'+line.oracle+'" not found in vault.');
       }
-      Array.from({ length: line.quantity }).forEach(() => pile.push(card));
+      Array.from({ length: line.quantity }).forEach(() => pile.push({ id: n++, card: card }));
     });
     return pile;
   }

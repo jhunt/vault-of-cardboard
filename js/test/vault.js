@@ -205,6 +205,7 @@ describe('Vault.resolve(cdif)', () => {
                   "1x MIR Moss Diamond\n"+
                   "1x MIR Charcoal Diamond\n");
     expect(pile.length).to.be.equal(5);
+    pile = pile.map(c => c.card);
     expect($v.filter(pile, '@white') .map(c => c.name)).to.include('Marble Diamond');
     expect($v.filter(pile, '@blue')  .map(c => c.name)).to.include('Sky Diamond');
     expect($v.filter(pile, '@black') .map(c => c.name)).to.include('Charcoal Diamond');
@@ -217,7 +218,7 @@ describe('Vault.resolve(cdif)', () => {
                   "1x MIR Crystal Golem\n"+
                   "1x MIR Crystal Golem\n");
     expect(pile.length).to.be.equal(2);
-    expect(pile.map(c => c.name)).to.include('Crystal Golem', 'Crystal Golem');
+    expect(pile.map(c => c.card.name)).to.include('Crystal Golem', 'Crystal Golem');
   });
 
   it('should be able to resolve multi-quantity entries', () => {
@@ -225,8 +226,9 @@ describe('Vault.resolve(cdif)', () => {
                   "4x MIR Cursed Totem\n"+
                   "3x MIR Grinning Totem\n");
     expect(pile.length).to.be.equal(7);
-    expect(pile.map(c => c.name)).to.include('Cursed Totem', 'Cursed Totem', 'Cursed Totem', 'Cursed Totem',
-                                             'Grinning Totem', 'Grinning Totem', 'Grinning Totem');
+    expect(pile.map(c => c.card.name)).to.include(
+      'Cursed Totem', 'Cursed Totem', 'Cursed Totem', 'Cursed Totem',
+      'Grinning Totem', 'Grinning Totem', 'Grinning Totem');
   });
 });
 

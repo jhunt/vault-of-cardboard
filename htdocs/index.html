@@ -536,14 +536,14 @@ Vue.component('deck-list', {
 
   <table class="decks sortable listing">
     <thead><tr>
-      <th class="sortable">ID</th>
+      <th class="sortable">Code</th>
       <th class="sortable">Name</th>
       <th class="sortable" data-sort-as="number">Created</th>
       <th class="sortable" data-sort-as="number">Last Updated</th>
     </tr></thead>
     <tbody>
       <tr v-for="deck in decks" :key="deck.id">
-        <td><a href="#" @click="show_deck(deck)">{{ deck.id }}</a></td>
+        <td><a href="#" @click="show_deck(deck)">{{ deck.code }}</a></td>
         <td><a href="#" @click="show_deck(deck)">{{ deck.title }}</a></td>
         <td :data-sort="deck.created_at">{{ strftime("%B %Oe, %Y", dated(deck.created_at)) }}</td>
         <td :data-sort="deck.updated_at">{{ strftime("%B %Oe, %Y", dated(deck.updated_at)) }}</td>
@@ -705,7 +705,7 @@ Vue.component('deck', {
           max = 0;
       let curve = [];
 
-      UI.vault.filter(this.cards, '!type:land').forEach(card => {
+      UI.vault.filter(this.cards.map(c => c.card), '!type:land').forEach(card => {
         if (!(card.cmc in curve)) {
           curve[card.cmc] = [];
         }
@@ -734,9 +734,9 @@ Vue.component('deck', {
     }
   },
   template: `
-<div class="deck prose" :data-uuid="deck.id">
+<div class="deck prose">
   <div class="title">
-    <span>in:{{ deck.id }}</span>
+    <span>in:{{ deck.code }}</span>
     <h1>{{ deck.name }}</h1>
   </div>
   <div class="buttons">
@@ -763,12 +763,10 @@ Vue.component('deck', {
   </div>
 
   <h2>Sample Hand</h2>
-  <button rel="mulligan">Mulligan!</button>
-  <div class="hand"><card-grid :cards="sample_hand"></card-grid></div>
+  <div class="hand"><card-grid :actual="true" :cards="sample_hand"></card-grid></div>
 
   <h2>Next 10 Draws</h2>
-  <button rel="mulligan">Mulligan!</button>
-  <div class="hand"><card-grid :cards="next_draws(10)"></card-grid></div>
+  <div class="hand"><card-grid :actual="true" :cards="next_draws(10)"></card-grid></div>
 
   <h2>What's In It?</h2>
   <pre class="rawlist"><code>{{ deck.main }}</code></pre>
@@ -777,16 +775,18 @@ Vue.component('deck', {
 });
 
 Vue.component('card-grid', {
-  props: ['q', 'oops', 'cards'],
+  props: ['q', 'oops', 'cards', 'actual'],
   template: `
 <div class="search">
   <div v-if="oops" class="oops">{{ q }}: {{ oops }}</div>
   <div v-if="q" class="meta-results">found <span class="count">{{ cards.length }}</span> card{{ cards.length == 1 ? '' : 's' }}.</div>
-  <div class="results grid">
-    <card
-      v-for="card in cards"
-      :key="card.id"
-      :card="card"></card>
+  <div class="results grid" v-if="actual">
+    <card v-for="c in cards" :key="c.id"
+          :card="c.card"></card>
+  </div>
+  <div class="results grid" v-else>
+    <card v-for="card in cards" :key="card.id"
+          :card="card"></card>
   </div>
 </div>
 `

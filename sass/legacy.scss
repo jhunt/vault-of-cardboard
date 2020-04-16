@@ -1334,3 +1334,16 @@ body[data-cohort="preview"] nav li.cohort-preview a::after {
 }
 
 .play .h2h { display: none; }
+
+
+
+
+.hand .grid { width: auto; }
+.hand .grid.results > span {
+  margin-right: -6em;
+}
+.hand .grid.results > span:hover {
+  z-index: 5;
+  transform: scale(120%);
+  transition: transform 0.2s;
+}
