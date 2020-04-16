@@ -10,8 +10,19 @@ let fetch_the_json = (url) =>
       });
 
 let API = {
+  load(vault) {
+    return Promise.all([
+      API.fetch_cards(),
+      API.fetch_prices()
+    ]).then(data => vault.ingest(data[0], data[1]));
+  },
+
   fetch_cards() {
     return fetch_the_json('/cards.json');
+  },
+
+  fetch_prices() {
+    return fetch_the_json('/prices.json');
   },
 
   whoami(sid) {

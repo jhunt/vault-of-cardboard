@@ -823,7 +823,10 @@ Vue.component('card-detail', {
   methods: {
     colorize: cardboard.colorize,
     price(d) {
-      return '$'+d.toFixed(2).split('').reverse().join('').match(/.{1,3}/g).join(',').split('').reverse().join('').replace(/,\./, '.');
+      if (typeof(d) === 'undefined' || d == '') {
+        return '';
+      }
+      return '$'+parseFloat(d).toFixed(2).split('').reverse().join('').match(/.{1,3}/g).join(',').split('').reverse().join('').replace(/,\./, '.');
     },
     oracle(card) {
       return cardboard.symbolize(card.oracle).replace(/\n/g, '</p></p>');
@@ -1439,8 +1442,8 @@ window.UI = new Vue({
       return undefined;
     })();
 
-    cardboard.API.fetch_cards().then(cards => this.vault.ingest(cards))
-      .catch(e => console.log('vaut:: failed to ingest card data from /cards.json: %s', e));
+    cardboard.API.load(this.vault)
+      .catch(e => console.log('vault:: failed to load card / pricing data: %s', e));
 
     if (session) {
       cardboard.API.whoami(session).then(data => {

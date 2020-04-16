@@ -34,7 +34,7 @@ class Vault {
     this.promise = Promise.resolve();
   }
 
-  ingest(data) {
+  ingest(data, prices) {
     this.index = {};
     this.cards = {};
     this.sets  = [];
@@ -80,7 +80,7 @@ class Vault {
           cost      : data.cards[card.oid].mana_cost,
           color     : data.cards[card.oid].color_identity.join(''),
 
-          price     : undefined, // we will backpatch this later, with prices.json data
+          price     : (prices && (card.id in prices)) ? prices[card.id] : undefined,
           owned     : 0,         // we will backpatch this later, with collection.json data
 
           flavor    : card.flavor,
@@ -116,6 +116,13 @@ class Vault {
     });
 
     When.trigger(CardsLoaded);
+    return this;
+  }
+
+  update_prices(prices) {
+    for (let id in prices) {
+      this.index[id].price = prices[id];
+    };
     return this;
   }
 
