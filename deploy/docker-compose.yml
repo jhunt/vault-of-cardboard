@@ -44,6 +44,11 @@ services:
       - CACHE=/cache
       - http_proxy=http://127.0.0.1:3128
       - https_proxy=http://127.0.0.1:3128
+      - S3_BUCKET=vault-of-cardboard
+
+      - S3_AKI=${S3_AKI}
+      - S3_KEY=${S3_KEY}
+      - IMAGES=${IMAGES}
     network_mode: 'service:proxycache' # can't co-exist with ports:[]
     entrypoint: ''
     command:

@@ -3,15 +3,56 @@ set -eu
 
 # REQUIRED environment variables:
 #
-#  CACHE  -  Where to store the cached JSON files.
+#  CACHE     -  Where to store the cached JSON files.
+#  S3_AKI    -  Credentials for S3 card image storage
+#  S3_KEY    -  Credentials for S3 card image storage
+#  S3_BUCKET -  S3 card image storage bucket
 #
 
+ok=yes
 if [[ -z "${CACHE:-}" ]]; then
   echo >&2 "Missing required environment variable CACHE;"
   echo >&2 "Please set CACHE to the absolute path of the cache"
   echo >&2 "directory, where I should store JSON fragments."
+  echo >&2
+  ok=no
+fi
+
+IMAGES=${IMAGES:-no}
+if [[ ${IMAGES} == "yes" ]]; then
+  if [[ -z "${S3_AKI:-}" ]]; then
+    echo >&2 "Missing required environment variable S3_AKI;"
+    echo >&2 "Please set S3_AKI to the Amazon Web Services"
+    echo >&2" Access Key ID for uploading card images."
+    echo >&2
+    ok=no
+  fi
+
+  if [[ -z "${S3_KEY:-}" ]]; then
+    echo >&2 "Missing required environment variable S3_KEY;"
+    echo >&2 "Please set S3_KEY to the Amazon Web Services"
+    echo >&2" Secret Access Key for uploading card images."
+    echo >&2
+    ok=no
+  fi
+
+  if [[ -z "${S3_BUCKET:-}" ]]; then
+    echo >&2 "Missing required environment variable S3_BUCKET;"
+    echo >&2 "Please set S3_BUCKET to the Amazon Web Services"
+    echo >&2" S3 bucket that holds card images."
+    echo >&2
+    ok=no
+  fi
+fi
+
+if [[ $ok != "yes" ]]; then
   exit 1
 fi
+
+upload() {
+  curl -sL $1 | s3 put --to $2 -
+  s3 chacl $2 public-read
+}
 
 mkdir -p $CACHE
 
@@ -67,5 +108,20 @@ for code in "$@"; do
     echo "scry:"; ls -l $CACHE/scry/$code/
     echo "work:"; ls -l $CACHE/work/$code/
     echo "final:"; jq -Mr . $CACHE/dat/$code.json
+  fi
+
+  if [[ ${IMAGES} = "yes" ]]; then
+    jq <$CACHE/dat/$code.json -Mr '.cards[] | select(.layout == "transform") | [.id,.card_faces[0].image_uris.large,.card_faces[1].image_uris.large] | @tsv' |\
+      while IFS=$'\t' read -r id front back; do
+        echo " >> uploading cards images for (transform) card [$id]..."
+        upload $front cards/$code/$code-$id.jpg
+        upload $back  cards/$code/$code-$id.flip.jpg
+      done
+
+    jq <$CACHE/dat/$code.json -Mr '.cards[] | select(.layout != "transform") | [.id,.image_uris.large] | @tsv' |\
+    while IFS=$'\t' read -r id front; do
+        echo " >> uploading cards images for card [$id]..."
+        upload $front cards/$code/$code-$id.jpg
+    done
   fi
 done
