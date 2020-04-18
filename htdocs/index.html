@@ -786,18 +786,18 @@ Vue.component('deck', {
 });
 
 Vue.component('card-grid', {
-  props: ['q', 'found', 'more', 'oops', 'cards', 'actual'],
+  props: ['q', 'found', 'more', 'oops', 'cards', 'actual', 'sleeve'],
   template: `
 <div class="search">
   <div v-if="oops" class="oops">{{ q }}: {{ oops }}</div>
   <div v-if="q" class="meta-results">found <span class="count">{{ found }}</span> card{{ cards.length == 1 ? '' : 's' }}.</div>
   <div class="results grid" v-if="actual">
     <card v-for="c in cards" :key="c.id"
-          :card="c.card"></card>
+          :sleeve="sleeve" :card="c.card"></card>
   </div>
   <div class="results grid" v-else>
     <card v-for="card in cards" :key="card.id"
-          :card="card"></card>
+          :sleeve="sleeve" :card="card"></card>
   </div>
   <div class="note meta-results" v-if="more">Not all {{ found }} matching cards displayed.  Have you tried narrowing your search criteria?</div>
 </div>
@@ -805,14 +805,14 @@ Vue.component('card-grid', {
 });
 
 Vue.component('card', {
-  props: ['card'],
+  props: ['card', 'sleeve'],
   data() {
     return {
       imgroot: $CONFIG.imgroot,
     };
   },
   template: `
-<span :data-own="card.owned">
+<span :class="sleeve ? ('sleeved sl-'+sleeve) : ''">
   <span class="card back"><img src="/img/mtgback.jpg"></span>
   <span :class="'card face ' + card.layout">
     <a v-if="card.layout == 'transform'" href="#" rel="flip"></a>
