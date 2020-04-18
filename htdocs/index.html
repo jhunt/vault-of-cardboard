@@ -272,7 +272,9 @@ Vue.component('login', {
 
           document.cookie = 'vcb_sesh='+UI.session.session+';max-age=7776000;samesite=strict';
           cardboard.API.fetch_collection_for(UI.session.uid)
-            .then(c => UI.vault.load_collection(c.base, c.patches));
+            .then(c => cardboard.When(cardboard.CardsLoaded, () => {
+              UI.vault.load_collection(c.base, c.patches);
+            }));
           UI.browse('/q/owned');
 
         } else {
@@ -346,7 +348,9 @@ Vue.component('signup', {
 
             document.cookie = 'vcb_sesh='+UI.session.session+';max-age=7776000;samesite=strict';
             cardboard.API.fetch_collection_for(UI.session.uid)
-              .then(c => UI.vault.load_collection(c.base, c.patches));
+              .then(c => cardboard.When(cardboard.CardsLoaded, () => {
+                UI.vault.load_collection(c.base, c.patches);
+              }));
             UI.browse('/q/owned');
 
           } else {
@@ -775,11 +779,11 @@ Vue.component('deck', {
 });
 
 Vue.component('card-grid', {
-  props: ['q', 'oops', 'cards', 'actual'],
+  props: ['q', 'found', 'more', 'oops', 'cards', 'actual'],
   template: `
 <div class="search">
   <div v-if="oops" class="oops">{{ q }}: {{ oops }}</div>
-  <div v-if="q" class="meta-results">found <span class="count">{{ cards.length }}</span> card{{ cards.length == 1 ? '' : 's' }}.</div>
+  <div v-if="q" class="meta-results">found <span class="count">{{ found }}</span> card{{ cards.length == 1 ? '' : 's' }}.</div>
   <div class="results grid" v-if="actual">
     <card v-for="c in cards" :key="c.id"
           :card="c.card"></card>
@@ -788,6 +792,7 @@ Vue.component('card-grid', {
     <card v-for="card in cards" :key="card.id"
           :card="card"></card>
   </div>
+  <div class="note meta-results" v-if="more">Not all {{ found }} matching cards displayed.  Have you tried narrowing your search criteria?</div>
 </div>
 `
 });
@@ -1455,7 +1460,9 @@ window.UI = new Vue({
           return;
         }
         cardboard.API.fetch_collection_for(UI.session.uid)
-          .then(c => this.vault.load_collection(c.base, c.patches));
+          .then(c => cardboard.When(cardboard.CardsLoaded, () => {
+            UI.vault.load_collection(c.base, c.patches);
+          }));
       });
 
     } else {
@@ -1574,7 +1581,10 @@ window.UI = new Vue({
       UI.search = { query: q, results: [] };
       cardboard.When(cardboard.AllLoaded, () => {
         try {
-          UI.search.results = UI.vault.search(q);
+          let results = UI.vault.search(q);
+          UI.search.found = results.length;
+          UI.search.results = results.slice(0,400);
+          UI.search.more = UI.search.results.length != results.length;
         } catch (e) {
           UI.search.error = e.toString();
         }
@@ -1751,6 +1761,8 @@ window.UI = new Vue({
     <card-grid
       v-else-if="mode == 'search'"
       :q="search.query"
+      :found="search.found"
+      :more="search.more"
       :oops="search.error"
       :cards="search.results"></card-grid>
     <card-grid

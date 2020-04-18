@@ -180,6 +180,8 @@ class Vault {
       patch.forEach(card => {
         if (card.id in this.index) {
           this.index[card.id].owned += card.quantity;
+        } else {
+          console.log('unable to update own:%d for card [%s] - card not found in vault', card.quantity, card.id);
         }
       });
     });
