@@ -709,7 +709,7 @@ Vue.component('deck', {
           max = 0;
       let curve = [];
 
-      UI.vault.filter(this.cards.map(c => c.card), '!type:land').forEach(card => {
+      UI.vault.filter(this.cards.map(c => c.card), '!type:land and !type:token').forEach(card => {
         if (!(card.cmc in curve)) {
           curve[card.cmc] = [];
         }
@@ -725,7 +725,14 @@ Vue.component('deck', {
     },
 
     library() {
-      return cardboard.shuffle([...this.cards]);
+      let included = cardboard.Query.parse('!type:token');
+      let lib = [];
+      this.cards.forEach(c => {
+        if (included.match(c.card)) {
+          lib.push(c);
+        }
+      });
+      return cardboard.shuffle(lib);
     },
 
     sample_hand() {
