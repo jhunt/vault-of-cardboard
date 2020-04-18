@@ -42,6 +42,31 @@ mod test {
     }
 
     #[test]
+    pub fn it_should_parse_double_faced_scryfall_cards() {
+        let sets = scryfall::sets("test/scryfall/sets");
+        assert!(sets.contains_key("5e914d7e-c1e9-446c-a33d-d093c02b2743"));
+
+        let soi = &sets["5e914d7e-c1e9-446c-a33d-d093c02b2743"];
+        let avacyn = &soi.cards[4];
+        assert_eq!("ae155ee2-008f-4dc6-82bf-476be7baa224", avacyn.id);
+        assert_eq!("432b37a5-d32a-4b78-91ab-860aa026b7cc", avacyn.oracle_id);
+        assert_eq!("transform", avacyn.layout);
+
+        let oracle = card::OracleCard::from(avacyn);
+        assert_eq!("Archangel Avacyn // Avacyn, the Purifier", oracle.name);
+        assert_eq!("Legendary Creature — Angel // Legendary Creature — Angel", oracle.type_line);
+        assert_eq!(5.0, oracle.cmc);
+        assert_eq!("{3}{W}{W}", oracle.mana_cost);
+        assert_eq!("4//6", oracle.power);
+        assert_eq!("4//5", oracle.tough);
+
+        assert_eq!("Flash\nFlying, vigilance\nWhen Archangel Avacyn enters the battlefield, creatures you control gain indestructible until end of turn.\nWhen a non-Angel creature you control dies, transform Archangel Avacyn at the beginning of the next upkeep.//Flying\nWhen this creature transforms into Avacyn, the Purifier, it deals 3 damage to each other creature and each opponent.", oracle.text);
+
+        let print = card::PrintCard::from(avacyn);
+        assert_eq!("\"Wings that once bore hope are now stained with blood. She is our guardian no longer.\" —Grete, cathar apostate", print.flavor);
+    }
+
+    #[test]
     pub fn it_should_parse_oracle_cards_into_a_pool() {
         let mut pool = card::Pool::new();
         for (_, set) in scryfall::sets("test/scryfall/sets") {

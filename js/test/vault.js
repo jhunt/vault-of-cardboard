@@ -30,9 +30,8 @@ describe('Vault.ingest()', () => {
       price     : undefined,
       owned     : 0,
       flavor    : "Don't insult a Talruum unless your mount is swift. —Suq'Ata saying",
-      power     : '3',
-      toughness : '3',
-      pt        : '3/3',
+      power     : ['3'],
+      toughness : ['3'],
       art       : 'decd9cb4-ef84-4a79-b8bf-e3151535ccda',
       back      : '',
       set: {

@@ -828,8 +828,8 @@ Vue.component('card-detail', {
       }
       return '$'+parseFloat(d).toFixed(2).split('').reverse().join('').match(/.{1,3}/g).join(',').split('').reverse().join('').replace(/,\./, '.');
     },
-    oracle(card) {
-      return cardboard.symbolize(card.oracle).replace(/\n/g, '</p></p>');
+    oracles(card) {
+      return cardboard.symbolize(card.oracle.replace('//', "\n<hr>\n")).split(/\n+/);
     }
   },
   template: `
@@ -862,7 +862,7 @@ Vue.component('card-detail', {
       <li><strong>Owned:</strong> {{ card.owned }}</li>
     </ul>
     <ul>
-      <li class="oracle"><p v-html="oracle(card)"></p></li>
+      <li class="oracle"><p v-for="(line, i) in oracles(card)" :key="i" v-html="line"></p></li>
     </ul>
     <p v-if="card.price" class="price">
       {{ price(card.price) }}

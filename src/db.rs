@@ -1093,6 +1093,7 @@ mod test {
             None,
             NewTransaction {
                 summary: "opting for ixalan",
+                disposition: "buy",
                 notes: "",
                 collection: jhunt.id,
                 dated: &NaiveDate::from_ymd(2020, 01, 14),
@@ -1128,6 +1129,7 @@ mod test {
             None,
             NewDeck {
                 collector: jhunt.id,
+                code: "niv",
                 title: "Niv-Mizzet",
                 description: "Draw a card, 1 damage to you...",
                 main: "1x GRN Niv-Mizzet\n",

@@ -83,21 +83,51 @@ class Query {
     case 'COLOR':
       return this.a.call(card, card.color);
     case 'P':
-        return card.power != "" && this.a.call(card, card.power);
+        for (var i = 0; i < card.power.length; i++) {
+          if (this.a.call(card, card.power[i])) {
+            return true;
+          }
+        }
+        return false;
+
     case 'T':
-        return card.power != "" && this.a.call(card, card.toughness);
+        for (var i = 0; i < card.toughness.length; i++) {
+          if (this.a.call(card, card.toughness[i])) {
+            return true;
+          }
+        }
+        return false;
+
     case 'CPT':
-        return card.power != "" && this.a.call(card, parseInt(card.power) + parseInt(card.toughness));
+        for (var i = 0; i < Math.min(card.power.length, card.toughness.length); i++) {
+          if (this.a.call(card, parseInt(card.power[i]) + parseInt(card.toughness[i]))) {
+            return true;
+          }
+        }
+        return false;
+
+    case 'PTR':
+        for (var i = 0; i < Math.min(card.power.length, card.toughness.length); i++) {
+          if (this.a.call(card, parseInt(card.power[i]) * 1.0 /  parseInt(card.toughness[i]))) {
+            return true;
+          }
+        }
+        return false;
+
+    case 'PT':
+        for (var i = 0; i < Math.min(card.power.length, card.toughness.length); i++) {
+          if (this.a == card.power[i] + '/' + card.toughness[i]) {
+            return true;
+          }
+        }
+        return false;
+
     case 'IN':
         return this.a.call(card, card.decks);
-    case 'PTR':
-        return card.power != "" && this.a.call(card, parseInt(card.power) * 1.0 / parseInt(card.toughness));
     case 'LAYOUT':
         return this.a == card.layout;
     case 'LEGAL':
         return card.flags.indexOf(this.a) >= 0;
-    case 'PT':
-        return this.a == card.pt;
     case 'FULLART':
         return this.a.call(card, card.flags.indexOf('^') >= 0);
     case 'OVERSIZED':

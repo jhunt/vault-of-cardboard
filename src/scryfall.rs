@@ -209,6 +209,31 @@ pub struct Card {
 
     pub power: Option<String>,
     pub toughness: Option<String>,
+
+    pub card_faces: Option<Vec<CardFace>>
+}
+
+#[derive(Deserialize)]
+pub struct CardFace {
+    pub object: String,
+
+    pub name: String,
+    pub type_line: String,
+    pub oracle_text: Option<String>,
+    pub flavor_text: Option<String>,
+
+    pub artist: String,
+    pub illustration_id: Option<String>,
+
+    pub mana_cost: Option<String>,
+
+    pub image_uris: Option<ImageURIs>,
+
+    pub colors: Option<Vec<String>>,
+    pub color_indicator: Option<Vec<String>>,
+
+    pub power: Option<String>,
+    pub toughness: Option<String>,
 }
 
 #[derive(Deserialize)]

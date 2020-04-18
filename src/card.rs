@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize, Serializer};
+use serde::{Deserialize, Serialize, Serializer};
 use std::collections::HashMap;
 use std::io;
 
@@ -275,47 +275,113 @@ pub struct OracleCard {
 
 impl std::convert::From<&scryfall::Card> for OracleCard {
     fn from(card: &scryfall::Card) -> Self {
-        OracleCard {
-            id: card.oracle_id.to_string(),
-            name: card.name.to_string(),
-            type_line: card.type_line.to_string(),
-            text: match &card.oracle_text {
-                Some(s) => s.to_string(),
-                None => "".to_string(),
+        match card.layout.as_str() {
+            "transform" => OracleCard {
+                id: card.oracle_id.to_string(),
+                name: card.name.to_string(),
+                type_line: card.type_line.to_string(),
+                text: match &card.card_faces {
+                    Some(faces) => faces
+                        .iter()
+                        .filter(|f| f.oracle_text.is_some())
+                        .map(|f| f.oracle_text.as_ref().unwrap().to_string())
+                        .collect::<Vec<_>>()
+                        .join("//")
+                        .to_string(),
+                    _ => "".to_string(),
+                },
+                cmc: card.cmc,
+                mana_cost: match &card.card_faces {
+                    Some(faces) if faces.len() > 1 => match &faces[0].mana_cost {
+                        Some(s) => s.to_string(),
+                        None => "".to_string(),
+                    },
+                    _ => "".to_string(),
+                },
+                power: match &card.card_faces {
+                    Some(faces) => faces
+                        .iter()
+                        .filter(|f| f.power.is_some())
+                        .map(|f| f.power.as_ref().unwrap().to_string())
+                        .collect::<Vec<_>>()
+                        .join("//")
+                        .to_string(),
+                    _ => "".to_string(),
+                },
+                tough: match &card.card_faces {
+                    Some(faces) => faces
+                        .iter()
+                        .filter(|f| f.toughness.is_some())
+                        .map(|f| f.toughness.as_ref().unwrap().to_string())
+                        .collect::<Vec<_>>()
+                        .join("//")
+                        .to_string(),
+                    _ => "".to_string(),
+                },
+                legal: Legality {
+                    brawl: maybe_legal(&card.legalities.brawl),
+                    commander: maybe_legal(&card.legalities.commander),
+                    duel: maybe_legal(&card.legalities.duel),
+                    frontier: maybe_legal(&card.legalities.frontier),
+                    future: maybe_legal(&card.legalities.future),
+                    historic: maybe_legal(&card.legalities.historic),
+                    legacy: maybe_legal(&card.legalities.legacy),
+                    modern: maybe_legal(&card.legalities.modern),
+                    old_school: maybe_legal(&card.legalities.oldschool),
+                    pauper: maybe_legal(&card.legalities.pauper),
+                    penny: maybe_legal(&card.legalities.penny),
+                    pioneer: maybe_legal(&card.legalities.pioneer),
+                    standard: maybe_legal(&card.legalities.standard),
+                    vintage: maybe_legal(&card.legalities.vintage),
+                },
+                color_identity: card.color_identity.clone(),
+                colors: match &card.colors {
+                    Some(l) => l.clone(),
+                    None => vec![],
+                },
             },
-            cmc: card.cmc,
-            mana_cost: match &card.mana_cost {
-                Some(s) => s.to_string(),
-                None => "".to_string(),
-            },
-            power: match &card.power {
-                Some(s) => s.to_string(),
-                None => "".to_string(),
-            },
-            tough: match &card.toughness {
-                Some(s) => s.to_string(),
-                None => "".to_string(),
-            },
-            legal: Legality {
-                brawl: maybe_legal(&card.legalities.brawl),
-                commander: maybe_legal(&card.legalities.commander),
-                duel: maybe_legal(&card.legalities.duel),
-                frontier: maybe_legal(&card.legalities.frontier),
-                future: maybe_legal(&card.legalities.future),
-                historic: maybe_legal(&card.legalities.historic),
-                legacy: maybe_legal(&card.legalities.legacy),
-                modern: maybe_legal(&card.legalities.modern),
-                old_school: maybe_legal(&card.legalities.oldschool),
-                pauper: maybe_legal(&card.legalities.pauper),
-                penny: maybe_legal(&card.legalities.penny),
-                pioneer: maybe_legal(&card.legalities.pioneer),
-                standard: maybe_legal(&card.legalities.standard),
-                vintage: maybe_legal(&card.legalities.vintage),
-            },
-            color_identity: card.color_identity.clone(),
-            colors: match &card.colors {
-                Some(l) => l.clone(),
-                None => vec![],
+            _ => OracleCard {
+                id: card.oracle_id.to_string(),
+                name: card.name.to_string(),
+                type_line: card.type_line.to_string(),
+                text: match &card.oracle_text {
+                    Some(s) => s.to_string(),
+                    None => "".to_string(),
+                },
+                cmc: card.cmc,
+                mana_cost: match &card.mana_cost {
+                    Some(s) => s.to_string(),
+                    None => "".to_string(),
+                },
+                power: match &card.power {
+                    Some(s) => s.to_string(),
+                    None => "".to_string(),
+                },
+                tough: match &card.toughness {
+                    Some(s) => s.to_string(),
+                    None => "".to_string(),
+                },
+                legal: Legality {
+                    brawl: maybe_legal(&card.legalities.brawl),
+                    commander: maybe_legal(&card.legalities.commander),
+                    duel: maybe_legal(&card.legalities.duel),
+                    frontier: maybe_legal(&card.legalities.frontier),
+                    future: maybe_legal(&card.legalities.future),
+                    historic: maybe_legal(&card.legalities.historic),
+                    legacy: maybe_legal(&card.legalities.legacy),
+                    modern: maybe_legal(&card.legalities.modern),
+                    old_school: maybe_legal(&card.legalities.oldschool),
+                    pauper: maybe_legal(&card.legalities.pauper),
+                    penny: maybe_legal(&card.legalities.penny),
+                    pioneer: maybe_legal(&card.legalities.pioneer),
+                    standard: maybe_legal(&card.legalities.standard),
+                    vintage: maybe_legal(&card.legalities.vintage),
+                },
+                color_identity: card.color_identity.clone(),
+                colors: match &card.colors {
+                    Some(l) => l.clone(),
+                    None => vec![],
+                },
             },
         }
     }
@@ -411,33 +477,70 @@ fn maybe_legal(s: &Option<String>) -> bool {
 
 impl std::convert::From<&scryfall::Card> for PrintCard {
     fn from(card: &scryfall::Card) -> Self {
-        PrintCard {
-            id: card.id.to_string(),
-            oid: card.oracle_id.to_string(),
-            artist: card.artist.to_string(),
-            number: card.collector_number.to_string(),
-            frame: card.frame.to_string(),
-            border: card.border_color.to_string(),
-            layout: card.layout.to_string(),
+        match card.layout.as_str() {
+            "transform" => PrintCard {
+                id: card.id.to_string(),
+                oid: card.oracle_id.to_string(),
+                artist: card.artist.to_string(),
+                number: card.collector_number.to_string(),
+                frame: card.frame.to_string(),
+                border: card.border_color.to_string(),
+                layout: card.layout.to_string(),
 
-            illustration: match &card.illustration_id {
-                Some(s) => s.to_string(),
-                None => card.id.to_string(),
+                illustration: match &card.illustration_id {
+                    Some(s) => s.to_string(),
+                    None => card.id.to_string(),
+                },
+
+                flavor: match &card.card_faces {
+                    Some(faces) => faces
+                        .iter()
+                        .filter(|f| f.flavor_text.is_some())
+                        .map(|f| f.flavor_text.as_ref().unwrap().to_string())
+                        .collect::<Vec<_>>()
+                        .join("//")
+                        .to_string(),
+                    _ => "".to_string(),
+                },
+
+                flags: Flags {
+                    full_art: maybe_true(&card.full_art),
+                    oversized: maybe_true(&card.oversized),
+                    reprint: maybe_true(&card.reprint),
+                    reserved: maybe_true(&card.reserved),
+                    variation: maybe_true(&card.variation),
+                    story_spotlight: maybe_true(&card.story_spotlight),
+                    rarity: card.rarity.to_string(),
+                },
             },
+            _ => PrintCard {
+                id: card.id.to_string(),
+                oid: card.oracle_id.to_string(),
+                artist: card.artist.to_string(),
+                number: card.collector_number.to_string(),
+                frame: card.frame.to_string(),
+                border: card.border_color.to_string(),
+                layout: card.layout.to_string(),
 
-            flavor: match &card.flavor_text {
-                Some(s) => s.to_string(),
-                None => "".to_string(),
-            },
+                illustration: match &card.illustration_id {
+                    Some(s) => s.to_string(),
+                    None => card.id.to_string(),
+                },
 
-            flags: Flags {
-                full_art: maybe_true(&card.full_art),
-                oversized: maybe_true(&card.oversized),
-                reprint: maybe_true(&card.reprint),
-                reserved: maybe_true(&card.reserved),
-                variation: maybe_true(&card.variation),
-                story_spotlight: maybe_true(&card.story_spotlight),
-                rarity: card.rarity.to_string(),
+                flavor: match &card.flavor_text {
+                    Some(s) => s.to_string(),
+                    None => "".to_string(),
+                },
+
+                flags: Flags {
+                    full_art: maybe_true(&card.full_art),
+                    oversized: maybe_true(&card.oversized),
+                    reprint: maybe_true(&card.reprint),
+                    reserved: maybe_true(&card.reserved),
+                    variation: maybe_true(&card.variation),
+                    story_spotlight: maybe_true(&card.story_spotlight),
+                    rarity: card.rarity.to_string(),
+                },
             },
         }
     }
@@ -445,10 +548,9 @@ impl std::convert::From<&scryfall::Card> for PrintCard {
 
 #[cfg(test)]
 mod test {
-    use serde_json::json;
-    use crate::prelude::*;
-    use crate::cdif;
     use super::*;
+    use crate::cdif;
+    use serde_json::json;
 
     #[test]
     fn should_be_able_to_convert_cdif_to_a_pile() {
@@ -490,13 +592,16 @@ mod test {
     }
 
     fn owned(qty: u32, pid: &str, var: Option<Vec<String>>) -> (u32, OwnedCard) {
-        (qty, OwnedCard{
-            pid: pid.to_string(),
-            var: match var {
-                Some(v) => v,
-                None => vec![],
+        (
+            qty,
+            OwnedCard {
+                pid: pid.to_string(),
+                var: match var {
+                    Some(v) => v,
+                    None => vec![],
+                },
             },
-        })
+        )
     }
 
     #[test]
@@ -528,7 +633,10 @@ mod test {
             }],
         });
 
-        assert_eq!(json!(c.cards).to_string(), r#"[[3,{"pid":"mir-plains","var":[]}]]"#);
+        assert_eq!(
+            json!(c.cards).to_string(),
+            r#"[[3,{"pid":"mir-plains","var":[]}]]"#
+        );
     }
 
     #[test]

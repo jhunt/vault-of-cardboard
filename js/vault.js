@@ -84,14 +84,14 @@ class Vault {
           owned     : 0,         // we will backpatch this later, with collection.json data
 
           flavor    : card.flavor,
-          power     : data.cards[card.oid].power,
-          toughness : data.cards[card.oid].tough,
-          pt        : (data.cards[card.oid].power && data.cards[card.oid].tough
-                      ? data.cards[card.oid].power + "/" + data.cards[card.oid].tough
-                      : ""),
+          power     : (data.cards[card.oid].power || '').split("//"),
+          toughness : (data.cards[card.oid].tough || '').split("//"),
           art       : card.illustration,
 
           back      : "", // FIXME - seems to be missing
+          back      : card.layout == 'transform'
+            ? data.sets[code].code + "/" + data.sets[code].code + "-" + card.id + ".flip.jpg"
+            : "",
 
           set: {
             name  : data.sets[code].name,
