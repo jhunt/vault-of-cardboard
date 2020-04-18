@@ -849,7 +849,7 @@ Vue.component('card-detail', {
   <div class="cardable">
 
   </div>
-  <div class="cardable" :data-own="card.owned"><div>
+  <div class="cardable"><div>
     <span class="card back"><img src="/img/mtgback.jpg"></span>
     <span :class="'card face ' + card.layout">
       <a v-if="card.layout == 'transform'" href="#" rel="flip"></a>
@@ -1400,7 +1400,7 @@ Vue.component('clarifier', {
       </div>
     </div>
     <div class="grid results">
-      <span v-for="card in problem.cards" :data-n="counts[card.id]">
+      <span v-for="card in problem.cards">
         <card :key="card.id" :card="card"></card>
         <span class="clarif"><span class="band"><a href="#" rel="dec" @click="decrement(card)">◀</a> <span>{{ counts[card.id] }}</span> <a href="#" rel="inc" @click="increment(card)">▶</a></span></span>
       </span>
@@ -1863,37 +1863,6 @@ $(function () {
   }).trigger('hashchange');
 
   $(document.body)
-  .on('keyup', function (event) {
-    if ($('.modal-fg').is(':visible')) {
-      switch (event.key) {
-      case 'ArrowDown':
-      case 'ArrowUp':
-        event.preventDefault();
-        break;
-
-      case 'ArrowLeft':
-      case 'ArrowRight':
-        $('.modal-bg, .modal-fg').hide();
-        var id = $('.modal-fg .card.face [data-id]').attr('data-id'),
-            who;
-
-        if (event.key == 'ArrowRight') {
-          var who = $('.results [data-id="'+id+'"]').closest('[data-own]').next();
-          if (!who.length) {
-            who = $('.results  [data-own]').first();
-          }
-        } else {
-          who = $('.results [data-id="'+id+'"]').closest('[data-own]').prev();
-          if (!who.length) {
-            who = $('.results [data-own]').last();
-          }
-        }
-        who[0].scrollIntoView();
-        who.find('.face img').trigger('click');
-        break;
-      }
-    }
-  })
   .on('click',  'header > h1', function (event) {
     event.preventDefault();
     document.location.hash = '#!/';
