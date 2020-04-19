@@ -237,7 +237,7 @@ Vue.component('loading', {
     }
   },
   template: `
-<div class="loading">
+<div id="loading">
   <h1>Loading...</h1>
   <p class="marquee" v-html="quotes[current]"></p>
 </div>
@@ -1395,7 +1395,13 @@ Vue.component('clarifier', {
     <div class="grid results">
       <span v-for="card in problem.cards">
         <card :key="card.id" :card="card"></card>
-        <span class="clarif"><span class="band"><a href="#" rel="dec" @click="decrement(card)">◀</a> <span>{{ counts[card.id] }}</span> <a href="#" rel="inc" @click="increment(card)">▶</a></span></span>
+        <span class="clarif" :data-n="counts[card.id]">
+          <span class="band">
+            <a href="#" rel="dec" @click="decrement(card)">◀</a>
+            <span>{{ counts[card.id] }}</span>
+            <a href="#" rel="inc" @click="increment(card)">▶</a>
+          </span>
+        </span>
       </span>
     </div>
   </div>

@@ -1,0 +1,97 @@
+body {
+  min-height: 100vh;
+  position: relative;
+}
+
+header {
+  background-color: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+
+  display: flex;
+  justify-content: space-between;
+
+  box-shadow: 2px 3px 17px #000;
+
+   h1 {
+    padding: 16px;
+    text-indent: -5000px;
+    background-image: url(/img/logo.png);
+    background-size: cover;
+    width: 160px;
+    height: 73px;
+    padding: 0;
+    margin: 8px 0 0 16px;
+  }
+
+  input {
+    margin: 1em;
+    color: #fff;
+    background-color: #555;
+    border: none;
+    border-radius: 5px;
+    font-size: 24px;
+    padding: 8px;
+    flex: auto;
+    height: 1.2em;
+    vertical-align: middle;
+  }
+
+  nav {
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    li nav li {
+      &.separator {
+        height: 1px;
+        background-color: #fff;
+        margin: 8px 0;
+        opacity: 0.4;
+      }
+      &:hover {
+        background-color: #000;
+        color: yellow;
+      }
+
+      a {
+        padding: 12px 24px;
+        display: block;
+      }
+    }
+  }
+
+  > nav {
+    list-style: none;
+    display: flex;
+
+    li {
+      align-self: flex-end;
+      &:hover {
+        background-color: forestgreen;
+      }
+
+      nav {
+        display: none;
+        position: absolute;
+        right: 0;
+        background-color: #444;
+        box-shadow: 5px 5px 5px #666;
+      }
+    }
+
+    > li {
+      a {
+        display: block;
+        padding: 16px;
+      }
+
+      &:hover > nav {
+        display: block;
+        z-index: 500;
+      }
+    }
+  }
+}

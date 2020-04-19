@@ -1,0 +1,90 @@
+.clarify {
+  .ok {
+    color: forestgreen;
+    font-size: 10pt;
+    font-style: italic;
+  }
+
+  .results {
+    width: 100%;
+  }
+
+  .clarif {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    padding-top: 27%;
+    z-index: 5;
+    text-align: center;
+    font-size: 50px;
+    box-sizing: border-box;
+    transform: rotate(5deg);
+    left: 0; top: 0;
+
+    visibility: hidden;
+
+    a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: none;
+      font-size: 80%;
+    }
+
+    .band {
+      display: inline-block;
+      width: 100%;
+      line-height: 1;
+      background-color: rgba(255,255,255, 0.7);
+      padding: 0.5em 0;
+    }
+
+    .problem {
+      .lineno {
+        font-weight: bold;
+        border-bottom: 2px solid #000;
+      }
+
+      .line {
+        color: #fff;
+        font-family: monospace;
+        font-weight: bold;
+        background-color: firebrick;
+        padding: 2px 8px;
+      }
+
+      .problem {
+        color: firebrick;
+        font-style: italic;
+      }
+    }
+  }
+
+  .changes {
+    width: 50%;
+
+    ins, del {
+      display: block;
+      padding: 2px 8px;
+      font-family: monospace;
+      font-weight: bold;
+      white-space: pre;
+      overflow: hidden;
+      text-decoration: none;
+    }
+    ins {
+      background-color: lightgreen;
+      color: darkgreen;
+    }
+    del {
+      background-color: salmon;
+      color: firebrick;
+      text-decoration: line-through;
+    }
+  }
+
+}
+
+.results > span:hover .clarif,
+.results .clarif:not([data-n="0"]) {
+  visibility: visible;
+}

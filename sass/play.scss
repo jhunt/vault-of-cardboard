@@ -1,10 +1,49 @@
 .play {
+  padding-bottom: 14vw;
+
+  ul.button li a,
+  .zones ul li a {
+    display: block;
+    background-color: #333;
+    color: #fff;
+    margin: 0 0 1vh 0;
+    font-size: 9pt;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-family: sans-serif;
+    padding: 4pt;
+    text-align: right;
+    white-space: pre;
+  }
+
+  img { /* i think this should be .card */
+    width: 8vw; height: 11.2vw;
+    margin: 0.05vw;
+    border-radius: 0.35vw;
+  }
+
+  .strip, .wash {
+    display: none;
+  }
+
   .hand {
+    position: fixed;
+    z-index: 5;
+    height: 3.733vw;
+    border-top: 2px solid #000;
+    bottom: 0; left: 0; right: 0;
+    padding: 0.5vw;
     margin-bottom: 1em;
 
+    display: flex;
+    justify-content: center;
+
+    background: url(/play/bg.jpg);
+    background-size: cover;
+
     img {
-      width: 100%;
       border-radius: 8pt;
+
     }
 
     ul {
@@ -16,6 +55,282 @@
       }
       &.draw {
         background-color: #aaa;
+      }
+    }
+  }
+
+  .strip {
+    position: fixed;
+    top: 20vh; bottom: 20vh; left: 0; right: 0;
+    border: 3px solid #000; border-width: 3px 0;
+    background-color: #fff;
+    padding: 2vh 0;
+    z-index: 2;
+    overflow-x: auto;
+
+    .cards {
+      display: flex;
+      justify-content: center;
+      height: 100%;
+    }
+    img {
+      height: 100%;
+      margin: 0 0.7vw;
+      border-radius: 2vh;
+    }
+  }
+
+  .wash {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0,0,0, 0.7);
+    z-index: 1;
+  }
+
+  .board {
+    display: flex;
+    flex-direction: row;
+
+    img.t {
+      transform: rotate(60deg);
+    }
+
+    .zones {
+      padding: 0 0.5vw;
+
+      > * {
+        position: relative;
+        img.c {
+          position: absolute;
+        }
+        &:hover ul {
+          display: block;
+          z-index: 5;
+        }
+      }
+
+      ul {
+        position: absolute;
+        right: -1vw;
+        top: 2vh;
+        display: none;
+      }
+
+      .exile, .graveyard {
+        img {
+          visibility: hidden;
+          &.c { opacity: 0.5; }
+          &:last-child { visibility: visible; }
+        }
+      }
+
+      .empty {
+        img { visibility: visible; }
+        ul { visibility: hidden; }
+      }
+
+      .library .placeholder,
+      .empty.library.back {
+        display: none;
+      }
+
+      .library .back,
+      .empty.library .placeholder {
+        display: block;
+      }
+    }
+
+    .battlefield {
+      position: relative;
+      flex-grow: 1;
+      /* 1.45 aspect ratio... */
+
+      img {
+        position: absolute;
+        &:hoer { box-shadow: 0 0 5px purple; }
+      }
+    }
+
+    .inspect img {
+      width: 24vw; height: 33.5vw;
+      padding: 0 0.25vw;
+      visibility: hidden;
+    }
+  }
+
+  .h2h {
+    width: 24vw;
+    background-color: #ccc;
+    border-radius: 10pt;
+    margin: 1vw 0.25vw;
+    overflow: hidden;
+    box-shadow: 0 0 12px #707070;
+
+    .p {
+      padding: 20px;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+
+      &:first-child {
+        border-bottom: 1px solid #aaa;
+      }
+      &.ap  { cursor: pointer; background-color: #f0ffeb; }
+      &.nap { cursor: alias;   background-color: #fcfaff;
+        span.active { display: none; }
+      }
+      .ap, .nap {
+      }
+
+      .stats {
+        display: flex;
+        flex-direction: row;
+
+        .details { flex-grow: 1; }
+      }
+
+      h2 {
+        display: none; /* for now */
+
+        font-weight: bold;
+        font-size: 16pt;
+        position: relative;
+
+        .active {
+          display: block;
+          position: absolute;
+          top: -8pt; right: -8pt;
+
+          font-size: 6pt;
+          font-family: monospace;
+          text-align: right;
+          font-weight: normal;
+          background-color: #333;
+          color: #fff;
+          display: block;
+          float: right;
+          padding: 2px 4px;
+          border-radius: 4px;
+        }
+      }
+
+      .details {
+        padding: 0 4pt 0 0;
+        p {
+          font-size: 10pt;
+          font-style: italic;
+          margin: 1pt 0 2pt 2pt;
+        }
+      }
+
+      .side {
+        padding: 4pt;
+        text-align: right;
+
+        .life.total {
+          display: flex;
+          flex-direction: column;
+
+          span {
+            font-size: 40pt;
+            font-weight: bold;
+          }
+
+          label {
+            line-height: 1em;
+            font-size: 11pt;
+            text-transform: uppercase;
+            color: #777;
+            font-weight: bold;
+            position: relative;
+            top: -0.6em;
+          }
+        }
+
+        .counters {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          justify-content: right;
+
+          span {
+            font-size: 30pt;
+            font-weight: bold;
+          }
+
+          label {
+            text-indent: 5000px;
+            overflow: hidden;
+            display: inline-block;
+            width: 0; height: 0;
+            background-size: cover;
+            opacity: 0.5;
+          }
+          &:hover label {
+            opacity: 1;
+          }
+          &.energy label {
+            background-image: url(/play/counters-energy.png);
+            width: 20px; height: 20px;
+          }
+          &.xp label {
+            background-image: url(/play/counters-xp.png);
+            width: 20px; height: 25px;
+          }
+        }
+      }
+    }
+
+    .sep {
+      position: relative;
+      top: -0.6em;
+      height: 0;
+      text-align: center;
+
+      span {
+        background-color: #fff;
+        border-radius: 100%;
+        border: 1px solid #aaa;
+        padding: 2px 12px;
+        display: inline-block;
+        margin: 0 auto;
+      }
+    }
+  }
+
+  .details {
+    .gauge {
+      height: 2.5em;
+      position: relative;
+      padding: 0.1em 0 0.1em 2em;
+      box-sizing: border-box;
+      margin: 0.5em 0;
+
+      label {
+        padding-left: 0.6em;
+        font-weight: bold;
+      }
+
+      .n {
+        background-color: blue;
+        border-radius: 100%;
+        width: 2.5em; height: 2.5em;
+        display: block;
+        text-align: center;
+        line-height: 2.5em;
+        font-weight: bold;
+        color: #fff;
+        position: absolute;
+        top: 0; left: 0;
+      }
+
+      .fill {
+        height: 1em;
+        margin-top: 0.6em;
+        margin-bottom: 0.1em;
+        width: 100%;
+        border-right: 0.2em solid #000;
+        background: linear-gradient(90deg, #00f, #00f 50%, rgba(0, 0, 255, 0.1) 50%);
       }
     }
   }
