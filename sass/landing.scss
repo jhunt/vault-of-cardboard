@@ -1,0 +1,130 @@
+.landing {
+  margin: 5vh 10vw;
+  padding-bottom: 3em;
+  overflow: none;
+  display: flex;
+  flex-flow: row wrap;
+
+  img {
+    max-width: 700px;
+    width: 100%;
+  }
+
+  > div {
+    width: 50%;
+
+    &:nth-child(2) {
+      font-size: 16pt;
+      line-height: 1.4em;
+      padding: 8em 0 0 4em;
+      box-sizing: border-box;
+    }
+  }
+
+  div {
+    p {
+      margin-bottom: 1em;
+    }
+
+    a {
+      text-decoration: none;
+      color: #0071bc;
+      border-bottom: 1px dotted #0071bc;
+    }
+
+    strong {
+      font-weight: bold;
+      font-family: sans-serif;
+      font-size: 90%;
+      padding: 2px 6px;
+      background-image: url(/img/hili.png);
+      background-repeat: no-repeat;
+      background-size: cover;
+    }
+
+    em {
+      font-style: italic;
+      font-weight: bold;
+    }
+
+    footer {
+      position: absolute;
+      bottom: 0;
+      right: 2em;
+      font-family: sans-serif;
+      font-size: 9pt;
+      opacity: 0.3;
+      line-height: 1.1em;
+      text-align: right;
+    }
+  }
+
+  form {
+    margin: 2em auto;
+    max-width: 44ex;
+
+    div {
+      margin: 1em;
+      position: relative;
+
+      a {
+        position: absolute;
+        top: 0px;
+        right: 0px;
+        font-size: 11pt;
+        border: none;
+        line-height: 1.1em;
+        visibility: hidden;
+      }
+    }
+
+    div:hover a {
+      visibility: visible;
+    }
+
+    label {
+      display: block;
+      line-height: 1.333em;
+      font-size: 10pt;
+      font-family: sans-serif;
+      text-transform: lowercase;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 24pt;
+      padding: 0.3em;
+      border: 2px solid dodgerblue;
+      border-radius: 5px;
+      background-color: #fff;
+      color: dodgerblue;
+
+      &:focus {
+        background-color: dodgerblue;
+        color: #fff;
+      }
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: bold;
+      box-sizing: border-box;
+      font-size: 16pt;
+      padding: 0.3em 0.9em;
+      border: 2px solid dodgerblue;
+      border-radius: 5px;
+
+      &.safe {
+        background-color: dodgerblue;
+        color: #fff;
+      }
+    }
+
+    > div:last-child {
+      display: flex;
+      flex-flow: row-reverse;
+    }
+  }
+}

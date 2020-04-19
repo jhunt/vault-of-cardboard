@@ -1,0 +1,159 @@
+.card {
+  display: block;
+  position: relative;
+  cursor: pointer;
+  transform: rotate(5deg);
+  transform-origin: 50% 50%;
+
+  .face, .back {
+    display: block;
+    width: 18vw;
+    height: 25.14vw;
+    margin: 0.68vw;
+    border-radius: 0.9vw;
+
+    span {
+      display: block;
+
+      border-radius: 0.9vw;
+      overflow: hidden;
+
+      background-image: url(/img/mtgback.jpg);
+      background-size: cover;
+
+      img {
+        display: block;
+        width: 100%;
+        border-radius: 0.9vw;
+        overflow: hidden;
+
+        &.flipped {
+          transform: rotate(180deg);
+        }
+      }
+
+      a[rel=flip] {
+        display: block;
+
+        position: absolute;
+        z-index: 6;
+
+        background-image: url(/img/flip.png);
+        background-size: cover;
+        background-color: #ffffffb3;
+        border-radius: 100%;
+
+        width: 17%;
+        height: 12%;
+        right: 3%;
+        bottom: 8%;
+      }
+    }
+  }
+
+  .face {
+    background-image: url(/img/mtgblank.jpg);
+    background-size: cover;
+
+    position: relative;
+    z-index: 1;
+  }
+
+  .back {
+    position: absolute;
+    transform: rotate(-5deg);
+  }
+}
+
+.modal-fg.card-detail > div {
+  position: relative;
+  background-color: #fff;
+  width: 70vw;
+  min-height: 70vh;
+  margin: 1em auto;
+  border-radius: 18px;
+  padding: 18px;
+  box-sizing: border-box;
+
+  font-family: sans-serif;
+  display: flex;
+  flex-dirextion: row;
+
+  .card {
+    transform: rotate(5deg) translate(-100px, 0);
+
+    .face {
+      width: 50.31vh;
+      height: 70vh;
+      border-radius: 2.4vh;
+      overflow: hidden;
+
+      span {
+        border-radius: none;
+      }
+    }
+  }
+
+  .detail {
+    font-size: 11.5pt;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+
+    h1 {
+      font-size: 180%;
+      font-weight: 600;
+    }
+
+    em     { font-style:  italic; }
+    strong { font-weight: bold; }
+    ul {
+      margin: 0 0 1em 0;
+
+      li p {
+        margin: 8pt 0;
+      }
+    }
+
+    .where {
+      flex-grow: 1;
+      flex-basis: auto;
+    }
+
+    .tags {
+      display: flex;
+      flex-flow: row wrap;
+
+      li {
+        background-color: #ba1fba;
+        border-radius: 4px;
+        padding: 4px 8px;
+        color: #fff;
+        font-size: 90%;
+        font-family: monospace;
+        font-weight: bold;
+        margin: 2px;
+      }
+    }
+
+    .price {
+      font-size: 48pt;
+      align-self: flex-end;
+      font-family: sans-serif;
+      font-weight: bold;
+      color: #888;
+
+      .w1, .w2, .w3 {
+        font-style: italic;
+        font-size: 9pt;
+        display: block;
+        text-align: right;
+        opacity: 0.7;
+      }
+      .w1 { color: darkred; }
+      .w2 { color: #ba6c2a; }
+      .w3 { color: inherit; }
+    }
+  }
+}

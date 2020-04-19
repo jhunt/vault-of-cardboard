@@ -1,0 +1,105 @@
+.timeline {
+  margin: 1em;
+  position:relative;
+  font-family: Arial, sans-serif;
+  font-size: 1rem;
+
+  &::after {
+    background-color: #0a8ab5e3;
+    width: 2px;
+    height: 100%;
+    display: block;
+    content: ' ';
+    position: absolute;
+    top: 20px;
+    left: 0px;
+  }
+
+  > div {
+    margin: 0 0 5em 0;
+    position: relative;
+    left: 30px;
+
+    &::after {
+      border: 4px solid #fff;
+      background-color: #166f8c;
+      content: ' ';
+      height: 12px;
+      width: 12px;
+      border-radius: 100%;
+      display: block;
+      position: absolute;
+      left: -39px;
+      z-index:5;
+      top: 2px;
+    }
+  }
+
+  em {
+    font-weight: bold; 
+    color: #b44537;
+    color: #0071bc;
+  }
+
+  .aggr .gain { color: forestgreen; }
+  .aggr .loss { color: #b44537; }
+
+  strong {
+    font-size: 110%;
+    font-weight: bold;
+    border-bottom: 2px dotted #888;
+  }
+
+  h2 {
+    font-size: 1.35rem;
+    font-family: Arial, sans-serif;
+
+    > span {
+      font-size: 60%;
+    }
+  }
+
+  ul {
+    display: flex;
+    flex-flow: column wrap;
+    padding-left: 1em;
+    line-height: 1.6em;
+    margin: 1em 0;
+  }
+
+  .summary ul {
+    line-height: 1em;
+    margin: 2em 0;
+
+    li {
+      font-size: 140%;
+      line-height: 1.3em;
+    }
+  }
+  .aggr li em:first-child {
+    width: 5.5ex;
+    display: inline-block;
+    text-align: right;
+  }
+  .aggr li em:nth-child(2) {
+    width: 2.2ex;
+    display: inline-block;
+    text-align: right;
+  }
+  .buttons {
+    display: flex;
+    flex-flow: row nowrap;
+    margin: 0 1em;
+  }
+  a {
+    color: #0071BC;
+    text-decoration: none;
+  }
+  .actions {
+    font-size: 80%;
+    visibility: hidden;
+    display: inline-block;
+    padding-left: 0.5em;
+  }
+  > div:hover .actions { visibility: visible; }
+}

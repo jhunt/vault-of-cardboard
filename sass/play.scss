@@ -1,0 +1,22 @@
+.play {
+  .hand {
+    margin-bottom: 1em;
+
+    img {
+      width: 100%;
+      border-radius: 8pt;
+    }
+
+    ul {
+      display: flex;
+      flex-direction: row;
+
+      li {
+        padding: 8pt 4pt 0pt 4pt;
+      }
+      &.draw {
+        background-color: #aaa;
+      }
+    }
+  }
+}

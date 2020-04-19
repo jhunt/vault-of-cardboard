@@ -797,7 +797,7 @@ Vue.component('card-grid', {
   </div>
   <div class="results grid" v-else>
     <card v-for="card in cards" :key="card.id"
-          :sleeve="sleeve" :card="card"></card>
+          :backed="card.owned > 0" :sleeve="sleeve" :card="card"></card>
   </div>
   <div class="note meta-results" v-if="more">Not all {{ found }} matching cards displayed.  Have you tried narrowing your search criteria?</div>
 </div>
@@ -805,21 +805,21 @@ Vue.component('card-grid', {
 });
 
 Vue.component('card', {
-  props: ['card', 'sleeve'],
+  props: ['card', 'backed', 'sleeve'],
   data() {
     return {
       imgroot: $CONFIG.imgroot,
     };
   },
   template: `
-<span :class="sleeve ? ('sleeved sl-'+sleeve) : ''">
-  <span class="card back"><img src="/img/mtgback.jpg"></span>
-  <span :class="'card face ' + card.layout">
-    <a v-if="card.layout == 'transform'" href="#" rel="flip"></a>
+<span :class="'card ' + (sleeve ? ('sleeved sl-'+sleeve) : '')">
+  <span v-if="backed" class="back"><span><img src="/img/mtgback.jpg"></span></span>
+  <span :class="'face ' + card.layout">
+    <span><a v-if="card.layout == 'transform'" href="#" rel="flip"></a>
     <img :data-id="card.id" :src="imgroot + '/cards/' + card.image"
          :alt="card.name + ' [' + card.set.code + ']'"
          :title="card.name + ' [' + card.set.code + ']'"
-         :data-flip-src="imgroot + '/cards/' + card.back">
+         :data-flip-src="imgroot + '/cards/' + card.back"></span>
   </span>
 </span>
 `
@@ -845,43 +845,35 @@ Vue.component('card-detail', {
     }
   },
   template: `
-<div class="modal-fg">
-  <div class="cardable">
-
-  </div>
-  <div class="cardable"><div>
-    <span class="card back"><img src="/img/mtgback.jpg"></span>
-    <span :class="'card face ' + card.layout">
-      <a v-if="card.layout == 'transform'" href="#" rel="flip"></a>
-      <img :data-id="card.id" :src="imgroot + '/cards/' + card.image"
-           :alt="card.name + ' [' + card.set.code + ']'"
-           :title="card.name + ' [' + card.set.code + ']'"
-           :data-flip-src="imgroot + '/cards/' + card.back">
-    </span>
-  </div></div>
-  <div class="detail">
-    <a class="close" href="#">X</a>
-    <ul class="info">
-      <li><strong>{{ card.name }}</strong></li>
-      <li><em>{{ card.type }}</em></li>
-      <li>{{ card.set.name }} ({{ card.set.code }})</li>
-      <li>#{{ card.number }}/{{ card.set.total }}</li>
-      <li v-html="colorize(card.color)"></li>
-      <li><strong>CMC:</strong> {{ card.cmc }}</li>
-      <li>{{ card.rarity }}</li>
-    </ul>
-    <ul class="owned">
-      <li><strong>Owned:</strong> {{ card.owned }}</li>
-    </ul>
-    <ul>
-      <li class="oracle"><p v-for="(line, i) in oracles(card)" :key="i" v-html="line"></p></li>
-    </ul>
-    <p v-if="card.price" class="price">
-      {{ price(card.price) }}
-      <span v-if="card.price > 999" class="w1">remember kids, M:tG is <strong>NOT</strong> an investment...</span>
-      <span v-else-if="card.price > 99" class="w2">oof</span>
-      <span v-else-if="card.price > 9" class="w3">that's a bit much, don't you think?</span>
-    </p>
+<div class="modal-fg card-detail">
+  <div>
+    <div>
+      <card :card="card"></card>
+    </div>
+    <div class="detail">
+      <a class="close" href="#">X</a>
+      <ul class="info">
+        <li><strong>{{ card.name }}</strong></li>
+        <li><em>{{ card.type }}</em></li>
+        <li>{{ card.set.name }} ({{ card.set.code }})</li>
+        <li>#{{ card.number }}/{{ card.set.total }}</li>
+        <li v-html="colorize(card.color)"></li>
+        <li><strong>CMC:</strong> {{ card.cmc }}</li>
+        <li>{{ card.rarity }}</li>
+      </ul>
+      <ul class="owned">
+        <li><strong>Owned:</strong> {{ card.owned }}</li>
+      </ul>
+      <ul>
+        <li class="oracle"><p v-for="(line, i) in oracles(card)" :key="i" v-html="line"></p></li>
+      </ul>
+      <p v-if="card.price" class="price">
+        {{ price(card.price) }}
+        <span v-if="card.price > 999" class="w1">remember kids, M:tG is <strong>NOT</strong> an investment...</span>
+        <span v-else-if="card.price > 99" class="w2">oof</span>
+        <span v-else-if="card.price > 9" class="w3">that's a bit much, don't you think?</span>
+      </p>
+    </div>
   </div>
 </div>
 `

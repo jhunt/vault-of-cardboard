@@ -1,0 +1,80 @@
+.deck {
+  .title {
+    h1 {
+      display: block;
+      margin: 4pt 0 1em 0;
+    }
+    span {
+      font-size: 9pt;
+      font-family: monospace;
+      color: #fff;
+      background-color: purple;
+      padding: 0.5em;
+      border-radius: 0.4em;
+    }
+  }
+
+  .buttons {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .curve {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: center;
+
+    img {
+      width: 100%;
+      border-radius: 5pt;
+    }
+
+    > div {
+      max-width: 15vw;
+      max-width: 12vw;
+
+      ul {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        overflow: hidden;
+        margin: 0 2pt;
+
+        li {
+          height: 2vw;
+        }
+      }
+
+      p {
+        text-align: center;
+        font-size: 24pt;
+        color: #888;
+        border-top: 3px solid #000;
+        width: 100%;
+        padding-top: 0.5em;
+        margin: 0 0 1em 0;
+      }
+    }
+  }
+
+  .grid {
+    width: auto;
+    &.results > span {
+      margin-right: -6em;
+    }
+    &.results > span:hover {
+      z-index: 5;
+      transform: scale(120%);
+      transition: transform 0.2s;
+    }
+    .back {
+      display: none !important;
+    }
+  }
+
+  .rawlist {
+    font-size: 11pt;
+    font-family: monospace;
+  }
+}
