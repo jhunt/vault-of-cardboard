@@ -296,7 +296,10 @@ Vue.component('login', {
     or <a href="#!/q/Didgeridoo or type:Minotaur">just looking for some jank</a>,
     <em>Vault of Cardboard</em> has got you covered.</p>
 
-    <form id="login" @submit="authenticate(username, password)">
+    <form class="user" @submit="authenticate(username, password)">
+      <h2>Sign In</h2>
+      <p class="divert">New to Vault of Cardboard?  <a href="#!/signup">sign up today</a>!</p>
+
       <div class="oops" v-if="error == 'authentication-failed'">
         Invalid username or password.
       </div>
@@ -304,17 +307,15 @@ Vue.component('login', {
         Uh-oh, something broke pretty bad.  Tap {{ colorize("2UUU") }} and summon James, Fixer of Codes!
         <!-- Uh-oh, something broke pretty bad.  Tap {{ colorize("4BR") }} to cast James Legendary Bug Fix -->
       </div>
-      <div>
+      <div class="control">
         <label>Username</label>
         <input type="text" name="username" autocomplete="off" v-model="username">
       </div>
-      <div>
+      <div class="control">
         <label>Password</label>
         <input type="password" name="password" v-model="password">
       </div>
-      <div>
-        <button type="submit"class="default safe">Sign in</button>
-      </div>
+      <button type="submit"class="default safe">Sign in</button>
     </form>
     <copyright-footer></copyright-footer>
   </div>
@@ -372,7 +373,10 @@ Vue.component('signup', {
     or <a href="#!/q/Didgeridoo or type:Minotaur">just looking for some jank</a>,
     <em>Vault of Cardboard</em> has got you covered.</p>
 
-    <form id="signup" @submit="signup()">
+    <form class="user" @submit="signup()">
+      <h2>Sign Up Today!</h2>
+      <p class="divert">Already a proud Vaulter?  <a href="#!/login">sign in</a>!</p>
+
       <div class="oops" v-if="error == 'signup-failed'">
         Invalid username or password.
       </div>
@@ -380,24 +384,22 @@ Vue.component('signup', {
         Uh-oh, something broke pretty bad.  Tap {{ colorize("2UUU") }} and summon James, Fixer of Codes!
         <!-- Uh-oh, something broke pretty bad.  Tap {{ colorize("4BR") }} to cast James Legendary Bug Fix -->
       </div>
-      <div>
+      <div class="control">
         <label>Username</label>
         <input type="text" name="username" autocomplete="off" v-model="username"
                placeholder="Pick a memorable username">
       </div>
-      <div>
+      <div class="control">
         <label>Email</label>
         <input type="text" name="email" autocomplete="off" v-model="email"
-               placeholder="We'll neither spam nor sell you">
+               placeholder="We'll never spam you or sell you">
       </div>
-      <div>
+      <div class="control">
         <label>Password</label>
         <input type="password" name="password" v-model="password"
                placeholder="Make it secret.  Make it secure.">
       </div>
-      <div>
-        <button type="submit"class="default safe">Sign up!</button>
-      </div>
+      <button type="submit"class="default safe">Sign up!</button>
     </form>
     <copyright-footer></copyright-footer>
   </div>
@@ -1545,6 +1547,9 @@ window.UI = new Vue({
     },
 
     goto(sub) {
+      if (event) { event.preventDefault(); }
+      document.location.href = "#!/"+sub;
+
       if (sub == "" || sub == "login" || sub == "signup") {
         UI.redraw(sub);
 

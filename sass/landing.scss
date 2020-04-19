@@ -14,7 +14,7 @@
     width: 50%;
 
     &:nth-child(2) {
-      font-size: 16pt;
+      font-size: 14pt;
       line-height: 1.4em;
       padding: 8em 0 0 4em;
       box-sizing: border-box;
@@ -64,7 +64,7 @@
     max-width: 44ex;
 
     div {
-      margin: 1em;
+      margin: 1em 0;
       position: relative;
 
       a {
@@ -80,46 +80,6 @@
 
     div:hover a {
       visibility: visible;
-    }
-
-    label {
-      display: block;
-      line-height: 1.333em;
-      font-size: 10pt;
-      font-family: sans-serif;
-      text-transform: lowercase;
-      font-weight: bold;
-    }
-
-    input {
-      width: 100%;
-      box-sizing: border-box;
-      font-size: 24pt;
-      padding: 0.3em;
-      border: 2px solid dodgerblue;
-      border-radius: 5px;
-      background-color: #fff;
-      color: dodgerblue;
-
-      &:focus {
-        background-color: dodgerblue;
-        color: #fff;
-      }
-    }
-
-    button {
-      cursor: pointer;
-      font-weight: bold;
-      box-sizing: border-box;
-      font-size: 16pt;
-      padding: 0.3em 0.9em;
-      border: 2px solid dodgerblue;
-      border-radius: 5px;
-
-      &.safe {
-        background-color: dodgerblue;
-        color: #fff;
-      }
     }
 
     > div:last-child {
