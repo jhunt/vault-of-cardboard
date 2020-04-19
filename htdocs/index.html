@@ -928,6 +928,7 @@ Vue.component('timeline', {
 
         var d = t.dated;
         d = d ? parseInt(d.replace(/-/g, '')) : undefined;
+        t._dated = d;
         d = d ? (100 * parseInt(d / 100) + 5).toString() : '0';
 
         if (!by_date.has(d)) {
@@ -946,7 +947,7 @@ Vue.component('timeline', {
 
       let to_sort = [];
       by_date.forEach((band, d) => {
-        band.transactions = band.transactions.sort((a, b) => { return b.dated - a.dated; });
+        band.transactions.sort((a, b) => { return b._dated - a._dated; });
         to_sort.push([d, band]);
       });
 
@@ -1033,7 +1034,7 @@ Vue.component('timeline', {
         <h2>{{ heading(d[0]) }} <span :class="gainloss(d[1].total_delta)">{{ d[1].total_delta }} cards <span :class="gainloss(d[1].unique_delta)">({{ d[1].unique_delta }} unique)</span></span></h2>
         <ul>
           <li v-for="txn in d[1].transactions" :class="txn.type">
-            <em :class="gainloss(txn.total_delta)">{{ txn.total_delta }}</em> cards in {{ txn.type }} <strong>{{ txn.summary }}</strong> ({{ txn.dated }}) <span class="actions"><a @click="start_edit_transaction(txn.id)">edit</a></span>
+            <em :class="gainloss(txn.total_delta)">{{ txn.total_delta }}</em> cards in {{ txn.dated }} {{ txn.type }} <strong>{{ txn.summary }}</strong> <span class="actions"><a href="#" @click="start_edit_transaction(txn.id)">edit</a></span>
             <transaction-form
               v-if="mode == 'edit' && target == txn.id"
               mode="edit"
