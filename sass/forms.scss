@@ -1,40 +1,66 @@
+button {
+  display: block;
+  cursor: pointer;
+
+  font-size: 11pt;
+  font-weight: 600;
+
+  line-height: 2em;
+  margin: 1em 0;
+  padding: 0.25em 1.5em;
+  box-sizing: border-box;
+
+  border-radius: 4px;
+    border: 1px solid #ccc;
+
+  &.action {
+    border: 1px solid #ccc;
+    color: #000;
+    background: linear-gradient(#f8f8f8 0%, #ddd 100%);
+
+    &:hover {
+      color: yellow;
+      background: linear-gradient(#69bef7 0,#0878ae 100%);
+      border-color: #428bbb;
+    }
+  }
+}
+
+form.data-enty,
+.buttons {
+  button {
+    display: inline-block;
+    margin: 4px 8px 4px 0;
+  }
+}
+
 form.data-entry {
   position: relative;
   padding-bottom: 5rem;
 
   button {
-    display: inline-block;
-    margin: 4px 8px 4px 0;
-
-    background-color: dodgerblue;
-    color: #fff;
-    font-size: 1em;
-    font-weight: bold;
-    cursor: pointer;
-    border: 2px solid dodgerblue;
-    border-radius: 5px;
-
-    padding: 4pt 12pt;
-    padding: 0.3em 0.9em;
-
-    box-sizing: border-box;
-
-    &:hover {
-      color: yellow;
-    }
+    border: 1px solid #ccc;
+    color: #000;
+    background: linear-gradient(#f8f8f8 0%, #ddd 100%);
 
     &.safe {
-      background-color: dodgerblue;
       color: #fff;
-    }
-    &.danger {
-      background: inherit;
-      font-weight: normal;
-      color: #777;
-      border: none;
+      background: linear-gradient(#69bef7 0,#0878ae 100%);
+      border-color: #428bbb;
 
       &:hover {
-        color: firebrick;
+        color: yellow;
+      }
+    }
+    &.danger {
+      color: #aaa;
+      opacity: 0.5;
+      font-weight: normal;
+
+      &:hover {
+        opacity: 1.0;
+        color: #b22222;
+        border-color: #b22222;
       }
     }
   }

@@ -531,7 +531,7 @@ Vue.component('deck-list', {
 <div class="decks prose">
   <h1>Your Magic: the Gathering Decks</h1>
   <div class="buttons" v-if="mode == 'view'">
-    <button class="create" @click="start_new_deck()">Craft New Deck</button>
+    <button class="action" @click="start_new_deck()">Craft New Deck</button>
   </div>
   <deck-form
     v-else
@@ -615,12 +615,12 @@ Vue.component('deck-form', {
   template: `
 <form :class="'deck data-entry ' + mode" @submit="save()">
   <h2 v-if="mode == 'new'">Craft a New Deck</h2>
-  <h2 v-else="mode == 'edit'">Update an Existing Deck</h2>
+  <h2 v-else="mode == 'edit'">Update &ldquo;{{ deck.title }}&rdquo;</h2>
   <div class="band">
     <div>
       <div class="control">
         <label for="code">Internal Identifier</label>
-         <input type="text" name="code"
+         <input type="text" name="code" v-model="deck.code"
                 class="autofocus"
                 placeholder="A unique ID to use with 'in:...' queries"
                 data-validate="present;min=2;max=40"
@@ -697,6 +697,9 @@ Vue.component('deck', {
   data: function () {
     return {
       imgroot: $CONFIG.imgroot,
+      sleeve: 'n',
+      shuffled: undefined,
+      mode:     'view',
     }
   },
   computed: {
@@ -724,6 +727,17 @@ Vue.component('deck', {
       return curve;
     },
 
+    showcase() {
+      let included = cardboard.Query.parse('!type:land and !type:token');
+      let lib = [];
+      this.cards.forEach(c => {
+        if (included.match(c.card)) {
+          lib.push(c);
+        }
+      });
+      return lib.slice(0,3);
+    },
+
     library() {
       let included = cardboard.Query.parse('!type:token');
       let lib = [];
@@ -742,45 +756,81 @@ Vue.component('deck', {
   methods: {
     next_draws(n) {
       return this.library.slice(8,n+8);
+    },
+
+    sleeve_it(sl) {
+      this.sleeve = sl;
+    },
+
+    shuffle() {
+      event.preventDefault();
+      this.deck.main = this.deck.main + '\n';
+    },
+
+    update_deck(ev) {
+      this.deck = ev.deck;
+      this.mode = 'view';
     }
   },
   template: `
 <div class="deck prose">
-  <div class="title">
-    <span>in:{{ deck.code }}</span>
-    <h1>{{ deck.name }}</h1>
-  </div>
-  <div class="buttons">
-    <button rel="playtest">Play!</button>
-    <button rel="edit-deck">Edit</button>
-    <button rel="edit-deck" class="danger">Delete Deck</button>
-  </div>
-
-  <h2>Description / Notes</h2>
-  <div>{{ deck.notes }}</div>
-
-  <h2>Mana Curve</h2>
-  <div class="curve">
-    <div v-for="(stack, cmc) in curve">
-      <ul>
-        <li v-for="card in stack">
-           <img :src="imgroot + '/cards/' + card.image"
-                :alt="card.name + ' [' + card.set.code + ']'"
-                :title="card.name + ' [' + card.set.code + ']'"></li>
-        <li><img src="/img/mtgback.jpg"></li>
-      </ul>
-      <p>{{ cmc }}</p>
+  <template v-if="mode == 'view'">
+    <div class="title">
+      <span v-if="deck.code">in:{{ deck.code }}</span>
+      <h1>{{ deck.title }}</h1>
     </div>
-  </div>
+    <div class="heads-up">
+      <div>
+        <template v-if="deck.notes" v-html="deck.notes"></template>
+        <template v-else><em>This deck's builder wishes for it to remain a mystery...</em></template>
+        <button class="action" rel="play">Play!</button>
+      </div>
+      <div>
+        <div class="showcase">
+          <card v-for="c in showcase" :sleeve="sleeve" :card="c.card" :key="c.id"></card>
+        </div>
+        <ul :class="'sleeview sl-'+sleeve">
+          <li class="sl-w" @click="sleeve_it('w')">snow</li>
+          <li class="sl-u" @click="sleeve_it('u')">azure</li>
+          <li class="sl-b" @click="sleeve_it('b')">slate</li>
+          <li class="sl-r" @click="sleeve_it('r')">crimson</li>
+          <li class="sl-g" @click="sleeve_it('g')">emerald</li>
+        </ul>
+      </div>
+    </div>
 
-  <h2>Sample Hand</h2>
-  <div class="hand"><card-grid :actual="true" :cards="sample_hand"></card-grid></div>
+    <h2>Sample Hand <a href="#" @click="shuffle()" rel="shuffle">↻</a></h2>
+    <div class="hand"><card-grid :sleeve="sleeve" :actual="true" :cards="sample_hand"></card-grid></div>
 
-  <h2>Next 10 Draws</h2>
-  <div class="hand"><card-grid :actual="true" :cards="next_draws(10)"></card-grid></div>
+    <h2>Next 16 Draws <a href="#" @click="shuffle()" rel="shuffle">↻</a></h2>
+    <div class="hand"><card-grid :sleeve="sleeve" :actual="true" :cards="next_draws(16)"></card-grid></div>
 
-  <h2>What's In It?</h2>
-  <pre class="rawlist"><code>{{ deck.main }}</code></pre>
+    <h2>Mana Curve</h2>
+    <div class="curve">
+      <div v-for="(stack, cmc) in curve">
+        <ul>
+          <li v-for="card in stack">
+             <img :src="imgroot + '/cards/' + card.image"
+                  :alt="card.name + ' [' + card.set.code + ']'"
+                  :title="card.name + ' [' + card.set.code + ']'"></li>
+          <li><img src="/img/mtgback.jpg"></li>
+        </ul>
+        <p>{{ cmc }}</p>
+      </div>
+    </div>
+
+    <h2>What's In It?</h2>
+    <div class="buttons">
+      <button class="action" @click="mode = 'edit'">Edit</button>
+    </div>
+    <pre class="rawlist"><code>{{ deck.main }}</code></pre>
+
+  </template>
+  <deck-form
+    v-else
+    mode="edit"
+    @updated-deck="update_deck($event)"
+    :deck="deck"></deck-form>
 </div>
 `
 });
@@ -1022,7 +1072,7 @@ Vue.component('timeline', {
         </ul>
 
         <div class="buttons" v-if="mode != 'new'">
-          <button class="buy"  rel="new-buy" @click="start_new_transaction()">Buy / Sell / Trade</button>
+          <button class="action" rel="new-buy" @click="start_new_transaction()">Buy / Sell / Trade</button>
         </div>
         <transaction-form
           v-else

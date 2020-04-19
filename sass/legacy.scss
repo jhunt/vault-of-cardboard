@@ -254,40 +254,6 @@ table th.sortable.asc ::before {
   }
 }
 
-button {
-  display: block;
-  margin: 4px 8px 4px 0;
-
-  background-color: dodgerblue;
-  color: #fff;
-  font-size: 18pt;
-  font-weight: bold;
-  cursor: pointer;
-  bordeR: none;
-  border-radius: 8px;
-  padding: 4pt 12pt;
-}
-button:hover {
-  color: yellow;
-}
-form button {
-  cursor: pointer;
-  font-weight: bold;
-  box-sizing: border-box;
-  font-size: 16pt;
-  padding: 0.3em 0.9em;
-  border: 2px solid dodgerblue;
-  border-radius: 5px;
-}
-form button.safe {
-  background-color: dodgerblue;
-  color: #fff;
-}
-button.danger {
-  background-color: firebrick;
-  color: #fff;
-}
-
 /*
 
    ########  ########  ######  ########   #######  ##    ##  ######  #### ##     ## ########

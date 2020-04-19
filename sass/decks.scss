@@ -14,9 +14,73 @@
     }
   }
 
+  h2 {
+    a[rel] {
+      border: none;
+      color: #aaa;
+    }
+
+    &:hover a[rel] {
+      color: dodgerblue;
+      text-shadow: 0 0 8px lightblue
+    }
+  }
+
   .buttons {
     display: flex;
     flex-direction: row;
+  }
+
+  .heads-up {
+    display: flex;
+    flex-direction: row;
+
+    > div:nth-child(2n+1) { width: 48%; }
+    > div:nth-child(2n)   { width: 52%; }
+  }
+
+  .showcase {
+    position: relative;
+    border-bottom: 1px solid #ccc;
+    min-height: 25vh;
+    overflow: hidden;
+
+    .card {
+      transform-origin: center bottom;
+      position: absolute;
+      left: 26%;
+      top: 10%;
+
+      &:nth-child(1) { transform: rotate(-26deg); }
+      &:nth-child(2) { transform: rotate(  0deg); }
+      &:nth-child(3) { transform: rotate( 26deg); }
+    }
+  }
+
+  .sleeview {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+
+    li {
+      text-indent: -5000px;
+      border: 1px solid #111;
+      height: 18px;
+      width: 18px;
+      margin: 12px 6px;
+
+      &.sl-w { background-color: #ece7cb; border-color: #979068; }
+      &.sl-u { background-color: #0b80bc; border-color: #243662; }
+      &.sl-b { background-color: #444444; border-color: #111111; }
+      &.sl-r { background-color: #b22222; border-color: #771515; }
+      &.sl-g { background-color: #096e47; border-color: #122f05; }
+    }
+
+    li:hover.sl-w, .sl-w .sl-w { box-shadow: 0 0 4px #ece7cb; }
+    li:hover.sl-u, .sl-u .sl-u { box-shadow: 0 0 4px #0b80bc; }
+    li:hover.sl-b, .sl-b .sl-b { box-shadow: 0 0 4px #444444; }
+    li:hover.sl-r, .sl-r .sl-r { box-shadow: 0 0 4px #b22222; }
+    li:hover.sl-g, .sl-g .sl-g { box-shadow: 0 0 4px #096e47; }
   }
 
   .curve {
