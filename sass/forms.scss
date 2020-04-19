@@ -31,6 +31,12 @@ form.data-enty,
   button {
     display: inline-block;
     margin: 4px 8px 4px 0;
+
+    &[rel=signup] {
+      color: yellow;
+      background: linear-gradient(#69bef7 0,#0878ae 100%);
+      border-color: #428bbb;
+    }
   }
 }
 

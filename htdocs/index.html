@@ -1859,8 +1859,10 @@ window.UI = new Vue({
         <strong>buy / sell / trade</strong> model of <strong>collection management</strong>,
         you'll never again wonder what you have or what you need.</p>
 
-        <button class="default safe" @click="goto('signup')">Sign Up</button>
-        <button class="default safe" @click="goto('login')">Sign In</button>
+        <div class="buttons">
+          <button class="action" rel="signup" @click="goto('signup')">Sign up</button>
+          <button class="action" @click="goto('login')">Sign in</button>
+        </div>
 
         <copyright-footer></copyright-footer>
       </div>
