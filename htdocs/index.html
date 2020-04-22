@@ -686,6 +686,7 @@ Vue.component('deck-form', {
       </div>
     </div>
   </div>
+  <div v-if="are_we_ok()" class="clarify ok">👍 everything checks out with these cards!</div>
   <clarifier v-for="problem in problems" :key="problem.id"
              @clarified="clarified($event)"
              :problem="problem"></clarifier>
@@ -1126,6 +1127,7 @@ Vue.component('transaction-form', {
   data() {
     return {
       ok: true,
+      blurred: false,
       problems: {
         gain: [],
         loss: []
@@ -1139,12 +1141,30 @@ Vue.component('transaction-form', {
     },
 
     validate(bucket) {
+      this.blurred = true;
       if (bucket == 'gain') {
         this.problems.gain = cardboard.CDIF.validate(this.transaction.gain, UI.vault ,1);
       } else {
         this.problems.loss = cardboard.CDIF.validate(this.transaction.loss, UI.vault ,1);
       }
       this.ok = this.can_we_submit();
+    },
+
+    are_we_ok() {
+      if (!this.blurred) {
+        return false;
+      }
+      if (this.transaction.disposition == 'buy') {
+        return this.transaction.gain.replace(/\s+/, '') != "" && this.can_we_submit();
+      }
+      if (this.transaction.disposition == 'sell') {
+        return this.transaction.loss.replace(/\s+/, '') != "" && this.can_we_submit();
+      }
+      if (this.transaction.disposition == 'trade') {
+        return this.transaction.gain.replace(/\s+/, '') != ""
+            && this.transaction.loss.replace(/\s+/, '') != ""
+            && this.can_we_submit();
+      }
     },
 
     can_we_submit() {
@@ -1288,6 +1308,7 @@ Vue.component('transaction-form', {
       </div>
     </div>
   </div>
+  <div v-if="are_we_ok()" class="clarify ok">👍 everything checks out with these cards!</div>
   <clarifier v-if="transaction.disposition == 'buy'"
              v-for="problem in problems.gain" :key="problem.id"
              @clarified="clarified('gain', $event)"
@@ -1302,6 +1323,7 @@ Vue.component('transaction-form', {
                   @blur="validate('loss')"
                   data-validate="present;max=100k"></textarea>
       </div>
+      <div v-if="are_we_ok()" class="clarify ok">👍 everything checks out with these cards!</div>
       <clarifier v-for="problem in problems.loss" :key="problem.id"
                  @clarified="clarified('loss', $event)"
                  :problem="problem"></clarifier>
@@ -1329,6 +1351,7 @@ Vue.component('transaction-form', {
                     @blur="validate('gain')"
                     data-validate="present;max=100k"></textarea>
         </div>
+        <div v-if="are_we_ok()" class="clarify ok">👍 everything checks out with these cards!</div>
         <clarifier v-for="problem in problems.loss" :key="problem.id"
                    @clarified="clarified('loss', $event)"
                    :problem="problem"></clarifier>
@@ -1445,7 +1468,7 @@ Vue.component('clarifier', {
         <li v-for="r in replacements"><ins>{{ r[0] }}x {{ r[1] }}</ins></li> 
       </ul>
       <div>
-        <button @click="apply()" rel="apply">✔</button>
+        <button @click="apply()" rel="apply">✔ Apply</button>
       </div>
     </div>
     <div class="grid results">
