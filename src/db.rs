@@ -580,30 +580,75 @@ impl Database {
         obj: &Transaction,
         upd: UpdateTransaction,
     ) -> Result<Transaction> {
+        let mut meta = match obj.metadata.as_object() {
+            Some(meta) => meta.clone(),
+            _ => serde_json::Map::new(),
+        };
+
+        let gain = match &upd.gain {
+            None => None,
+            Some(s) => {
+                let cdif = cdif::File::from_string(&s)
+                    .chain_err(|| "failed to parse updated gains during transaction update")?;
+
+                let (total, unique) = cdif.count();
+                meta.insert(
+                    "total_gain".to_string(),
+                    serde_json::Value::Number(serde_json::Number::from_f64(total as f64).unwrap()),
+                );
+                meta.insert(
+                    "unique_gain".to_string(),
+                    serde_json::Value::Number(serde_json::Number::from_f64(unique as f64).unwrap()),
+                );
+
+                Some(cdif)
+            }
+        };
+
+        let loss = match &upd.loss {
+            None => None,
+            Some(s) => {
+                let cdif = cdif::File::from_string(&s)
+                    .chain_err(|| "failed to parse updated losses during transaction update")?;
+
+                let (total, unique) = cdif.count();
+                meta.insert(
+                    "total_loss".to_string(),
+                    serde_json::Value::Number(serde_json::Number::from_f64(total as f64).unwrap()),
+                );
+                meta.insert(
+                    "unique_loss".to_string(),
+                    serde_json::Value::Number(serde_json::Number::from_f64(unique as f64).unwrap()),
+                );
+
+                Some(cdif)
+            }
+        };
+
         let txn = diesel::update(obj)
-            .set((&upd, transactions::dsl::updated_at.eq(Utc::now())))
+            .set((
+                &upd,
+                transactions::dsl::metadata.eq(serde_json::Value::Object(meta)),
+                transactions::dsl::updated_at.eq(Utc::now()),
+            ))
             .get_result(&self.pg)
             .chain_err(|| "failed to update transaction record in database")?;
 
-        match upd.gain {
+        match gain {
             None => (),
-            Some(gain) => {
+            Some(now) => {
                 let then = cdif::File::from_string(&obj.gain)
                     .chain_err(|| "failed to parse previous gains during transaction update")?;
-                let now = cdif::File::from_string(&gain)
-                    .chain_err(|| "failed to parse new gains during transaction update")?;
 
                 self.apply_collection_credit(obj.collection, cdif::File::diff(&then, &now))?;
             }
         };
 
-        match upd.loss {
+        match loss {
             None => (),
-            Some(loss) => {
+            Some(now) => {
                 let then = cdif::File::from_string(&obj.loss)
                     .chain_err(|| "failed to parse previous losses during transaction update")?;
-                let now = cdif::File::from_string(&loss)
-                    .chain_err(|| "failed to parse new losses during transaction update")?;
 
                 self.apply_collection_debit(obj.collection, cdif::File::diff(&then, &now))?;
             }
@@ -728,7 +773,8 @@ mod test {
                 "lookup.json",
                 r#"
 {
-  "XLN Opt": "xln-opt-fake-id"
+  "XLN Opt": "xln-opt-fake-id",
+  "GRN Radical Idea": "grn-rad-fake-id"
 }
 "#,
             )
@@ -1091,7 +1137,7 @@ mod test {
             NewTransaction {
                 summary: "opting for ixalan",
                 disposition: "buy",
-                notes: "",
+                notes: "this oughta be good",
                 collection: jhunt.id,
                 dated: &NaiveDate::from_ymd(2020, 01, 14),
                 gain: "1x XLN Opt\n",
@@ -1102,9 +1148,41 @@ mod test {
         let txn = txn.unwrap();
 
         assert_eq!(txn.collection, jhunt.id);
+        assert_eq!(txn.summary, "opting for ixalan");
+        assert_eq!(txn.notes, "this oughta be good");
+        assert_eq!(txn.disposition, "buy");
         assert_eq!(txn.dated, NaiveDate::from_ymd(2020, 01, 14));
         assert_eq!(txn.gain, "1x XLN Opt\n");
         assert_eq!(txn.loss, "");
+        assert_eq!(txn.total_card_gain(), 1);
+        assert_eq!(txn.unique_card_gain(), 1);
+        assert_eq!(txn.total_card_loss(), 0);
+        assert_eq!(txn.unique_card_loss(), 0);
+
+        let updated = db
+            .update_transaction(
+                &txn,
+                UpdateTransaction {
+                    summary: None,
+                    notes: None,
+                    dated: None,
+                    disposition: None,
+                    gain: Some("1x XLN Opt\n3x GRN Radical Idea\n".to_string()),
+                    loss: None,
+                },
+            )
+            .unwrap();
+        assert_eq!(updated.collection, jhunt.id);
+        assert_eq!(updated.dated, NaiveDate::from_ymd(2020, 01, 14));
+        assert_eq!(updated.summary, "opting for ixalan");
+        assert_eq!(updated.notes, "this oughta be good");
+        assert_eq!(updated.disposition, "buy");
+        assert_eq!(updated.gain, "1x XLN Opt\n3x GRN Radical Idea\n");
+        assert_eq!(updated.loss, "");
+        assert_eq!(updated.total_card_gain(), 4);
+        assert_eq!(updated.unique_card_gain(), 2);
+        assert_eq!(updated.total_card_loss(), 0);
+        assert_eq!(updated.unique_card_loss(), 0);
     }
 
     #[test]
