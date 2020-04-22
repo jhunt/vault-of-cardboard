@@ -150,11 +150,9 @@ pub struct Transaction {
 impl Transaction {
     fn metadata_value_as_u32(&self, key: &str, or: u32) -> u32 {
         match self.metadata.get(key) {
-            Some(serde_json::Value::Number(number)) => {
-                match number.as_f64() {
-                    Some(n) => n as u32,
-                    _ => or,
-                }
+            Some(serde_json::Value::Number(number)) => match number.as_f64() {
+                Some(n) => n as u32,
+                _ => or,
             },
             _ => or,
         }
@@ -716,11 +714,10 @@ mod test {
     fn connect() -> (TempDir, Database) {
         use std::env;
 
-        let pg = env::var("VCB_DATABASE_URL")
-            .expect("VCB_DATABASE_URL must be set in the environment.");
+        let pg =
+            env::var("VCB_DATABASE_URL").expect("VCB_DATABASE_URL must be set in the environment.");
 
-        let rd = env::var("VCB_REDIS_URL")
-            .expect("VCB_REDIS_URL must be set in the environment.");
+        let rd = env::var("VCB_REDIS_URL").expect("VCB_REDIS_URL must be set in the environment.");
 
         let fs = TempDir::new("vcb-test").expect("Failed to create temp directory");
 
