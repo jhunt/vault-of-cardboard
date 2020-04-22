@@ -11,7 +11,42 @@
 <link rel="stylesheet" type="text/css" href="/css/vcb.css" />
 </head>
 <body>
-<div id="app"></div>
+<div id="app">
+  <header>
+    <h1>Vault of Cardboard</h1>
+    <input name="q" placeholder="i.e.: Ral color:RU +draw" autocomplete="off">
+    <!--v-model="search.query" @change="doSearch(search.query, true)" @keyup="forceSearch(search.query, true)">-->
+    <nav>
+      <li><a>Search</a>
+        <nav>
+          <li><router-link to="/docs">How do I search?</router-link></li>
+          <li><router-link to="/sets">What sets are there?</router-link></li>
+          <li class="separator"></li>
+          <li v-if="auth"><a href="#!/q/owned">My Collection</a></li>
+          <li v-if="auth"><a href="#!/q/own:2+">My Duplicates</a></li>
+          <li v-if="auth"><a href="#!/q/own:4+">My Playsets</a></li>
+          <li v-if="auth" class="separator"></li>
+          <li><a href="#!/q/type:planeswalker">Planeswalkers</a></li>
+          <li><a href="#!/q/=mythic">Mythics</a></li>
+          <li><a href="#!/q/+gains? and +loses?">Life Gain + Loss</a></li>
+          <li><a href="#!/q/type:land and +damage">Pain Lands</a></li>
+          <li><a href="#!/q/usd:10+ and usd:400-">Expensive Cards</a></li>
+        </nav></li>
+      <li v-if="!auth"><router-link to="/login">Sign in</router-linke></li>
+      <li v-if="auth"><a class="-username">{{ auth.username }}</a>
+        <nav>
+          <li><a href="#!/timeline">My Collection</a></li>
+          <li v-if="auth.cohort != 'stable'"><a href="#!/decks">Decks</a></li>
+          <li><a href="#!/logout" rel="logout">Sign out</a></li>
+        </nav></li>
+    </nav>
+  </header>
+  <div v-if="mode == 'search' && search.results.length > 0"
+       class="colors" :style="colorBandStyle(search.results)"></div>
+  <router-view
+    @authenticated="authenticated($event)"
+    ></router-view>
+</div>
 
 <script type="text/html" id="template:play-card"><!-- {{{ -->
   <img class="c" id="[[= _.id ]]" src="[[= $CONFIG.imgroot ]]/cards/[[= _.card.image ]]"
@@ -126,6 +161,7 @@
   };
 </script>
 <script src="https://vuejs.org/js/vue.js"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
 <script type="text/javascript" src="js/jquery.js"></script>
 <script type="text/javascript" src="js/util.js"></script>
 <script type="text/javascript" src="js/table.js"></script>
@@ -248,80 +284,6 @@ Vue.component('loading', {
 `
 });
 
-Vue.component('login', {
-  props: {
-    error: {
-      type: String,
-      required: false,
-    }
-  },
-  data() {
-    return {
-      username: '',
-      password: ''
-    };
-  },
-  mounted() {
-    $('[name=username]').focus();
-  },
-  methods: {
-    colorize: cardboard.colorize,
-    authenticate(username, password) {
-      event.preventDefault();
-      cardboard.API.authenticate(username, password).then(data => {
-        if (data.authenticated) {
-          UI.session = data.authenticated;
-          UI.vault.unload_collection();
-          cardboard.When.trigger('authenticated');
-
-          document.cookie = 'vcb_sesh='+UI.session.session+';max-age=7776000;samesite=strict';
-          cardboard.API.fetch_collection_for(UI.session.uid)
-            .then(c => cardboard.When(cardboard.CardsLoaded, () => {
-              UI.vault.load_collection(c.base, c.patches);
-            }));
-          UI.browse('/q/owned');
-
-        } else {
-          UI.error = data.response.message;
-        }
-      });
-    }
-  },
-  template: `
-<div class="landing login">
-  <div><img src="/img/front.png"></div>
-  <div>
-    <p>Whether you're putting together <a href="#!/q/type:sliver">that Sliver deck,</a>
-    seeking out <a href="#!/q/type:legendary and type:creature">your next Commander,</a>
-    or <a href="#!/q/Didgeridoo or type:Minotaur">just looking for some jank</a>,
-    <em>Vault of Cardboard</em> has got you covered.</p>
-
-    <form class="user" @submit="authenticate(username, password)">
-      <h2>Sign In</h2>
-      <p class="divert">New to Vault of Cardboard?  <a href="#!/signup">sign up today</a>!</p>
-
-      <div class="oops" v-if="error == 'authentication-failed'">
-        Invalid username or password.
-      </div>
-      <div class="oops" v-else-if="error">
-        Uh-oh, something broke pretty bad.  Tap {{ colorize("2UUU") }} and summon James, Fixer of Codes!
-        <!-- Uh-oh, something broke pretty bad.  Tap {{ colorize("4BR") }} to cast James Legendary Bug Fix -->
-      </div>
-      <div class="control">
-        <label>Username</label>
-        <input type="text" name="username" autocomplete="off" v-model="username">
-      </div>
-      <div class="control">
-        <label>Password</label>
-        <input type="password" name="password" v-model="password">
-      </div>
-      <button type="submit"class="default safe">Sign in</button>
-    </form>
-    <copyright-footer></copyright-footer>
-  </div>
-</div>
-`
-});
 
 Vue.component('signup', {
   props: {
@@ -348,13 +310,13 @@ Vue.component('signup', {
         .then(data => {
           if (data.authenticated) {
             UI.session = data.authenticated;
-            UI.vault.unload_collection();
+            $vault.unload_collection();
             cardboard.When.trigger('authenticated');
 
             document.cookie = 'vcb_sesh='+UI.session.session+';max-age=7776000;samesite=strict';
             cardboard.API.fetch_collection_for(UI.session.uid)
               .then(c => cardboard.When(cardboard.CardsLoaded, () => {
-                UI.vault.load_collection(c.base, c.patches);
+                $vault.load_collection(c.base, c.patches);
               }));
             UI.browse('/q/owned');
 
@@ -434,56 +396,8 @@ Vue.component('changelog', {
 `
 });
 
-Vue.component('docs', {
-  props: ['docs'],
-  template: `
-<div class="sets prose">
-  <div v-html="docs"></div>
-</div>
-`
-});
-
-Vue.component('set-list', {
-  props: ['sets'],
-  mounted() {
-    $('#main table.sortable').sortableTable();
-  },
-  methods: {
-    dated:    dated,
-    strftime: strftime,
-  },
-  template: `
-<div class="sets prose">
-  <h1>Currently Known Magic: the Gathering Sets</h1>
-  <p>These are all the M:tG sets that Vault of Cardboard knows about.
-  Most of these should have images.  If a set is missing, or missing its images,
-  please let us know!</p>
-  <table class="sets sortable listing">
-    <thead><tr>
-      <th></th>
-      <th class="sortable">Code</th>
-      <th class="sortable">Name</th>
-      <th class="sortable" data-sort-as="number">Release Date</th>
-      <th class="sortable" data-sort-as="number">Size</th>
-      <th></th>
-    </tr></thead>
-    <tbody>
-      <tr v-for="set in sets"
-          :key="set.code"
-          :set="set">
-        <td><span :class="'ss ss-' + set.code.toLowerCase()"></span></td>
-        <td>{{ set.code }}</td>
-        <td>{{ set.name }}</td>
-        <td :data-sort="set.release">{{ strftime("%B %Oe, %Y", dated(set.release)) }}</td>
-        <td :data-sort="set.size"><a :href="'#!/q/set:' + set.code">{{ set.size }}</a></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-`
-})
-
-Vue.component('deck-list', {
+cardboard.UI.Decks = {
+//Vue.component('deck-list', {
   props: ['decks'],
   data: function () {
     return {
@@ -562,7 +476,7 @@ Vue.component('deck-list', {
   </table>
 </div>
 `
-})
+};
 
 Vue.component('deck-form', {
   props: {
@@ -607,7 +521,7 @@ Vue.component('deck-form', {
     },
 
     validate() {
-      this.problems = cardboard.CDIF.validate(this.deck.main, UI.vault, 1);
+      this.problems = cardboard.CDIF.validate(this.deck.main, $vault, 1);
     },
 
     clarified($event) {
@@ -692,7 +606,7 @@ Vue.component('deck-form', {
 
   <div v-if="problems.length == 0">
     <button class="default safe" type="submit">{{ mode == 'new' ? "Create" : "Update" }} Deck</button>
-    <button v-if="mode == 'edit'" @click="remove()" class="danger">Delete This Deck</button>
+    <button v-if="mode == 'edit' && false" @click="remove()" class="danger">Delete This Deck</button>
   </div>
 </form>
 `
@@ -710,7 +624,7 @@ Vue.component('deck', {
   },
   computed: {
     cards() {
-      return UI.vault.resolve(this.deck.main);
+      return $vault.resolve(this.deck.main);
     },
 
     curve() {
@@ -718,7 +632,7 @@ Vue.component('deck', {
           max = 0;
       let curve = [];
 
-      UI.vault.filter(this.cards.map(c => c.card), '!type:land and !type:token').forEach(card => {
+      $vault.filter(this.cards.map(c => c.card), '!type:land and !type:token').forEach(card => {
         if (!(card.cmc in curve)) {
           curve[card.cmc] = [];
         }
@@ -1140,9 +1054,9 @@ Vue.component('transaction-form', {
 
     validate(bucket) {
       if (bucket == 'gain') {
-        this.problems.gain = cardboard.CDIF.validate(this.transaction.gain, UI.vault ,1);
+        this.problems.gain = cardboard.CDIF.validate(this.transaction.gain, $vault ,1);
       } else {
-        this.problems.loss = cardboard.CDIF.validate(this.transaction.loss, UI.vault ,1);
+        this.problems.loss = cardboard.CDIF.validate(this.transaction.loss, $vault ,1);
       }
       this.ok = this.can_we_submit();
     },
@@ -1465,7 +1379,41 @@ Vue.component('clarifier', {
 `
 });
 
-window.UI = new Vue({
+const router = new VueRouter({
+  routes: [
+  //{ path: '/blog',                 component: cardboard.UI.Blog },
+    { path: '/docs',                 component: cardboard.UI.Docs },
+    { path: '/login',                component: cardboard.UI.Login },
+    { path: '/my/decks',             component: cardboard.UI.Decks },
+  //{ path: '/my/deck/:id(/:plug)?', component: cardboard.UI.DeckView, props: true },
+  //{ path: '/my/decks/edit/:id',    component: cardboard.UI.DeckEdit, props: true },
+    { path: '/my/timeline',          component: cardboard.UI.Timeline },
+  //{ path: '/q/:query',             component: cardboard.UI.SearchResults },
+    { path: '/sets',                 component: cardboard.UI.SetList },
+  ]
+});
+
+const app = new Vue({
+  router,
+  data: {
+    mode: 'legacy',
+    session: false, // legacy
+
+    auth: undefined,
+  },
+
+  methods: {
+    authenticated(creds) {
+      this.auth = creds;
+    }
+  }
+}).$mount('#app');
+
+const $vault = new cardboard.Vault();
+cardboard.API.load($vault)
+  .catch(e => console.log('vault:: failed to load card / pricing data: %s', e));
+
+window.UI = () => new Vue({
   el: '#app',
   data: {
     // A general error, to be propagated down to all interested
@@ -1482,7 +1430,6 @@ window.UI = new Vue({
     mode: 'landing',
     modal: false,
 
-    sets: [],
     decks: [],
 
     transactions: [],
@@ -1491,11 +1438,7 @@ window.UI = new Vue({
       results: []
     },
 
-    docs: undefined,
-
-    changes: [],
-
-    vault: new cardboard.Vault()
+    changes: []
   },
   mounted() {
     var session = (function () {
@@ -1523,7 +1466,7 @@ window.UI = new Vue({
         }
         cardboard.API.fetch_collection_for(UI.session.uid)
           .then(c => cardboard.When(cardboard.CardsLoaded, () => {
-            UI.vault.load_collection(c.base, c.patches);
+            $vault.load_collection(c.base, c.patches);
           }));
       });
 
@@ -1568,26 +1511,6 @@ window.UI = new Vue({
           UI.redraw('changelog');
         });
 
-      } else if (sub == "docs") {
-        if (!UI.docs) {
-          fetch('/docs.html').then(r => {
-            if (!r.ok) { throw new Error('unable to load docs'); }
-            return r.text();
-          }).then(text => {
-            UI.docs = text;
-            UI.redraw('docs');
-          });
-        } else {
-          UI.redraw('docs');
-        }
-
-      } else if (sub == "sets") {
-        UI.redraw('loading');
-        cardboard.When(cardboard.CardsLoaded, () => {
-          UI.sets = UI.vault.sets;
-          UI.redraw('sets');
-        });
-
       } else if (sub == "decks") {
         UI.redraw('loading');
         cardboard.When('authenticated', () =>
@@ -1603,10 +1526,10 @@ window.UI = new Vue({
         UI.redraw('loading');
         cardboard.When(cardboard.CardsLoaded, () => {
           let land_set = set;
-          while (land_set && !UI.vault.has_any('set:'+land_set+' and type:basic land')) {
-            land_set = UI.vault.previous_set(land_set);
+          while (land_set && !$vault.has_any('set:'+land_set+' and type:basic land')) {
+            land_set = $vault.previous_set(land_set);
           }
-          UI.draft = new cardboard.Draft(UI.vault, {
+          UI.draft = new cardboard.Draft($vault, {
             set: set,
             lands: land_set,
           }).pack();
@@ -1646,7 +1569,7 @@ window.UI = new Vue({
       UI.search = { query: q, results: [] };
       cardboard.When(cardboard.AllLoaded, () => {
         try {
-          let results = UI.vault.search(q);
+          let results = $vault.search(q);
           UI.search.found = results.length;
           UI.search.results = results.slice(0,400);
           UI.search.more = UI.search.results.length != results.length;
@@ -1737,8 +1660,8 @@ window.UI = new Vue({
   </header>
   <div v-if="mode == 'search' && search.results.length > 0"
        class="colors" :style="colorBandStyle(search.results)"></div>
-  <div id="main">
     <!--
+  <div id="main">
     <div class="prose"><form class="data-entry">
       <h2>Title of the Form</h2>
       <div class="band">
@@ -1815,14 +1738,10 @@ window.UI = new Vue({
         </div>
       </div>
     </form></div>
-    -->
     <loading v-if="mode == 'loading'"></loading>
     <signup
       v-else-if="mode == 'signup'"
       :error="error"></signup>
-    <login
-      v-else-if="mode == 'login'"
-      :error="error"></login>
     <card-grid
       v-else-if="mode == 'search'"
       :q="search.query"
@@ -1836,18 +1755,12 @@ window.UI = new Vue({
     <timeline
       v-else-if="mode == 'timeline'"
       :transactions="transactions"></timeline>
-    <set-list
-      v-else-if="mode == 'sets'"
-      :sets="sets"></set-list>
     <deck-list
       v-else-if="mode == 'decks'"
       :decks="decks"></deck-list>
     <deck
       v-else-if="mode == 'deck'"
       :deck="deck"></deck>
-    <docs
-      v-else-if="mode == 'docs'"
-      :docs="docs"></docs>
     <changelog
       v-else-if="mode == 'changelog'"
       :changes="changes"></changelog>
@@ -1878,6 +1791,7 @@ window.UI = new Vue({
   <card-detail
     v-if="modal"
     :card="modalfg.card"></card-detail>
+    -->
 </div>
 `
 });
@@ -1944,7 +1858,7 @@ $(function () {
   })
   .on('click', '.results .face img', function (event) {
     var id = $(event.target).closest('[data-id]').attr('data-id');
-    UI.modalfg = { card: UI.vault.card(id) };
+    UI.modalfg = { card: $vault.card(id) };
     UI.modal = true;
   })
   .on('click', '.oops ul a[href="#more"]', function (event) {

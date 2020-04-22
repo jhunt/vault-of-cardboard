@@ -5,4 +5,11 @@ module.exports = Object.freeze(Object.assign({},
   require('./helpers.js'),
   require('./query.js'),
   require('./vault.js'),
-  require('./when.js')));
+  require('./when.js'),
+  {
+    UI: {
+      Docs:    require('./ui/docs.js'),
+      Login:   require('./ui/login.js'),
+      SetList: require('./ui/set-list.js')
+    }
+  }));

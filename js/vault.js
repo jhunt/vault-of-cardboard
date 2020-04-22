@@ -46,7 +46,7 @@ class Vault {
         name:    data.sets[code].name,
         size:    data.sets[code].cards.length,
         code:    data.sets[code].code,
-        release: data.sets[code].released_at.replace(/-/g, '')
+        release: data.sets[code].released_at
       });
 
       this.cards[code] = [];

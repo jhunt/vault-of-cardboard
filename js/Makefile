@@ -7,6 +7,9 @@ JS_FILES += query.js
 JS_FILES += vault.js
 JS_FILES += when.js
 
+JS_FILES += ui/docs.js
+JS_FILES += ui/set-list.js
+
 DIST_FILES := cardboard.js
 DIST_FILES += cardboard.min.js
 DIST_FILES += cardboard.js.gz
