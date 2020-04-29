@@ -557,11 +557,6 @@ impl Database {
             "unique_gain".to_string(),
             json!(unique as f64),
         );
-        for x in gain.unique_sets() {
-            print!("GAINED SET [{}]\n", x);
-            print!("  to_string: [{}]\n", x.to_string());
-            print!("  value str: [{}]\n", serde_json::Value::String(x.to_string()));
-        }
         meta.insert(
             "set_gain".to_string(),
             json!(gain.unique_sets()),
