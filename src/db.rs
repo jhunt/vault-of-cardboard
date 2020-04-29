@@ -173,6 +173,19 @@ impl Transaction {
     pub fn unique_card_loss(&self) -> u32 {
         self.metadata_value_as_u32("unique_loss", 0)
     }
+
+    pub fn set_gain(&self) -> Vec<String> {
+        match self.metadata.get("set_gain") {
+            Some(serde_json::Value::Array(v)) => v.iter().map(|x| x.as_str().unwrap().to_string()).collect(),
+            _ => vec![],
+        }
+    }
+    pub fn set_loss(&self) -> Vec<String> {
+        match self.metadata.get("set_loss") {
+            Some(serde_json::Value::Array(v)) => v.iter().map(|x| x.as_str().unwrap().to_string()).collect(),
+            _ => vec![],
+        }
+    }
 }
 
 #[derive(Insertable)]
@@ -538,21 +551,34 @@ impl Database {
         let (total, unique) = gain.count();
         meta.insert(
             "total_gain".to_string(),
-            serde_json::Value::Number(serde_json::Number::from_f64(total as f64).unwrap()),
+            json!(total as f64),
         );
         meta.insert(
             "unique_gain".to_string(),
-            serde_json::Value::Number(serde_json::Number::from_f64(unique as f64).unwrap()),
+            json!(unique as f64),
+        );
+        for x in gain.unique_sets() {
+            print!("GAINED SET [{}]\n", x);
+            print!("  to_string: [{}]\n", x.to_string());
+            print!("  value str: [{}]\n", serde_json::Value::String(x.to_string()));
+        }
+        meta.insert(
+            "set_gain".to_string(),
+            json!(gain.unique_sets()),
         );
 
         let (total, unique) = loss.count();
         meta.insert(
             "total_loss".to_string(),
-            serde_json::Value::Number(serde_json::Number::from_f64(total as f64).unwrap()),
+            json!(total as f64),
         );
         meta.insert(
             "unique_loss".to_string(),
-            serde_json::Value::Number(serde_json::Number::from_f64(unique as f64).unwrap()),
+            json!(unique as f64),
+        );
+        meta.insert(
+            "set_loss".to_string(),
+            json!(loss.unique_sets()),
         );
 
         let txn = diesel::insert_into(transactions::table)
@@ -594,11 +620,15 @@ impl Database {
                 let (total, unique) = cdif.count();
                 meta.insert(
                     "total_gain".to_string(),
-                    serde_json::Value::Number(serde_json::Number::from_f64(total as f64).unwrap()),
+                    json!(total as f64),
                 );
                 meta.insert(
                     "unique_gain".to_string(),
-                    serde_json::Value::Number(serde_json::Number::from_f64(unique as f64).unwrap()),
+                    json!(unique as f64),
+                );
+                meta.insert(
+                    "set_gain".to_string(),
+                    json!(cdif.unique_sets()),
                 );
 
                 Some(cdif)
@@ -614,11 +644,15 @@ impl Database {
                 let (total, unique) = cdif.count();
                 meta.insert(
                     "total_loss".to_string(),
-                    serde_json::Value::Number(serde_json::Number::from_f64(total as f64).unwrap()),
+                    json!(total as f64),
                 );
                 meta.insert(
                     "unique_loss".to_string(),
-                    serde_json::Value::Number(serde_json::Number::from_f64(unique as f64).unwrap()),
+                    json!(unique as f64),
+                );
+                meta.insert(
+                    "set_loss".to_string(),
+                    json!(cdif.unique_sets()),
                 );
 
                 Some(cdif)
@@ -755,6 +789,7 @@ mod test {
     use super::*;
     use tempdir::TempDir;
     use uuid::Uuid;
+    use std::collections::HashSet;
 
     fn connect() -> (TempDir, Database) {
         use std::env;
@@ -1117,6 +1152,14 @@ mod test {
         assert!(collection.is_some());
     }
 
+    fn vec_to_set(src: Vec<String>) -> HashSet<String> {
+        let mut dst = HashSet::new();
+        for x in src {
+            dst.insert(x);
+        }
+        dst
+    }
+
     #[test]
     pub fn can_create_a_transaction() {
         let (_tmp, db) = connect();
@@ -1159,6 +1202,11 @@ mod test {
         assert_eq!(txn.total_card_loss(), 0);
         assert_eq!(txn.unique_card_loss(), 0);
 
+        assert_eq!(txn.set_loss().len(), 0);
+        assert_eq!(txn.set_gain().len(), 1);
+        let sets = vec_to_set(txn.set_gain());
+        assert!(sets.contains("XLN"));
+
         let updated = db
             .update_transaction(
                 &txn,
@@ -1183,6 +1231,12 @@ mod test {
         assert_eq!(updated.unique_card_gain(), 2);
         assert_eq!(updated.total_card_loss(), 0);
         assert_eq!(updated.unique_card_loss(), 0);
+
+        assert_eq!(updated.set_loss().len(), 0);
+        assert_eq!(updated.set_gain().len(), 2);
+        let sets = vec_to_set(updated.set_gain());
+        assert!(sets.contains("XLN"));
+        assert!(sets.contains("GRN"));
     }
 
     #[test]

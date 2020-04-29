@@ -1091,7 +1091,10 @@ Vue.component('timeline', {
         <h2>{{ heading(d[0]) }} <span :class="gainloss(d[1].total_delta)">{{ d[1].total_delta }} cards <span :class="gainloss(d[1].unique_delta)">({{ d[1].unique_delta }} unique)</span></span></h2>
         <ul>
           <li v-for="txn in d[1].transactions" :class="txn.type">
-            <em :class="gainloss(txn.total_delta)">{{ txn.total_delta }}</em> cards in {{ txn.dated }} {{ txn.type }} <strong>{{ txn.summary }}</strong> <span class="actions"><a href="#" @click="start_edit_transaction(txn.id)">edit</a></span>
+            <em :class="gainloss(txn.total_delta)">{{ txn.total_delta }}</em> cards in {{ txn.dated }} {{ txn.type }} <strong>{{ txn.summary }}</strong>
+            <span v-for="set in txn.set_gain" :class="'ss ss-' + set.toLowerCase()"></span>
+            <span v-for="set in txn.set_loss" :class="'ss ss-' + set.toLowerCase()"></span>
+            <span class="actions"><a href="#" @click="start_edit_transaction(txn.id)">edit</a></span>
             <transaction-form
               v-if="mode == 'edit' && target == txn.id"
               mode="edit"
