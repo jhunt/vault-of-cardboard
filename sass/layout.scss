@@ -66,6 +66,7 @@ header {
   > nav {
     list-style: none;
     display: flex;
+    justify-content: flex-end;
 
     li {
       align-self: flex-end;
