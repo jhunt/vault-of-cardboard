@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::{self, BufRead, BufReader};
 
 use crate::prelude::*;
@@ -149,6 +149,7 @@ impl Line {
 
 pub struct File {
     pub lines: HashMap<String, Line>,
+    pub sets: HashSet<String>,
 
     total: u32,
     unique: u32,
@@ -158,6 +159,7 @@ impl File {
     fn blank() -> Self {
         Self {
             lines: HashMap::new(),
+            sets: HashSet::new(),
             total: 0,
             unique: 0,
         }
@@ -167,9 +169,14 @@ impl File {
         (self.total, self.unique)
     }
 
+    pub fn unique_sets(&self) -> Vec<String> {
+        self.sets.iter().map(|s| s.to_string()).collect()
+    }
+
     fn track(&mut self, line: Line) {
         if line.quantity != 0 {
             self.total += line.quantity as u32;
+            self.sets.insert(line.set.to_string());
 
             match self.lines.get_mut(&line.id()) {
                 Some(l) => {
@@ -559,6 +566,14 @@ mod test {
         assert!(!Line::parse("1x DOM Opt | NM (test:signed))").is_some());
     }
 
+    fn vec_to_set(src: Vec<String>) -> HashSet<String> {
+        let mut dst = HashSet::new();
+        for x in src {
+            dst.insert(x);
+        }
+        dst
+    }
+
     #[test]
     fn should_parse_cdif_files() {
         let test_dot_cdif = r#"
@@ -572,6 +587,8 @@ mod test {
         let file = File::from_string(&test_dot_cdif).unwrap();
         assert_eq!(file.lines.len(), 2);
         assert_eq!(file.count(), (5, 2));
+        let sets = vec_to_set(file.unique_sets());
+        assert!(sets.contains("DOM"));
 
         let line = file.lines.get("DOM Mox Amber");
         assert!(line.is_some());

@@ -132,6 +132,8 @@ pub struct Transaction {
     pub total_card_loss: u32,
     pub unique_card_gain: u32,
     pub unique_card_loss: u32,
+    pub set_loss: Vec<String>,
+    pub set_gain: Vec<String>,
 }
 
 impl std::convert::From<db::Transaction> for Transaction {
@@ -147,6 +149,8 @@ impl std::convert::From<db::Transaction> for Transaction {
             total_card_loss: other.total_card_loss(),
             unique_card_gain: other.unique_card_gain(),
             unique_card_loss: other.unique_card_loss(),
+            set_loss: other.set_loss(),
+            set_gain: other.set_gain(),
 
             disposition: other.disposition.to_string(),
             gain: other.gain,

@@ -1,5 +1,5 @@
 .clarify {
-  .ok {
+  &.ok {
     color: forestgreen;
     font-size: 10pt;
     font-style: italic;
@@ -37,25 +37,29 @@
       background-color: rgba(255,255,255, 0.7);
       padding: 0.5em 0;
     }
+  }
+
+  div.problem {
+    .lineno {
+      font-weight: bold;
+      border-bottom: 2px solid #000;
+    }
+
+    .line {
+      color: #fff;
+      font-family: monospace;
+      font-weight: bold;
+      background-color: firebrick;
+      padding: 2px 8px;
+    }
 
     .problem {
-      .lineno {
-        font-weight: bold;
-        border-bottom: 2px solid #000;
-      }
+      color: firebrick;
+      font-style: italic;
+    }
 
-      .line {
-        color: #fff;
-        font-family: monospace;
-        font-weight: bold;
-        background-color: firebrick;
-        padding: 2px 8px;
-      }
-
-      .problem {
-        color: firebrick;
-        font-style: italic;
-      }
+    .results > span {
+      position: relative;
     }
   }
 
@@ -79,6 +83,18 @@
       background-color: salmon;
       color: firebrick;
       text-decoration: line-through;
+    }
+  }
+  .resolution {
+    display: flex;
+    gap: 1em;
+    justify-content: flex-start;
+    align-items: center;
+
+    button[rel=apply] {
+      color: #fff;
+      background: linear-gradient(#5ae81a 0,#11a436 100%);
+      border-color: #42bb44;
     }
   }
 

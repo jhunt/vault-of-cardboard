@@ -150,11 +150,9 @@ pub struct Transaction {
 impl Transaction {
     fn metadata_value_as_u32(&self, key: &str, or: u32) -> u32 {
         match self.metadata.get(key) {
-            Some(serde_json::Value::Number(number)) => {
-                match number.as_f64() {
-                    Some(n) => n as u32,
-                    _ => or,
-                }
+            Some(serde_json::Value::Number(number)) => match number.as_f64() {
+                Some(n) => n as u32,
+                _ => or,
             },
             _ => or,
         }
@@ -174,6 +172,19 @@ impl Transaction {
 
     pub fn unique_card_loss(&self) -> u32 {
         self.metadata_value_as_u32("unique_loss", 0)
+    }
+
+    pub fn set_gain(&self) -> Vec<String> {
+        match self.metadata.get("set_gain") {
+            Some(serde_json::Value::Array(v)) => v.iter().map(|x| x.as_str().unwrap().to_string()).collect(),
+            _ => vec![],
+        }
+    }
+    pub fn set_loss(&self) -> Vec<String> {
+        match self.metadata.get("set_loss") {
+            Some(serde_json::Value::Array(v)) => v.iter().map(|x| x.as_str().unwrap().to_string()).collect(),
+            _ => vec![],
+        }
     }
 }
 
@@ -540,21 +551,29 @@ impl Database {
         let (total, unique) = gain.count();
         meta.insert(
             "total_gain".to_string(),
-            serde_json::Value::Number(serde_json::Number::from_f64(total as f64).unwrap()),
+            json!(total as f64),
         );
         meta.insert(
             "unique_gain".to_string(),
-            serde_json::Value::Number(serde_json::Number::from_f64(unique as f64).unwrap()),
+            json!(unique as f64),
+        );
+        meta.insert(
+            "set_gain".to_string(),
+            json!(gain.unique_sets()),
         );
 
         let (total, unique) = loss.count();
         meta.insert(
             "total_loss".to_string(),
-            serde_json::Value::Number(serde_json::Number::from_f64(total as f64).unwrap()),
+            json!(total as f64),
         );
         meta.insert(
             "unique_loss".to_string(),
-            serde_json::Value::Number(serde_json::Number::from_f64(unique as f64).unwrap()),
+            json!(unique as f64),
+        );
+        meta.insert(
+            "set_loss".to_string(),
+            json!(loss.unique_sets()),
         );
 
         let txn = diesel::insert_into(transactions::table)
@@ -582,30 +601,83 @@ impl Database {
         obj: &Transaction,
         upd: UpdateTransaction,
     ) -> Result<Transaction> {
+        let mut meta = match obj.metadata.as_object() {
+            Some(meta) => meta.clone(),
+            _ => serde_json::Map::new(),
+        };
+
+        let gain = match &upd.gain {
+            None => None,
+            Some(s) => {
+                let cdif = cdif::File::from_string(&s)
+                    .chain_err(|| "failed to parse updated gains during transaction update")?;
+
+                let (total, unique) = cdif.count();
+                meta.insert(
+                    "total_gain".to_string(),
+                    json!(total as f64),
+                );
+                meta.insert(
+                    "unique_gain".to_string(),
+                    json!(unique as f64),
+                );
+                meta.insert(
+                    "set_gain".to_string(),
+                    json!(cdif.unique_sets()),
+                );
+
+                Some(cdif)
+            }
+        };
+
+        let loss = match &upd.loss {
+            None => None,
+            Some(s) => {
+                let cdif = cdif::File::from_string(&s)
+                    .chain_err(|| "failed to parse updated losses during transaction update")?;
+
+                let (total, unique) = cdif.count();
+                meta.insert(
+                    "total_loss".to_string(),
+                    json!(total as f64),
+                );
+                meta.insert(
+                    "unique_loss".to_string(),
+                    json!(unique as f64),
+                );
+                meta.insert(
+                    "set_loss".to_string(),
+                    json!(cdif.unique_sets()),
+                );
+
+                Some(cdif)
+            }
+        };
+
         let txn = diesel::update(obj)
-            .set((&upd, transactions::dsl::updated_at.eq(Utc::now())))
+            .set((
+                &upd,
+                transactions::dsl::metadata.eq(serde_json::Value::Object(meta)),
+                transactions::dsl::updated_at.eq(Utc::now()),
+            ))
             .get_result(&self.pg)
             .chain_err(|| "failed to update transaction record in database")?;
 
-        match upd.gain {
+        match gain {
             None => (),
-            Some(gain) => {
+            Some(now) => {
                 let then = cdif::File::from_string(&obj.gain)
                     .chain_err(|| "failed to parse previous gains during transaction update")?;
-                let now = cdif::File::from_string(&gain)
-                    .chain_err(|| "failed to parse new gains during transaction update")?;
 
                 self.apply_collection_credit(obj.collection, cdif::File::diff(&then, &now))?;
             }
         };
 
-        match upd.loss {
+        match loss {
             None => (),
-            Some(loss) => {
+            Some(now) => {
                 let then = cdif::File::from_string(&obj.loss)
                     .chain_err(|| "failed to parse previous losses during transaction update")?;
-                let now = cdif::File::from_string(&loss)
-                    .chain_err(|| "failed to parse new losses during transaction update")?;
 
                 self.apply_collection_debit(obj.collection, cdif::File::diff(&then, &now))?;
             }
@@ -712,15 +784,15 @@ mod test {
     use super::*;
     use tempdir::TempDir;
     use uuid::Uuid;
+    use std::collections::HashSet;
 
     fn connect() -> (TempDir, Database) {
         use std::env;
 
-        let pg = env::var("VCB_DATABASE_URL")
-            .expect("VCB_DATABASE_URL must be set in the environment.");
+        let pg =
+            env::var("VCB_DATABASE_URL").expect("VCB_DATABASE_URL must be set in the environment.");
 
-        let rd = env::var("VCB_REDIS_URL")
-            .expect("VCB_REDIS_URL must be set in the environment.");
+        let rd = env::var("VCB_REDIS_URL").expect("VCB_REDIS_URL must be set in the environment.");
 
         let fs = TempDir::new("vcb-test").expect("Failed to create temp directory");
 
@@ -731,7 +803,8 @@ mod test {
                 "lookup.json",
                 r#"
 {
-  "XLN Opt": "xln-opt-fake-id"
+  "XLN Opt": "xln-opt-fake-id",
+  "GRN Radical Idea": "grn-rad-fake-id"
 }
 "#,
             )
@@ -1074,6 +1147,14 @@ mod test {
         assert!(collection.is_some());
     }
 
+    fn vec_to_set(src: Vec<String>) -> HashSet<String> {
+        let mut dst = HashSet::new();
+        for x in src {
+            dst.insert(x);
+        }
+        dst
+    }
+
     #[test]
     pub fn can_create_a_transaction() {
         let (_tmp, db) = connect();
@@ -1094,7 +1175,7 @@ mod test {
             NewTransaction {
                 summary: "opting for ixalan",
                 disposition: "buy",
-                notes: "",
+                notes: "this oughta be good",
                 collection: jhunt.id,
                 dated: &NaiveDate::from_ymd(2020, 01, 14),
                 gain: "1x XLN Opt\n",
@@ -1105,9 +1186,52 @@ mod test {
         let txn = txn.unwrap();
 
         assert_eq!(txn.collection, jhunt.id);
+        assert_eq!(txn.summary, "opting for ixalan");
+        assert_eq!(txn.notes, "this oughta be good");
+        assert_eq!(txn.disposition, "buy");
         assert_eq!(txn.dated, NaiveDate::from_ymd(2020, 01, 14));
         assert_eq!(txn.gain, "1x XLN Opt\n");
         assert_eq!(txn.loss, "");
+        assert_eq!(txn.total_card_gain(), 1);
+        assert_eq!(txn.unique_card_gain(), 1);
+        assert_eq!(txn.total_card_loss(), 0);
+        assert_eq!(txn.unique_card_loss(), 0);
+
+        assert_eq!(txn.set_loss().len(), 0);
+        assert_eq!(txn.set_gain().len(), 1);
+        let sets = vec_to_set(txn.set_gain());
+        assert!(sets.contains("XLN"));
+
+        let updated = db
+            .update_transaction(
+                &txn,
+                UpdateTransaction {
+                    summary: None,
+                    notes: None,
+                    dated: None,
+                    disposition: None,
+                    gain: Some("1x XLN Opt\n3x GRN Radical Idea\n".to_string()),
+                    loss: None,
+                },
+            )
+            .unwrap();
+        assert_eq!(updated.collection, jhunt.id);
+        assert_eq!(updated.dated, NaiveDate::from_ymd(2020, 01, 14));
+        assert_eq!(updated.summary, "opting for ixalan");
+        assert_eq!(updated.notes, "this oughta be good");
+        assert_eq!(updated.disposition, "buy");
+        assert_eq!(updated.gain, "1x XLN Opt\n3x GRN Radical Idea\n");
+        assert_eq!(updated.loss, "");
+        assert_eq!(updated.total_card_gain(), 4);
+        assert_eq!(updated.unique_card_gain(), 2);
+        assert_eq!(updated.total_card_loss(), 0);
+        assert_eq!(updated.unique_card_loss(), 0);
+
+        assert_eq!(updated.set_loss().len(), 0);
+        assert_eq!(updated.set_gain().len(), 2);
+        let sets = vec_to_set(updated.set_gain());
+        assert!(sets.contains("XLN"));
+        assert!(sets.contains("GRN"));
     }
 
     #[test]

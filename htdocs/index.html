@@ -600,6 +600,7 @@ Vue.component('deck-form', {
       </div>
     </div>
   </div>
+  <div v-if="are_we_ok()" class="clarify ok">👍 everything checks out with these cards!</div>
   <clarifier v-for="problem in problems" :key="problem.id"
              @clarified="clarified($event)"
              :problem="problem"></clarifier>
@@ -1004,7 +1005,10 @@ Vue.component('timeline', {
         <h2>{{ heading(d[0]) }} <span :class="gainloss(d[1].total_delta)">{{ d[1].total_delta }} cards <span :class="gainloss(d[1].unique_delta)">({{ d[1].unique_delta }} unique)</span></span></h2>
         <ul>
           <li v-for="txn in d[1].transactions" :class="txn.type">
-            <em :class="gainloss(txn.total_delta)">{{ txn.total_delta }}</em> cards in {{ txn.dated }} {{ txn.type }} <strong>{{ txn.summary }}</strong> <span class="actions"><a href="#" @click="start_edit_transaction(txn.id)">edit</a></span>
+            <em :class="gainloss(txn.total_delta)">{{ txn.total_delta }}</em> cards in {{ txn.dated }} {{ txn.type }} <strong>{{ txn.summary }}</strong>
+            <span v-for="set in txn.set_gain" :class="'ss ss-' + set.toLowerCase()"></span>
+            <span v-for="set in txn.set_loss" :class="'ss ss-' + set.toLowerCase()"></span>
+            <span class="actions"><a href="#" @click="start_edit_transaction(txn.id)">edit</a></span>
             <transaction-form
               v-if="mode == 'edit' && target == txn.id"
               mode="edit"
@@ -1040,6 +1044,7 @@ Vue.component('transaction-form', {
   data() {
     return {
       ok: true,
+      blurred: false,
       problems: {
         gain: [],
         loss: []
@@ -1053,12 +1058,30 @@ Vue.component('transaction-form', {
     },
 
     validate(bucket) {
+      this.blurred = true;
       if (bucket == 'gain') {
         this.problems.gain = cardboard.CDIF.validate(this.transaction.gain, $vault ,1);
       } else {
         this.problems.loss = cardboard.CDIF.validate(this.transaction.loss, $vault ,1);
       }
       this.ok = this.can_we_submit();
+    },
+
+    are_we_ok() {
+      if (!this.blurred) {
+        return false;
+      }
+      if (this.transaction.disposition == 'buy') {
+        return this.transaction.gain.replace(/\s+/, '') != "" && this.can_we_submit();
+      }
+      if (this.transaction.disposition == 'sell') {
+        return this.transaction.loss.replace(/\s+/, '') != "" && this.can_we_submit();
+      }
+      if (this.transaction.disposition == 'trade') {
+        return this.transaction.gain.replace(/\s+/, '') != ""
+            && this.transaction.loss.replace(/\s+/, '') != ""
+            && this.can_we_submit();
+      }
     },
 
     can_we_submit() {
@@ -1202,6 +1225,7 @@ Vue.component('transaction-form', {
       </div>
     </div>
   </div>
+  <div v-if="are_we_ok()" class="clarify ok">👍 everything checks out with these cards!</div>
   <clarifier v-if="transaction.disposition == 'buy'"
              v-for="problem in problems.gain" :key="problem.id"
              @clarified="clarified('gain', $event)"
@@ -1216,6 +1240,7 @@ Vue.component('transaction-form', {
                   @blur="validate('loss')"
                   data-validate="present;max=100k"></textarea>
       </div>
+      <div v-if="are_we_ok()" class="clarify ok">👍 everything checks out with these cards!</div>
       <clarifier v-for="problem in problems.loss" :key="problem.id"
                  @clarified="clarified('loss', $event)"
                  :problem="problem"></clarifier>
@@ -1243,6 +1268,7 @@ Vue.component('transaction-form', {
                     @blur="validate('gain')"
                     data-validate="present;max=100k"></textarea>
         </div>
+        <div v-if="are_we_ok()" class="clarify ok">👍 everything checks out with these cards!</div>
         <clarifier v-for="problem in problems.loss" :key="problem.id"
                    @clarified="clarified('loss', $event)"
                    :problem="problem"></clarifier>
@@ -1359,7 +1385,7 @@ Vue.component('clarifier', {
         <li v-for="r in replacements"><ins>{{ r[0] }}x {{ r[1] }}</ins></li> 
       </ul>
       <div>
-        <button @click="apply()" rel="apply">✔</button>
+        <button @click="apply()" rel="apply">✔ Apply</button>
       </div>
     </div>
     <div class="grid results">

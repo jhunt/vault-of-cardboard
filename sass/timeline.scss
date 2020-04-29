@@ -76,15 +76,19 @@
       line-height: 1.3em;
     }
   }
-  .aggr li em:first-child {
-    width: 5.5ex;
-    display: inline-block;
-    text-align: right;
-  }
-  .aggr li em:nth-child(2) {
-    width: 2.2ex;
-    display: inline-block;
-    text-align: right;
+  .aggr li {
+    &.buy, &.sell {
+      > em:first-child {
+        width: 5.5ex;
+        display: inline-block;
+        text-align: right;
+      }
+      > em:nth-child(2) {
+        width: 2.2ex;
+        display: inline-block;
+        text-align: right;
+      }
+    }
   }
   .buttons {
     display: flex;
