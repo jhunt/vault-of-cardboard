@@ -14,6 +14,7 @@ class Query {
   toString() {
     switch (this.type) {
     case 'SET':
+    case 'CARD':
     case 'TYPE':
     case 'NAME':
     case 'ORACLE':
@@ -69,6 +70,10 @@ class Query {
       return this.a.call(card, this.parent().unique);
     case 'SET':
       return this.a == card.set.code;
+    case 'CARD':
+      return this.a == card.id
+          || this.a == card.oid
+          || this.a == card.number;
     case 'TYPE':
       card.type.replace(/—/g, '-'); /* FIXME: normalize lookalike chars */
       return !!this.a.exec(card.type);
@@ -685,6 +690,7 @@ function parse(tok) {
       switch (t[1]) {
       case 'UNIQUE':  fn = uniquify; break;
       case 'SET':     fn = setcode;  break;
+      case 'CARD':
       case 'LAYOUT':
       case 'BORDER':
       case 'PT':      fn = literal;  break;

@@ -225,6 +225,8 @@ describe('Cardboard Query Parser', () => {
   it('should handle companion frame queries',    test('frame:companion',     '(FRAME C)'));
 
   it('should handle border queries', test('border:black', '(BORDER black)'));
+
+  it('should handle card id/number queries', test('card:3b', '(CARD 3b)'));
 });
 
 describe('Individual Card Querying', () => {
@@ -428,5 +430,19 @@ describe('Individual Card Querying', () => {
     expect(cardboard.Query.parse('border:black').match(c)).to.be.true;
     expect(cardboard.Query.parse('border:BLACK').match(c)).to.be.true;
     expect(cardboard.Query.parse('!border:white').match(c)).to.be.true;
+  });
+
+  it('should allow matching based on card ID, oracle ID, and collector number', () => {
+    let c = {
+      id:     '8e2bce5d-283f-45aa-9201-a1bfc65add25',
+      oid:    'a9a55a50-731c-4cdc-a09f-23aac0c5c0f5',
+      number: '42'
+    };
+    expect(cardboard.Query.parse('card:8e2bce5d-283f-45aa-9201-a1bfc65add25').match(c)).to.be.true;
+    expect(cardboard.Query.parse('card:a9a55a50-731c-4cdc-a09f-23aac0c5c0f5').match(c)).to.be.true;
+    expect(cardboard.Query.parse('card:42').match(c)).to.be.true;
+
+    expect(cardboard.Query.parse('card:1').match(c)).to.be.false;
+    expect(cardboard.Query.parse('card:1b538f5b-aacf-40c9-aede-1d5cdbee55ce').match(c)).to.be.false;
   });
 });
