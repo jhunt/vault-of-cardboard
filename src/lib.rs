@@ -81,7 +81,7 @@ mod test {
         assert_eq!("Destroy target creature. It can't be regenerated. Its controller creates a 1/1 white Spirit creature token with flying.", card.text);
         assert_eq!(3.0, card.cmc);
         assert_eq!("{2}{W}", card.mana_cost);
-        assert_eq!("EdlB$v", card.legal.pack());
+        assert_eq!("EdlP$v", card.legal.pack());
         assert_eq!(vec!["W"], card.color_identity);
         assert_eq!(vec!["W"], card.colors);
     }

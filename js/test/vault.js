@@ -15,7 +15,7 @@ describe('Vault.ingest()', () => {
     expect(card).to.deep.equal({
       id        : '51657034-2c30-40a2-a215-a00277f01642',
       oid       : 'c5661500-c48f-4f6d-bbe7-c8bd7118d862',
-      flags     : '1EdlB$v',
+      flags     : '1EdlP$v',
       artist    : 'Pete Venters',
       layout    : 'normal',
       number    : '196',

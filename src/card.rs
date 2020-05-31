@@ -235,7 +235,7 @@ impl Legality {
             encode self.legacy     => 'l',
             encode self.modern     => 'm',
             encode self.old_school => 'o',
-            encode self.pauper     => 'B',
+            encode self.pauper     => 'P',
             encode self.penny      => '$',
             encode self.pioneer    => 'p',
             encode self.standard   => 's',
