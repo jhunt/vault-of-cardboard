@@ -237,8 +237,8 @@ describe('Vault.previous_set()', () => {
     expect($v.previous_set('WTH')).to.be.equal('VIS'));
   it('should find that MIR immediately preceded VIS', () =>
     expect($v.previous_set('VIS')).to.be.equal('MIR'));
-  it('should find that nothing came before MIR', () =>
-    expect($v.previous_set('MIR')).to.be.undefined);
+  it('should find that nothing came before HML', () =>
+    expect($v.previous_set('HML')).to.be.undefined);
 });
 
 describe('Vault.clarify()', () => {
@@ -257,36 +257,36 @@ describe('Vault.clarify()', () => {
     expect(card).to.include({name: 'Bone Mask'});
   });
 
-  it('should be able to clarify what you meant by "Island"', () => {
-    let clarifications = $v.clarify(undefined, "Island");
+  it('should be able to clarify what you meant by "Bone Mask"', () => {
+    let clarifications = $v.clarify(undefined, "Bone Mask");
     let best = clarifications[0];
     expect(best).to.include({
       set:  'MIR',
-      name: 'Island',
+      name: 'Bone Mask',
       type: 'global'
     });
   });
 
-  it('should be able to clarify what you meant by "[VIS] Island"', () => {
-    let clarifications = $v.clarify('VIS', "Island");
+  it('should be able to clarify what you meant by "[VIS] Talruum Minotaur"', () => {
+    let clarifications = $v.clarify('VIS', "Talruum Minotaur");
     expect(clarifications).to.be.an('array');
 
     let best = clarifications[0];
     expect(best).to.include({
       set:  'MIR',
-      name: 'Island',
+      name: 'Talruum Minotaur',
       type: 'global'
     });
   });
 
-  it('should be able to clarify what you meant by "[MIR] Islan"', () => {
-    let clarifications = $v.clarify('MIR', "Islan");
+  it('should be able to clarify what you meant by "[MIR] Talrun Minoatur"', () => {
+    let clarifications = $v.clarify('MIR', "Talrun Minoatur");
     expect(clarifications).to.be.an('array');
 
     let best = clarifications[0];
     expect(best).to.include({
       set:  'MIR',
-      name: 'Island',
+      name: 'Talruum Minotaur',
       type: 'in-set'
     });
   });
