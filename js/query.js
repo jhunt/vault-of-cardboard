@@ -35,6 +35,7 @@ class Query {
     case 'FRAME':
       return '('+this.type+' '+this.a.toString()+')';
 
+    case 'DATE':
     case 'UNIQUE':
     case 'FULLART':
     case 'OVERSIZED':
@@ -87,6 +88,8 @@ class Query {
       return !!this.a.exec(card.artist);
     case 'RARITY':
       return card.flags.indexOf(this.a) >= 0;
+    case 'DATE':
+      return this.a.call(card, card.set.release);
     case 'COLOR':
       return this.a.call(card, card.color);
     case 'P':
@@ -447,7 +450,7 @@ function parse(tok) {
 
         default:
           var m, op = '', point = '';
-          m = v.match(new RegExp('^([<>]=?)([a-zA-Z0-9]+)$'))
+          m = v.match(new RegExp('^([<>]=?)([a-zA-Z0-9]+)$'));
           if (m) {
             op = m[1];
             point = m[2];
@@ -618,6 +621,56 @@ function parse(tok) {
         fn.string = v;
         return fn;
       },
+      daterange = function (v) {
+        if (typeof(v) === 'undefined') {
+          return false;
+        }
+        var a, b, ts, op, fn = function () { return false; }
+        var m = v.match('^([<>]?=?)?([0-9-]+)$');
+        if (m) {
+          op = m[1] || '=';
+          ts = m[2];
+
+        } else {
+          m = v.match('^([0-9-]+)\\+$');
+          if (m) {
+            op = '>=';
+            ts = m[1];
+
+          } else {
+            return false;
+          }
+        }
+
+        if (ts.length == 4) {
+          a = ts + "0101";
+          b = ts + "1231";
+
+        } else if (ts.length == 6) {
+          a = ts + "01";
+          b = ts + "31"; // close enough
+
+        } else if (ts.length == 8) {
+          a = ts;
+          b = ts;
+
+        } else {
+          return false;
+        }
+
+        a = parseInt(a);
+        b = parseInt(b);
+
+        switch (op) {
+        case '>':  fn = function (v) { return v >  b; }; break;
+        case '<':  fn = function (v) { return v <  a; }; break;
+        case '>=': fn = function (v) { return v >= a; }; break;
+        case '<=': fn = function (v) { return v <= b; }; break;
+        case '=':  fn = function (v) { return v >= a && v <= b; }; break;
+        }
+        fn.string = v;
+        return fn;
+      },
       uniquify  = function (v) {
         v = v.toLowerCase();
 
@@ -713,6 +766,7 @@ function parse(tok) {
       case 'CPT':
       case 'PTR':
       case 'CMC':     fn = range;    break;
+      case 'DATE':    fn = daterange; break;
       }
       data.push(new Query(t[1], fn(v[1])));
       break;

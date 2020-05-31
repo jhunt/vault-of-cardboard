@@ -39,7 +39,8 @@ describe('Vault.ingest()', () => {
       set: {
         name: 'Mirage',
         code: 'MIR',
-        total: 350
+        total: 350,
+        release: '19961008'
       }
     });
   });

@@ -227,6 +227,16 @@ describe('Cardboard Query Parser', () => {
   it('should handle border queries', test('border:black', '(BORDER black)'));
 
   it('should handle card id/number queries', test('card:3b', '(CARD 3b)'));
+
+  it('should handle print date (whole year) queries',  test('date:1996',     '(DATE 1996)'));
+  it('should handle print date (whole month) queries', test('date:199610',   '(DATE 199610)'));
+  it('should handle print date (exact date) queries',  test('date:19961008', '(DATE 19961008)'));
+
+  it('should handle print date "X+" range queries',  test('date:2008+',      '(DATE 2008+)'));
+  it('should handle print date ">X" range queries',  test('date:>2007',      '(DATE >2007)'));
+  it('should handle print date ">=X" range queries', test('date:>=199511',   '(DATE >=199511)'));
+  it('should handle print date "<X" range queries',  test('date:<201504',    '(DATE <201504)'));
+  it('should handle print date "<=X" range queries', test('date:<=19991231', '(DATE <=19991231)'));
 });
 
 describe('Individual Card Querying', () => {
@@ -444,5 +454,22 @@ describe('Individual Card Querying', () => {
 
     expect(cardboard.Query.parse('card:1').match(c)).to.be.false;
     expect(cardboard.Query.parse('card:1b538f5b-aacf-40c9-aede-1d5cdbee55ce').match(c)).to.be.false;
+  });
+
+  it('should allow matching based on print dates', () => {
+    let c = { set: { release: '19961008' } };
+    expect(cardboard.Query.parse('date:1996+').match(c)).to.be.true;
+    expect(cardboard.Query.parse('date:1996').match(c)).to.be.true;
+    expect(cardboard.Query.parse('date:199610+').match(c)).to.be.true;
+    expect(cardboard.Query.parse('date:199610').match(c)).to.be.true;
+    expect(cardboard.Query.parse('date:19961008+').match(c)).to.be.true;
+    expect(cardboard.Query.parse('date:19961008').match(c)).to.be.true;
+    expect(cardboard.Query.parse('date:<1997').match(c)).to.be.true;
+    expect(cardboard.Query.parse('date:<19961225').match(c)).to.be.true;
+    expect(cardboard.Query.parse('date:<19960125').match(c)).to.be.false;
+    expect(cardboard.Query.parse('date:>=1996').match(c)).to.be.true;
+    expect(cardboard.Query.parse('date:>1996').match(c)).to.be.false;
+    expect(cardboard.Query.parse('date:<=1996').match(c)).to.be.true;
+    expect(cardboard.Query.parse('date:<1996').match(c)).to.be.false;
   });
 });

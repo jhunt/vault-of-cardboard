@@ -94,9 +94,10 @@ class Vault {
             : "",
 
           set: {
-            name  : data.sets[code].name,
-            code  : data.sets[code].code,
-            total : data.sets[code].cards.length,
+            name    : data.sets[code].name,
+            code    : data.sets[code].code,
+            total   : data.sets[code].cards.length,
+            release : data.sets[code].released_at.replace(/-/g, '')
           },
         };
         this.cards[code].push(card);
