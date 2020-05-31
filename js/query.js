@@ -27,6 +27,7 @@ class Query {
     case 'ARTIST':
     case 'RARITY':
     case 'LAYOUT':
+    case 'BORDER':
     case 'LEGAL':
     case 'PT':
     case 'IN':
@@ -127,6 +128,8 @@ class Query {
         return this.a.call(card, card.decks);
     case 'LAYOUT':
         return this.a == card.layout;
+    case 'BORDER':
+        return this.a == card.border;
     case 'LEGAL':
         return card.flags.indexOf(this.a) >= 0;
     case 'FRAME':
@@ -365,7 +368,7 @@ function parse(tok) {
   var strict_re = function (v) { return new RegExp('\\b'+v+'\\b'); },
       loose_re  = function (v) { return new RegExp('\\b'+v+'\\b', 'i'); },
       setcode   = function (v) { return v.toUpperCase(); },
-      literal   = function (v) { return v ; },
+      literal   = function (v) { return v.toLowerCase(); },
       rarity    = function (v) {
         switch (v.toLowerCase()) {
         case 'c': case 'common':     return '1';
@@ -683,6 +686,7 @@ function parse(tok) {
       case 'UNIQUE':  fn = uniquify; break;
       case 'SET':     fn = setcode;  break;
       case 'LAYOUT':
+      case 'BORDER':
       case 'PT':      fn = literal;  break;
       case 'RARITY':  fn = rarity;   break;
       case 'LEGAL':   fn = legalese; break;

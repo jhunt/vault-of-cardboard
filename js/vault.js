@@ -60,7 +60,7 @@ class Vault {
           layout    : card.layout,
           frame     : card.frame,
           number    : card.number,
-          // border unused
+          border    : card.border == 'borderless' ? 'none' : card.border,
 
           // for draft
           rarity    : flagged(card.flags, {

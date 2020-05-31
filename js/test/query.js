@@ -223,6 +223,8 @@ describe('Cardboard Query Parser', () => {
   it('should handle extendedart frame alias',    test('frame:extendedart',   '(FRAME +)'));
   it('should handle stretched frame alias',      test('frame:stretched',     '(FRAME +)'));
   it('should handle companion frame queries',    test('frame:companion',     '(FRAME C)'));
+
+  it('should handle border queries', test('border:black', '(BORDER black)'));
 });
 
 describe('Individual Card Querying', () => {
@@ -419,5 +421,12 @@ describe('Individual Card Querying', () => {
 
     c.frame = '7';
     expect(cardboard.Query.parse('frame:shifted').match(c)).to.be.false;
+  });
+
+  it('should allow matching based on border color / presence', () => {
+    let c = { border: 'black' };
+    expect(cardboard.Query.parse('border:black').match(c)).to.be.true;
+    expect(cardboard.Query.parse('border:BLACK').match(c)).to.be.true;
+    expect(cardboard.Query.parse('!border:white').match(c)).to.be.true;
   });
 });
