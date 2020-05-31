@@ -30,6 +30,7 @@ class Query {
     case 'LEGAL':
     case 'PT':
     case 'IN':
+    case 'FRAME':
       return '('+this.type+' '+this.a.toString()+')';
 
     case 'UNIQUE':
@@ -128,6 +129,12 @@ class Query {
         return this.a == card.layout;
     case 'LEGAL':
         return card.flags.indexOf(this.a) >= 0;
+    case 'FRAME':
+        if (this.a.length > 0 && this.a[0] == '!') { //interior negation
+          return !this.a.substr(1).split('').find(l => card.frame.indexOf(l) >= 0);
+        } else {
+          return !!this.a.split('').find(l => card.frame.indexOf(l) >= 0);
+        }
     case 'FULLART':
         return this.a.call(card, card.flags.indexOf('^') >= 0);
     case 'OVERSIZED':
@@ -389,6 +396,115 @@ function parse(tok) {
         default:           return ' ';
         }
       },
+      framer = function (v) {
+        switch (v.toLowerCase()) {
+        case '1993':
+        case '93':            return '3';
+        case '1997':
+        case '97':            return '7';
+        case 'modern':
+        case '2003':
+        case '03':            return 'M';
+        case '2015':
+        case '15':
+        case 'current':       return 'N';
+        case 'future':
+        case 'timeshifted':
+        case 'time-shifted':  return 'F';
+
+        case 'legendary':     return 'L';
+        case 'miracle':       return 'm';
+        case 'nyx':
+        case 'nyxtouched':
+        case 'nyx-touched':   return 'n';
+        case 'draft':         return 'D';
+        case 'devoid':        return 'd';
+        case 'tombstone':
+        case 'flashback':     return 't';
+        case 'colorshifted':
+        case 'color-shifted': return '$';
+        case 'showcase':      return 's';
+        case 'compass':       return 'c';
+        case 'extended':
+        case 'extendedart':
+        case 'extended-art':
+        case 'stretched':     return '+';
+        case 'companion':     return 'C';
+
+        case 'shifted':       return '$F';
+        case 'special':       return  'Dts+';
+        case 'normal':        return '!Dts+';
+        case 'old':           return '37';
+        case 'new':           return 'MNF';
+
+        default:
+          var m, op = '', point = '';
+          m = v.match(new RegExp('^([<>]=?)([a-zA-Z0-9]+)$'))
+          if (m) {
+            op = m[1];
+            point = m[2];
+          }
+          m = v.match(new RegExp('^([a-zA-Z0-9]+)\\+$'));
+          if (m) {
+            op = '>=';
+            point = m[1];
+          }
+
+          switch (point) {
+          case '1993':
+          case '93':
+            switch (op) {
+            case '>':  return '7MNF';
+            case '>=': return '37MNF';
+            case '<':  return '';
+            case '<=': return '3';
+            }
+            break;
+
+          case '1997':
+          case '97':
+            switch (op) {
+            case '>':  return 'MNF';
+            case '>=': return '7MNF';
+            case '<':  return '3';
+            case '<=': return '37';
+            }
+            break;
+
+          case '2003':
+          case '03':
+          case 'modern':
+            switch (op) {
+            case '>':  return 'NF';
+            case '>=': return 'MNF';
+            case '<':  return '37';
+            case '<=': return '37M';
+            }
+            break;
+
+          case '2015':
+          case '15':
+          case 'current':
+            switch (op) {
+            case '>':  return 'F';
+            case '>=': return 'NF';
+            case '<':  return '37M';
+            case '<=': return '37MN';
+            }
+            break;
+
+          case 'future':
+            switch (op) {
+            case '>':  return '';
+            case '>=': return 'F';
+            case '<':  return '37MN';
+            case '<=': return '37MNF';
+            }
+            break;
+          }
+        }
+        return '';
+      },
       boolish   = function (v) {
         var fn = function (v) { return !v; }
         fn.string = 'no';
@@ -570,6 +686,7 @@ function parse(tok) {
       case 'PT':      fn = literal;  break;
       case 'RARITY':  fn = rarity;   break;
       case 'LEGAL':   fn = legalese; break;
+      case 'FRAME':   fn = framer;   break;
       case 'FULLART':
       case 'OVERSIZED':
       case 'VARIANT':

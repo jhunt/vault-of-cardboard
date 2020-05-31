@@ -361,6 +361,7 @@ impl std::convert::From<&scryfall::Card> for OracleCard {
                     Some(s) => s.to_string(),
                     None => "".to_string(),
                 },
+
                 legal: Legality {
                     brawl: maybe_legal(&card.legalities.brawl),
                     commander: maybe_legal(&card.legalities.commander),
@@ -444,6 +445,74 @@ impl Serialize for Flags {
     }
 }
 
+pub struct Frame {
+    pub legendary: bool,
+    pub miracle: bool,
+    pub nyx_touched: bool,
+    pub draft: bool,
+    pub devoid: bool,
+    pub tombstone: bool,
+    pub color_shifted: bool,
+    pub showcase: bool,
+    pub compass: bool,
+    pub extended_art: bool,
+    pub companion: bool,
+
+    pub frame: String,
+}
+
+impl Frame {
+    pub fn pack(&self) -> String {
+        let mut s = String::new();
+
+        macro_rules! pack {
+            (encode $ok: expr => $c: expr) => {{
+                if $ok {
+                    s.push($c);
+                }
+            }};
+
+            (encode $ok: expr => $c: expr, $(encode $ok1: expr => $c1: expr),+) => {{
+                pack!(encode $ok => $c);
+                pack!($(encode $ok1 => $c1),+);
+            }};
+        }
+        pack! {
+            encode self.legendary       => 'L',
+            encode self.miracle         => 'm',
+            encode self.nyx_touched     => 'n',
+            encode self.draft           => 'D',
+            encode self.devoid          => 'd',
+            encode self.tombstone       => 't',
+            encode self.color_shifted   => '$',
+            encode self.showcase        => 's',
+            encode self.compass         => 'c',
+            encode self.extended_art    => '+',
+            encode self.companion       => 'C'
+        };
+
+        match self.frame.as_str() {
+            "1993" => s.push('3'),
+            "1997" => s.push('7'),
+            "2003" => s.push('M'),
+            "2015" => s.push('N'),
+            "future" => s.push('F'),
+            _ => (),
+        };
+
+        s
+    }
+}
+
+impl Serialize for Frame {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.pack())
+    }
+}
+
 #[derive(Serialize)]
 pub struct PrintCard {
     pub id: String,
@@ -454,11 +523,11 @@ pub struct PrintCard {
     pub number: String,
     pub flavor: String,
 
-    pub frame: String,
     pub border: String,
     pub layout: String,
 
     pub flags: Flags,
+    pub frame: Frame,
 }
 
 fn maybe_true(t: &Option<bool>) -> bool {
@@ -475,15 +544,53 @@ fn maybe_legal(s: &Option<String>) -> bool {
     }
 }
 
+fn maybe_frame(s: &'static str, effects: &Option<Vec<String>>) -> bool {
+    match effects {
+        Some(effects) => {
+            for effect in effects {
+                if s == effect {
+                    return true;
+                }
+            }
+            false
+        }
+        _ => false,
+    }
+}
+
 impl std::convert::From<&scryfall::Card> for PrintCard {
     fn from(card: &scryfall::Card) -> Self {
+        let frame = Frame {
+            frame: card.frame.to_string(),
+            legendary: maybe_frame("legendary", &card.frame_effects),
+            miracle: maybe_frame("miracle", &card.frame_effects),
+            nyx_touched: maybe_frame("nyxtouched", &card.frame_effects),
+            draft: maybe_frame("draft", &card.frame_effects),
+            devoid: maybe_frame("devoid", &card.frame_effects),
+            tombstone: maybe_frame("tombstone", &card.frame_effects),
+            color_shifted: maybe_frame("colorshifted", &card.frame_effects),
+            showcase: maybe_frame("showcase", &card.frame_effects),
+            compass: maybe_frame("compasslanddfc", &card.frame_effects),
+            extended_art: maybe_frame("extendedart", &card.frame_effects),
+            companion: maybe_frame("companion", &card.frame_effects),
+        };
+
+        let flags = Flags {
+            full_art: maybe_true(&card.full_art),
+            oversized: maybe_true(&card.oversized),
+            reprint: maybe_true(&card.reprint),
+            reserved: maybe_true(&card.reserved),
+            variation: maybe_true(&card.variation),
+            story_spotlight: maybe_true(&card.story_spotlight),
+            rarity: card.rarity.to_string(),
+        };
         match card.layout.as_str() {
             "transform" => PrintCard {
                 id: card.id.to_string(),
                 oid: card.oracle_id.to_string(),
                 artist: card.artist.to_string(),
                 number: card.collector_number.to_string(),
-                frame: card.frame.to_string(),
+                frame: frame,
                 border: card.border_color.to_string(),
                 layout: card.layout.to_string(),
 
@@ -503,22 +610,14 @@ impl std::convert::From<&scryfall::Card> for PrintCard {
                     _ => "".to_string(),
                 },
 
-                flags: Flags {
-                    full_art: maybe_true(&card.full_art),
-                    oversized: maybe_true(&card.oversized),
-                    reprint: maybe_true(&card.reprint),
-                    reserved: maybe_true(&card.reserved),
-                    variation: maybe_true(&card.variation),
-                    story_spotlight: maybe_true(&card.story_spotlight),
-                    rarity: card.rarity.to_string(),
-                },
+                flags: flags,
             },
             _ => PrintCard {
                 id: card.id.to_string(),
                 oid: card.oracle_id.to_string(),
                 artist: card.artist.to_string(),
                 number: card.collector_number.to_string(),
-                frame: card.frame.to_string(),
+                frame: frame,
                 border: card.border_color.to_string(),
                 layout: card.layout.to_string(),
 
@@ -532,15 +631,7 @@ impl std::convert::From<&scryfall::Card> for PrintCard {
                     None => "".to_string(),
                 },
 
-                flags: Flags {
-                    full_art: maybe_true(&card.full_art),
-                    oversized: maybe_true(&card.oversized),
-                    reprint: maybe_true(&card.reprint),
-                    reserved: maybe_true(&card.reserved),
-                    variation: maybe_true(&card.variation),
-                    story_spotlight: maybe_true(&card.story_spotlight),
-                    rarity: card.rarity.to_string(),
-                },
+                flags: flags,
             },
         }
     }
@@ -551,6 +642,273 @@ mod test {
     use super::*;
     use crate::cdif;
     use serde_json::json;
+
+    #[test]
+    fn should_be_able_to_pack_flags() {
+        let new = || -> Flags {
+            Flags {
+                full_art: false,
+                oversized: false,
+                reprint: false,
+                reserved: false,
+                variation: false,
+                story_spotlight: false,
+                rarity: "".to_string(),
+            }
+        };
+        assert_eq!(new().pack(), "", "the empty Flags packs to an empty string");
+
+        let mut flags = new();
+        flags.rarity = "common".to_string();
+        assert_eq!(flags.pack(), "1", "commons should encode to '1'");
+
+        let mut flags = new();
+        flags.rarity = "uncommon".to_string();
+        assert_eq!(flags.pack(), "2", "uncommons should encode to '2'");
+
+        let mut flags = new();
+        flags.rarity = "rare".to_string();
+        assert_eq!(flags.pack(), "3", "rares should encode to '3'");
+
+        let mut flags = new();
+        flags.rarity = "mythic".to_string();
+        assert_eq!(flags.pack(), "4", "commons should encode to '4'");
+
+        let mut flags = new();
+        flags.full_art = true;
+        assert_eq!(flags.pack(), "^", "'full art' is packed to '^'");
+
+        let mut flags = new();
+        flags.reprint = true;
+        assert_eq!(flags.pack(), "+", "'reprint' is packed to '+'");
+
+        let mut flags = new();
+        flags.reserved = true;
+        assert_eq!(flags.pack(), "!", "'reserved' is packed to '!'");
+
+        let mut flags = new();
+        flags.variation = true;
+        assert_eq!(flags.pack(), "~", "'variation' is packed to '~'");
+
+        let mut flags = new();
+        flags.story_spotlight = true;
+        assert_eq!(flags.pack(), "@", "'story spotlight' is packed to '@'");
+
+        let mut flags = new();
+        flags.rarity = "rare".to_string();
+        flags.full_art = true;
+        flags.reprint = true;
+        flags.reserved = true;
+        flags.variation = true;
+        flags.story_spotlight = true;
+        assert_eq!(flags.pack(), "^+!~@3", "all flags can coexist");
+
+        let mut flags = new();
+        flags.rarity = "mythic".to_string();
+        flags.variation = true;
+        flags.story_spotlight = true;
+        assert_eq!(flags.pack(), "~@4", "subsets of flags can coexist");
+    }
+
+    #[test]
+    fn should_be_able_to_pack_legality() {
+        let new = |on: bool| -> Legality {
+            Legality {
+                brawl: on,
+                commander: on,
+                duel: on,
+                frontier: on,
+                future: on,
+                historic: on,
+                legacy: on,
+                modern: on,
+                old_school: on,
+                pauper: on,
+                penny: on,
+                pioneer: on,
+                standard: on,
+                vintage: on,
+            }
+        };
+
+        assert_eq!(
+            new(false).pack(),
+            "",
+            "the empty Legality packs to the empty string"
+        );
+
+        assert_eq!(
+            new(true).pack(),
+            "BEdjfhlmoP$psv",
+            "the full Legality packs appropriately"
+        );
+
+        let mut legal = new(false);
+        legal.brawl = true;
+        assert_eq!(legal.pack(), "B", "'brawl' is packed to 'B'");
+
+        let mut legal = new(false);
+        legal.commander = true;
+        assert_eq!(legal.pack(), "E", "'commander' is packed to 'E'");
+
+        let mut legal = new(false);
+        legal.duel = true;
+        assert_eq!(legal.pack(), "d", "'duel' is packed to 'd'");
+
+        let mut legal = new(false);
+        legal.frontier = true;
+        assert_eq!(legal.pack(), "j", "'frontier' is packed to 'j'");
+
+        let mut legal = new(false);
+        legal.future = true;
+        assert_eq!(legal.pack(), "f", "'future' is packed to 'f'");
+
+        let mut legal = new(false);
+        legal.historic = true;
+        assert_eq!(legal.pack(), "h", "'historic' is packed to 'h'");
+
+        let mut legal = new(false);
+        legal.legacy = true;
+        assert_eq!(legal.pack(), "l", "'legacy' is packed to 'l'");
+
+        let mut legal = new(false);
+        legal.modern = true;
+        assert_eq!(legal.pack(), "m", "'modern' is packed to 'm'");
+
+        let mut legal = new(false);
+        legal.old_school = true;
+        assert_eq!(legal.pack(), "o", "'old_school' is packed to 'o'");
+
+        let mut legal = new(false);
+        legal.pauper = true;
+        assert_eq!(legal.pack(), "P", "'pauper' is packed to 'P'");
+
+        let mut legal = new(false);
+        legal.penny = true;
+        assert_eq!(legal.pack(), "$", "'penny' is packed to '$'");
+
+        let mut legal = new(false);
+        legal.pioneer = true;
+        assert_eq!(legal.pack(), "p", "'pioneer' is packed to 'p'");
+
+        let mut legal = new(false);
+        legal.standard = true;
+        assert_eq!(legal.pack(), "s", "'standard' is packed to 's'");
+
+        let mut legal = new(false);
+        legal.vintage = true;
+        assert_eq!(legal.pack(), "v", "'vintage' is packed to 'v'");
+
+        let mut legal = new(true);
+        legal.vintage = false;
+        legal.modern = false;
+        assert_eq!(
+            legal.pack(),
+            "BEdjfhloP$ps",
+            "subsets of legalities can be packed"
+        );
+    }
+
+    #[test]
+    fn should_be_able_to_pack_frames() {
+        let new = |on: bool| -> Frame {
+            Frame {
+                frame: "".to_string(),
+
+                legendary: on,
+                miracle: on,
+                nyx_touched: on,
+                draft: on,
+                devoid: on,
+                tombstone: on,
+                color_shifted: on,
+                showcase: on,
+                compass: on,
+                extended_art: on,
+                companion: on,
+            }
+        };
+
+        assert_eq!(
+            new(false).pack(),
+            "",
+            "the empty Frame packs to the empty string"
+        );
+        assert_eq!(
+            new(true).pack(),
+            "LmnDdt$sc+C",
+            "the full Frame packs appropriately"
+        );
+
+        let mut frame = new(false);
+        frame.frame = "1993".to_string();
+        assert_eq!(frame.pack(), "3", "'1993' should pack to '3'");
+
+        let mut frame = new(false);
+        frame.frame = "1997".to_string();
+        assert_eq!(frame.pack(), "7", "'1997' should pack to '7'");
+
+        let mut frame = new(false);
+        frame.frame = "2003".to_string();
+        assert_eq!(frame.pack(), "M", "'modern' should pack to 'M'");
+
+        frame.frame = "2015".to_string();
+        assert_eq!(frame.pack(), "N", "'2015' should back to 'N'");
+
+        let mut frame = new(false);
+        frame.frame = "future".to_string();
+        assert_eq!(frame.pack(), "F", "'future' should pack to 'F'");
+
+        let mut frame = new(false);
+        frame.legendary = true;
+        assert_eq!(frame.pack(), "L", "'legendary' should pack to 'L'");
+
+        let mut frame = new(false);
+        frame.miracle = true;
+        assert_eq!(frame.pack(), "m", "'miracle' should pack to 'm'");
+
+        let mut frame = new(false);
+        frame.nyx_touched = true;
+        assert_eq!(frame.pack(), "n", "'nyx-touched' should pack to 'n'");
+
+        let mut frame = new(false);
+        frame.draft = true;
+        assert_eq!(frame.pack(), "D", "'draft' should pack to 'D'");
+
+        let mut frame = new(false);
+        frame.devoid = true;
+        assert_eq!(frame.pack(), "d", "'devoid' should pack to 'd'");
+
+        let mut frame = new(false);
+        frame.tombstone = true;
+        assert_eq!(frame.pack(), "t", "'tombstone' should pack to 't'");
+
+        let mut frame = new(false);
+        frame.color_shifted = true;
+        assert_eq!(frame.pack(), "$", "'color-shifted' should pack to '$'");
+
+        let mut frame = new(false);
+        frame.showcase = true;
+        assert_eq!(frame.pack(), "s", "'showcase' should pack to 's'");
+
+        let mut frame = new(false);
+        frame.compass = true;
+        assert_eq!(frame.pack(), "c", "'compass' should pack to 'c'");
+
+        let mut frame = new(false);
+        frame.extended_art = true;
+        assert_eq!(frame.pack(), "+", "'extended-art' should pack to '+'");
+
+        let mut frame = new(false);
+        frame.companion = true;
+        assert_eq!(frame.pack(), "C", "'companion' should pack to 'C'");
+
+        let mut frame = new(false);
+        frame.frame = "2003".to_string();
+        frame.legendary = true;
+        frame.companion = true;
+        assert_eq!(frame.pack(), "LCM", "subsets of frames can coexist");
+    }
 
     #[test]
     fn should_be_able_to_convert_cdif_to_a_pile() {

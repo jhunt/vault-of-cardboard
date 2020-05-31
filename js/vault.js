@@ -58,7 +58,7 @@ class Vault {
           flags     : card.flags + data.cards[card.oid].legal, // this is new
           artist    : card.artist,
           layout    : card.layout,
-          // frame unused
+          frame     : card.frame,
           number    : card.number,
           // border unused
 

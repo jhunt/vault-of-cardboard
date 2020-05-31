@@ -123,6 +123,106 @@ describe('Cardboard Query Parser', () => {
   it('should handle pioneer legality queries',    test('legal:pioneer',    '(LEGAL p)'));
   it('should handle standard legality queries',   test('legal:standard',   '(LEGAL s)'));
   it('should handle vintage legality queries',    test('legal:vintage',    '(LEGAL v)'));
+
+  it('should handle 1993 frame queries', test('frame:1993', '(FRAME 3)'));
+  it('should handle "93" frame alias',   test('frame:93',   '(FRAME 3)'));
+
+  it('should handle 1997 frame queries', test('frame:1997', '(FRAME 7)'));
+  it('should handle "97" frame alias',   test('frame:97',   '(FRAME 7)'));
+
+  it('should handle 2003 frame queries',   test('frame:2003',   '(FRAME M)'));
+  it('should handle "03" frame alias',     test('frame:03',     '(FRAME M)'));
+  it('should handle "modern" frame alias', test('frame:modern', '(FRAME M)'));
+
+  it('should handle 2015 frame queries',    test('frame:2015',    '(FRAME N)'));
+  it('should handle "15" frame alias',      test('frame:15',      '(FRAME N)'));
+  it('should handle "current" frame alias', test('frame:current', '(FRAME N)'));
+
+  it('should handle future frame queries',       test('frame:future',       '(FRAME F)'));
+  it('should handle "timeshifted" frame alias',  test('frame:timeshifted',  '(FRAME F)'));
+  it('should handle "time-shifted" frame alias', test('frame:time-shifted', '(FRAME F)'));
+
+  it('should handle "93+" frame range',    test('frame:93+',    '(FRAME 37MNF)'));
+  it('should handle "1993+" frame range',  test('frame:1993+',  '(FRAME 37MNF)'));
+  it('should handle ">93" frame range',    test('frame:>93',    '(FRAME 7MNF)'));
+  it('should handle ">1993" frame range',  test('frame:>1993',  '(FRAME 7MNF)'));
+  it('should handle ">=93" frame range',   test('frame:>=93',   '(FRAME 37MNF)'));
+  it('should handle ">=1993" frame range', test('frame:>=1993', '(FRAME 37MNF)'));
+  it('should handle "<93" frame range',    test('frame:<93',    '(FRAME )'));
+  it('should handle "<1993" frame range',  test('frame:<1993',  '(FRAME )'));
+  it('should handle "<=93" frame range',   test('frame:<=93',   '(FRAME 3)'));
+  it('should handle "<=1993" frame range', test('frame:<=1993', '(FRAME 3)'));
+
+  it('should handle "97+" frame range',    test('frame:97+',    '(FRAME 7MNF)'));
+  it('should handle "1997+" frame range',  test('frame:1997+',  '(FRAME 7MNF)'));
+  it('should handle ">97" frame range',    test('frame:>97',    '(FRAME MNF)'));
+  it('should handle ">1997" frame range',  test('frame:>1997',  '(FRAME MNF)'));
+  it('should handle ">=97" frame range',   test('frame:>=97',   '(FRAME 7MNF)'));
+  it('should handle ">=1997" frame range', test('frame:>=1997', '(FRAME 7MNF)'));
+  it('should handle "<97" frame range',    test('frame:<97',    '(FRAME 3)'));
+  it('should handle "<1997" frame range',  test('frame:<1997',  '(FRAME 3)'));
+  it('should handle "<=97" frame range',   test('frame:<=97',   '(FRAME 37)'));
+  it('should handle "<=1997" frame range', test('frame:<=1997', '(FRAME 37)'));
+
+  it('should handle "03+" frame range',      test('frame:03+',      '(FRAME MNF)'));
+  it('should handle "2003+" frame range',    test('frame:2003+',    '(FRAME MNF)'));
+  it('should handle "modern+" frame range',  test('frame:modern+',  '(FRAME MNF)'));
+  it('should handle ">03" frame range',      test('frame:>03',      '(FRAME NF)'));
+  it('should handle ">2003" frame range',    test('frame:>2003',    '(FRAME NF)'));
+  it('should handle ">modern" frame range',  test('frame:>modern',  '(FRAME NF)'));
+  it('should handle ">=03" frame range',     test('frame:>=03',     '(FRAME MNF)'));
+  it('should handle ">=2003" frame range',   test('frame:>=2003',   '(FRAME MNF)'));
+  it('should handle ">=modern" frame range', test('frame:>=modern', '(FRAME MNF)'));
+  it('should handle "<03" frame range',      test('frame:<03',      '(FRAME 37)'));
+  it('should handle "<2003" frame range',    test('frame:<2003',    '(FRAME 37)'));
+  it('should handle "<modern" frame range',  test('frame:<modern',  '(FRAME 37)'));
+  it('should handle "<=03" frame range',     test('frame:<=03',     '(FRAME 37M)'));
+  it('should handle "<=2003" frame range',   test('frame:<=2003',   '(FRAME 37M)'));
+  it('should handle "<=modern" frame range', test('frame:<=modern', '(FRAME 37M)'));
+
+  it('should handle "15+" frame range',       test('frame:15+',       '(FRAME NF)'));
+  it('should handle "2015+" frame range',     test('frame:2015+',     '(FRAME NF)'));
+  it('should handle "current+" frame range',  test('frame:current+',  '(FRAME NF)'));
+  it('should handle ">15" frame range',       test('frame:>15',       '(FRAME F)'));
+  it('should handle ">2015" frame range',     test('frame:>2015',     '(FRAME F)'));
+  it('should handle ">current" frame range',  test('frame:>current',  '(FRAME F)'));
+  it('should handle ">=15" frame range',      test('frame:>=15',      '(FRAME NF)'));
+  it('should handle ">=2015" frame range',    test('frame:>=2015',    '(FRAME NF)'));
+  it('should handle ">=current" frame range', test('frame:>=current', '(FRAME NF)'));
+  it('should handle "<15" frame range',       test('frame:<15',       '(FRAME 37M)'));
+  it('should handle "<2015" frame range',     test('frame:<2015',     '(FRAME 37M)'));
+  it('should handle "<current" frame range',  test('frame:<current',  '(FRAME 37M)'));
+  it('should handle "<=15" frame range',      test('frame:<=15',      '(FRAME 37MN)'));
+  it('should handle "<=2015" frame range',    test('frame:<=2015',    '(FRAME 37MN)'));
+  it('should handle "<=current" frame range', test('frame:<=current', '(FRAME 37MN)'));
+
+  it('should handle "future+" frame range',  test('frame:future+',  '(FRAME F)'));
+  it('should handle ">future" frame range',  test('frame:>future',  '(FRAME )'));
+  it('should handle ">=future" frame range', test('frame:>=future', '(FRAME F)'));
+  it('should handle "<future" frame range',  test('frame:<future',  '(FRAME 37MN)'));
+  it('should handle "<=future" frame range', test('frame:<=future', '(FRAME 37MNF)'));
+
+  it('should handle "old" frame range alias',  test('frame:old',  '(FRAME 37)'));
+  it('should handle "new" frame range alias',  test('frame:new',  '(FRAME MNF)'));
+
+  it('should handle legendary frame queries',    test('frame:legendary',     '(FRAME L)'));
+  it('should handle miracle frame queries',      test('frame:miracle',       '(FRAME m)'));
+  it('should handle nyx frame queries',          test('frame:nyx',           '(FRAME n)'));
+  it('should handle nyx-touched frame alias',    test('frame:nyx-touched',   '(FRAME n)'));
+  it('should handle nyxtouched frame alias',     test('frame:nyxtouched',    '(FRAME n)'));
+  it('should handle draft frame queries',        test('frame:draft',         '(FRAME D)'));
+  it('should handle devoid frame queries',       test('frame:devoid',        '(FRAME d)'));
+  it('should handle tombstone frame queries',    test('frame:tombstone',     '(FRAME t)'));
+  it('should handle flashback frame alias',      test('frame:flashback',     '(FRAME t)'));
+  it('should handle colorshifted frame queries', test('frame:colorshifted',  '(FRAME $)'));
+  it('should handle color-shifted frame alias',  test('frame:color-shifted', '(FRAME $)'));
+  it('should handle showcase frame queries',     test('frame:showcase',      '(FRAME s)'));
+  it('should handle compass frame queries',      test('frame:compass',       '(FRAME c)'));
+  it('should handle extended frame queries',     test('frame:extended',      '(FRAME +)'));
+  it('should handle extended-art frame alias',   test('frame:extended-art',  '(FRAME +)'));
+  it('should handle extendedart frame alias',    test('frame:extendedart',   '(FRAME +)'));
+  it('should handle stretched frame alias',      test('frame:stretched',     '(FRAME +)'));
+  it('should handle companion frame queries',    test('frame:companion',     '(FRAME C)'));
 });
 
 describe('Individual Card Querying', () => {
@@ -197,14 +297,14 @@ describe('Individual Card Querying', () => {
   should_match('based on a complicated query',
     'Talruum and Minotaur and (@U or @R) and !=mythic');
 
-  it('should allow match cards based on equip costs', () => {
+  it('should allowi matching cards based on equip costs', () => {
     let c = { oracle: 'Equip {2}.' };
     expect(cardboard.Query.parse('equip:2').match(c)).to.be.true;
     expect(cardboard.Query.parse('equip:1+').match(c)).to.be.true;
     expect(cardboard.Query.parse('equip:<=3').match(c)).to.be.true;
   });
 
-  it('should allow match cards based on {T} activation', () => {
+  it('should allowi matching cards based on {T} activation', () => {
     let c = { oracle: '{T}: Do the thing' };
     expect(cardboard.Query.parse('activate:do the thing').match(c)).to.be.true;
     expect(cardboard.Query.parse('activate:"Do the thing"').match(c)).to.be.true;
@@ -217,7 +317,7 @@ describe('Individual Card Querying', () => {
     expect(cardboard.Query.parse('tap: and +do the thing').match(c)).to.be.true;
   });
 
-  it('should allow match cards based on {Q} activation', () => {
+  it('should allowi matching cards based on {Q} activation', () => {
     let c = { oracle: '{Q}: Do the thing' };
     expect(cardboard.Query.parse('activate:do the thing').match(c)).to.be.true;
     expect(cardboard.Query.parse('activate:"Do the thing"').match(c)).to.be.true;
@@ -230,7 +330,7 @@ describe('Individual Card Querying', () => {
     expect(cardboard.Query.parse('untap: and +do the thing').match(c)).to.be.true;
   });
 
-  it('should allow match cards based on "sacrifice" activation', () => {
+  it('should allowi matching cards based on "sacrifice" activation', () => {
     let c = { oracle: 'Sacrifice a creature: Do the thing' };
     expect(cardboard.Query.parse('activate:do the thing').match(c)).to.be.true;
     expect(cardboard.Query.parse('activate:"Do the thing"').match(c)).to.be.true;
@@ -243,7 +343,7 @@ describe('Individual Card Querying', () => {
     expect(cardboard.Query.parse('sacrifice: and +do the thing').match(c)).to.be.true;
   });
 
-  it('should allow match cards based on "discard" activation', () => {
+  it('should allowi matching cards based on "discard" activation', () => {
     let c = { oracle: 'Discard a card: Do the thing' };
     expect(cardboard.Query.parse('activate:do the thing').match(c)).to.be.true;
     expect(cardboard.Query.parse('activate:"Do the thing"').match(c)).to.be.true;
@@ -256,7 +356,7 @@ describe('Individual Card Querying', () => {
     expect(cardboard.Query.parse('discard: and +do the thing').match(c)).to.be.true;
   });
 
-  it('should allow match cards based on "exile" activation', () => {
+  it('should allowi matching cards based on "exile" activation', () => {
     let c = { oracle: 'Exile a token: Do the thing' };
     expect(cardboard.Query.parse('activate:do the thing').match(c)).to.be.true;
     expect(cardboard.Query.parse('activate:"Do the thing"').match(c)).to.be.true;
@@ -269,7 +369,7 @@ describe('Individual Card Querying', () => {
     expect(cardboard.Query.parse('exile: and +do the thing').match(c)).to.be.true;
   });
 
-  it('should allow match cards based on "pay" activation', () => {
+  it('should allowi matching cards based on "pay" activation', () => {
     let c = { oracle: 'Exile a token: Do the thing' };
     expect(cardboard.Query.parse('activate:do the thing').match(c)).to.be.true;
     expect(cardboard.Query.parse('activate:"Do the thing"').match(c)).to.be.true;
@@ -280,5 +380,44 @@ describe('Individual Card Querying', () => {
 //    expect(cardboard.Query.parse('pay:"Do the thing"').match(c)).to.be.true;
 //    expect(cardboard.Query.parse('pay:').match(c)).to.be.true;
 //    expect(cardboard.Query.parse('pay: and +do the thing').match(c)).to.be.true;
+  });
+
+  it('should allow matching cards based on card frame', () => {
+    let c = { frame: '3' };
+    expect(cardboard.Query.parse('frame:93').match(c)).to.be.true;
+    expect(cardboard.Query.parse('frame:97').match(c)).to.be.false;
+
+    c.frame = 'LCM';
+    expect(cardboard.Query.parse('frame:companion').match(c)).to.be.true;
+    expect(cardboard.Query.parse('frame:compass').match(c)).to.be.false;
+  });
+
+  it('should allow matching cards based on time-sensitive card frames', () => {
+    let c = { frame: 'M' };
+    expect(cardboard.Query.parse('frame:modern').match(c)).to.be.true;
+    expect(cardboard.Query.parse('frame:modern+').match(c)).to.be.true;
+    expect(cardboard.Query.parse('frame:97+').match(c)).to.be.true;
+    expect(cardboard.Query.parse('frame:93+').match(c)).to.be.true;
+    expect(cardboard.Query.parse('frame:<current').match(c)).to.be.true;
+    expect(cardboard.Query.parse('frame:<1997').match(c)).to.be.false;
+    expect(cardboard.Query.parse('frame:old').match(c)).to.be.false;
+    expect(cardboard.Query.parse('frame:new').match(c)).to.be.true;
+  });
+
+  it('should allow matching cards based on "specialness" of frame', () => {
+    let c = { frame: 'sN' };
+    expect(cardboard.Query.parse('frame:special').match(c)).to.be.true;
+    expect(cardboard.Query.parse('frame:normal').match(c)).to.be.false;
+  });
+
+  it('should allow matching of all *-shifted card frames', () => {
+    let c = { frame: '$M' };
+    expect(cardboard.Query.parse('frame:shifted').match(c)).to.be.true;
+
+    c.frame = 'F';
+    expect(cardboard.Query.parse('frame:shifted').match(c)).to.be.true;
+
+    c.frame = '7';
+    expect(cardboard.Query.parse('frame:shifted').match(c)).to.be.false;
   });
 });

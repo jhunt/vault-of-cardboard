@@ -18,6 +18,7 @@ describe('Vault.ingest()', () => {
       flags     : '1EdlP$v',
       artist    : 'Pete Venters',
       layout    : 'normal',
+      frame     : '7',
       number    : '196',
       rarity    : 'common', // from flags
       image     : 'MIR/MIR-51657034-2c30-40a2-a215-a00277f01642.jpg',

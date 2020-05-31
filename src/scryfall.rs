@@ -164,6 +164,7 @@ pub struct Card {
     pub set_uri: String,
 
     pub frame: String,
+    pub frame_effects: Option<Vec<String>>,
     pub border_color: String,
     pub layout: String,
 
