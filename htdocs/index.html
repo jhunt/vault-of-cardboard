@@ -1204,7 +1204,7 @@ Vue.component('transaction-form', {
 
     clarified(type, $event) {
       let lines = this.transaction[type].split("\n");
-      lines.splice($event.problem.line - 1, 1, $event.replacements.map(r => r[0]+'x '+r[1]));
+      lines.splice($event.problem.line - 1, 1, ...$event.replacements.map(r => r[0]+'x '+r[1]));
       this.transaction[type] = lines.join("\n");
 
       if (type == 'gain') {
