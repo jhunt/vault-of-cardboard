@@ -6,6 +6,7 @@ use crate::prelude::*;
 pub struct Line {
     pub quantity: i32,
     pub set: String,
+    pub number: String,
     pub oracle: String,
     pub gvars: Vec<String>,
     pub lvars: Vec<(String, String)>,
@@ -15,7 +16,11 @@ impl Line {
     pub fn id(&self) -> String {
         let mut s = String::new();
 
-        s.push_str(&format!("{} {}", self.set, self.oracle));
+        s.push_str(&format!("{}", self.set));
+        if self.number.len() > 0 {
+            s.push_str(&format!(" *{}", self.number));
+        }
+        s.push_str(&format!(" {}", self.oracle));
         if self.gvars.len() + self.lvars.len() > 0 {
             s.push_str(" |");
             for gvar in &self.gvars {
@@ -36,6 +41,7 @@ impl Line {
         let mut data = Self {
             quantity: 0,
             set: String::new(),
+            number: String::new(),
             oracle: String::new(),
             lvars: Vec::new(),
             gvars: Vec::new(),
@@ -77,6 +83,7 @@ impl Line {
                     data.oracle.push(c);
                     state = 6;
                 } // 5 -> 6 [label="LETTER"]
+                (5, '*') => state = 15, // 5 -> 15 [label="'*'"]
 
                 (6, '#') => state = 14,        // 6 -> 14 [label="'#'"]
                 (6, '|') => state = 7,         // 6 -> 7 [label="'|'"]
@@ -131,6 +138,21 @@ impl Line {
                 (13, '#') => state = 14, // 13 -> 14 [label="'#'"]
 
                 (14, _) => (), // 14 -> 14 [label="*"]
+
+                (15, '0'..='9') => {
+                    data.number.push(c);
+                    state = 16;
+                } // 15 -> 16 [label="DIGIT"]
+
+                (16, 'a'..='z') | (16, 'A'..='Z') | (16, '0'..='9') => data.number.push(c),
+                // 16 -> 16 [label="LETTER"]
+                (16, ' ') => state = 17, // 16 -> 17 [label="WS"]
+
+                (17, ' ') => (), // 17 -> 17 [label="WS"]
+                (17, 'a'..='z') | (17, 'A'..='Z') | (17, '0'..='9') => {
+                    data.oracle.push(c);
+                    state = 6;
+                } // 17 -> 6 [label="LETTER or DIGIT"]
 
                 (_, _) => return None, // syntax error
             }
@@ -204,6 +226,7 @@ impl File {
                     Line {
                         quantity: quantity,
                         set: line.set.to_string(),
+                        number: line.number.to_string(),
                         oracle: line.oracle.to_string(),
                         gvars: line.gvars.clone(),
                         lvars: line.lvars.clone(),
@@ -219,6 +242,7 @@ impl File {
                     Line {
                         quantity: line.quantity,
                         set: line.set.to_string(),
+                        number: line.number.to_string(),
                         oracle: line.oracle.to_string(),
                         gvars: line.gvars.clone(),
                         lvars: line.lvars.clone(),
@@ -263,6 +287,7 @@ mod test {
         let mut line = Line {
             quantity: 2,
             set: "MIR".to_string(),
+            number: "".to_string(),
             oracle: "Swamp".to_string(),
             gvars: vec![],
             lvars: vec![],
@@ -274,27 +299,34 @@ mod test {
         assert_eq!("MIR Femeref Scouts", line.id());
         assert_eq!("2x MIR Femeref Scouts", line.as_cdif_string());
 
+        line.number = "42a".to_string();
+        assert_eq!("MIR *42a Femeref Scouts", line.id());
+        assert_eq!("2x MIR *42a Femeref Scouts", line.as_cdif_string());
+
         line.gvars.push("NM".to_string());
         line.gvars.push("promo".to_string());
-        assert_eq!("MIR Femeref Scouts | NM promo", line.id());
-        assert_eq!("2x MIR Femeref Scouts | NM promo", line.as_cdif_string());
+        assert_eq!("MIR *42a Femeref Scouts | NM promo", line.id());
+        assert_eq!(
+            "2x MIR *42a Femeref Scouts | NM promo",
+            line.as_cdif_string()
+        );
 
         line.quantity = 1;
         line.lvars
             .push(("signed".to_string(), "SDCC 2019".to_string()));
         assert_eq!(
-            "MIR Femeref Scouts | NM promo (signed: SDCC 2019)",
+            "MIR *42a Femeref Scouts | NM promo (signed: SDCC 2019)",
             line.id()
         );
         assert_eq!(
-            "1x MIR Femeref Scouts | NM promo (signed: SDCC 2019)",
+            "1x MIR *42a Femeref Scouts | NM promo (signed: SDCC 2019)",
             line.as_cdif_string()
         );
 
         line.gvars = vec![];
-        assert_eq!("MIR Femeref Scouts | (signed: SDCC 2019)", line.id());
+        assert_eq!("MIR *42a Femeref Scouts | (signed: SDCC 2019)", line.id());
         assert_eq!(
-            "1x MIR Femeref Scouts | (signed: SDCC 2019)",
+            "1x MIR *42a Femeref Scouts | (signed: SDCC 2019)",
             line.as_cdif_string()
         );
 
@@ -302,17 +334,39 @@ mod test {
         line.lvars
             .push(("misprint".to_string(), "double-flip".to_string()));
         assert_eq!(
-            "MIR Femeref Scouts | NM (signed: SDCC 2019) (misprint: double-flip)",
+            "MIR *42a Femeref Scouts | NM (signed: SDCC 2019) (misprint: double-flip)",
             line.id()
         );
         assert_eq!(
-            "1x MIR Femeref Scouts | NM (signed: SDCC 2019) (misprint: double-flip)",
+            "1x MIR *42a Femeref Scouts | NM (signed: SDCC 2019) (misprint: double-flip)",
             line.as_cdif_string()
         );
     }
 
     #[cfg(test)]
     macro_rules! assert_parses {
+        ($line:expr, $qty:expr, $set:expr, $num:expr, $ora:expr) => {
+            let c = Line::parse($line);
+            assert!(c.is_some(), format!("The line '{}' should parse", $line));
+
+            let c = c.unwrap();
+            assert_eq!(
+                $qty, c.quantity,
+                "Quantity of '{}' should be {}",
+                $line, $qty
+            );
+            assert_eq!($set, c.set, "Set of '{}' should be '{}'", $line, $set);
+            assert_eq!(
+                $num, c.number,
+                "Collector number of '{}' should be '{}'",
+                $line, $num
+            );
+            assert_eq!(
+                $ora, c.oracle,
+                "Oracle card of '{}' should be '{}'",
+                $line, $ora
+            );
+        };
         ($line:expr, $qty:expr, $set:expr, $ora:expr) => {
             let c = Line::parse($line);
             assert!(c.is_some(), format!("The line '{}' should parse", $line));
@@ -442,6 +496,14 @@ mod test {
         assert_parses!("1x DOM Opt", 1, "DOM", "Opt");
         assert_parses!("1 WAR Return to Nature", 1, "WAR", "Return to Nature");
         assert_parses!("1 M19 Ajani's Last Stand", 1, "M19", "Ajani's Last Stand");
+        assert_parses!(
+            "1 HML *3b Aysen Bureaucrats",
+            1,
+            "HML",
+            "3b",
+            "Aysen Bureaucrats"
+        );
+        assert_parses!("1 IKO *40 Anticipate", 1, "IKO", "40", "Anticipate");
     }
 
     #[test]
@@ -749,5 +811,49 @@ mod test {
         assert_eq!(line.quantity, -2);
         assert_eq!(line.set, "DOM");
         assert_eq!(line.oracle, "Opt");
+    }
+
+    #[test]
+    fn should_handle_cdif_files_that_change_collector_numbers() {
+        let a_dot_cdif = r#"
+# a.cdif
+4x DOM *42a Opt
+1x GRN *32 Chemister's Insight
+3x GRN Radical Idea
+"#;
+
+        let b_dot_cdif = r#"
+# b.cdif
+4x DOM *42b Opt
+
+3x GRN Radical Idea
+1x GRN *32 Chemister's Insight
+"#;
+
+        let a = File::from_string(&a_dot_cdif).unwrap();
+        let b = File::from_string(&b_dot_cdif).unwrap();
+
+        let diff = File::diff(&a, &b);
+        assert_eq!(diff.lines.len(), 2);
+
+        let mut added = 0;
+        let mut removed = 0;
+        for line in diff.lines.values() {
+            if line.quantity < 0 {
+                removed = removed + 1;
+                assert_eq!(line.set, "DOM");
+                assert_eq!(line.number, "42a");
+                assert_eq!(line.oracle, "Opt");
+                assert_eq!(line.quantity, -4);
+            } else {
+                added = added + 1;
+                assert_eq!(line.set, "DOM");
+                assert_eq!(line.number, "42b");
+                assert_eq!(line.oracle, "Opt");
+                assert_eq!(line.quantity, 4);
+            }
+        }
+        assert_eq!(added, 1, "should have seen exactly one addition");
+        assert_eq!(removed, 1, "should have seen exactly one substraction");
     }
 }

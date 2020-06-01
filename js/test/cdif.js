@@ -24,6 +24,7 @@ describe('CDIF Parser', () => {
       src      : '1 MIR Island',
       quantity : 1,
       set      : 'MIR',
+      number   : '',
       oracle   : 'Island'
     }]);
   });
@@ -34,6 +35,7 @@ describe('CDIF Parser', () => {
       src      : '1x MIR Island',
       quantity : 1,
       set      : 'MIR',
+      number   : '',
       oracle   : 'Island'
     }]);
   });
@@ -44,13 +46,37 @@ describe('CDIF Parser', () => {
       src      : '40x MIR Island',
       quantity : 40,
       set      : 'MIR',
+      number   : '',
       oracle   : 'Island'
     }, {
       line     : 2,
       src      : '40x MIR Mountain',
       quantity : 40,
       set      : 'MIR',
+      number   : '',
       oracle   : 'Mountain'
+    }]);
+  });
+
+  it('can handle simple numeric collector numbers', () => {
+    expect(cardboard.CDIF.parse('1 BFZ *260 Swamp')).to.be.an('array').that.deep.equals([{
+      line     : 1,
+      src      : '1 BFZ *260 Swamp',
+      quantity : 1,
+      set      : 'BFZ',
+      number   : '260',
+      oracle   : 'Swamp'
+    }]);
+  });
+
+  it('can handle alphanumeric collector numbers', () => {
+    expect(cardboard.CDIF.parse('1 HML *3b Aysen Bureaucrats')).to.be.an('array').that.deep.equals([{
+      line     : 1,
+      src      : '1 HML *3b Aysen Bureaucrats',
+      quantity : 1,
+      set      : 'HML',
+      number   : '3b',
+      oracle   : 'Aysen Bureaucrats'
     }]);
   });
 
@@ -60,6 +86,7 @@ describe('CDIF Parser', () => {
       src      : '4x   MIR Island',
       quantity : 4,
       set      : 'MIR',
+      number   : '',
       oracle   : 'Island'
     }]);
   });
@@ -70,6 +97,7 @@ describe('CDIF Parser', () => {
       src      : '4x MIR    Island',
       quantity : 4,
       set      : 'MIR',
+      number   : '',
       oracle   : 'Island'
     }]);
   });
@@ -80,6 +108,7 @@ describe('CDIF Parser', () => {
       src      : '4x mir island',
       quantity : 4,
       set      : 'mir',
+      number   : '',
       oracle   : 'island'
     }]);
   });
@@ -90,6 +119,7 @@ describe('CDIF Parser', () => {
       src      : '18x 1AZ Island',
       quantity : 18,
       set      : '1AZ',
+      number   : '',
       oracle   : 'Island'
     }]);
   });
@@ -100,6 +130,7 @@ describe('CDIF Parser', () => {
       src      : '18x M19 Island',
       quantity : 18,
       set      : 'M19',
+      number   : '',
       oracle   : 'Island'
     }]);
   });
@@ -110,6 +141,7 @@ describe('CDIF Parser', () => {
       src      : '8x UNS 2 4 The Show',
       quantity : 8,
       set      : 'UNS',
+      number   : '',
       oracle   : '2 4 The Show'
     }]);
   });
@@ -120,6 +152,7 @@ describe('CDIF Parser', () => {
       src      : '1 MIR Island # the best one',
       quantity : 1,
       set      : 'MIR',
+      number   : '',
       oracle   : 'Island'
     }]);
   });
@@ -131,6 +164,7 @@ describe('CDIF Parser', () => {
         src      : '1 MIR Island | foil SDCC 2legit2quit',
         quantity : 1,
         set      : 'MIR',
+        number   : '',
         oracle   : 'Island'
       }]);
   });
@@ -143,6 +177,7 @@ describe('CDIF Parser', () => {
         src      : "1 MIR Island | foil SDCC 2legit2quit     # super special",
         quantity : 1,
         set      : 'MIR',
+        number   : '',
         oracle   : 'Island'
       }]);
   });
@@ -154,6 +189,7 @@ describe('CDIF Parser', () => {
         src      : "1 MIR Island | (signed: SDCC '01) (MISPRINT: double)  (00: 007)",
         quantity : 1,
         set      : 'MIR',
+        number   : '',
         oracle   : 'Island'
       }]);
   });
@@ -165,6 +201,7 @@ describe('CDIF Parser', () => {
         src      : "1 MIR Island | (signed: SDCC '01) (MISPRINT: double)  (00: 007)# wtf",
         quantity : 1,
         set      : 'MIR',
+        number   : '',
         oracle   : 'Island'
       }]);
   });

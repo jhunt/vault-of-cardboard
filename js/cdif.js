@@ -9,6 +9,7 @@ let CDIF = {
       let state = 0;
       let quantity = 0;
       let set = '';
+      let number = '';
       let name = '';
 
       for (i = 0; i < line.length; i++) {
@@ -44,6 +45,8 @@ let CDIF = {
           state = 5;
         } else if (state == 5 && c == ' ') {
           // ignore whitespace
+        } else if (state == 5 && c == '*') {
+          state = 15;
         } else if (state == 5 && ((c >= 'a' && c <= 'z')
                                || (c >= 'A' && c <= 'Z')
                                || (c >= '0' && c <= '9'))) {
@@ -101,8 +104,24 @@ let CDIF = {
           state = 7;
         } else if (state == 13 && c == '#') {
           state = 14;
-        } else if (state = 14) {
+        } else if (state == 14) {
           // ignore comments
+        } else if (state == 15 && (c >= '0' && c <= '9')) {
+          number += c;
+          state = 16;
+        } else if (state == 16 && ((c >= 'a' && c <= 'z')
+                                || (c >= 'A' && c <= 'Z')
+                                || (c >= '0' && c <= '9'))) {
+          number += c;
+        } else if (state == 16 && c == ' ') {
+          state = 17;
+        } else if (state == 17 && c == ' ') {
+          // ignore whitespace
+        } else if (state == 17 && ((c >= 'a' && c <= 'z')
+                                || (c >= 'A' && c <= 'Z')
+                                || (c >= '0' && c <= '9'))) {
+          name += c;
+          state = 6;
         } else {
           throw new Error('syntax error on line '+lineno.toString()+' '+JSON.stringify({s:state,c:c}));
         }
@@ -122,6 +141,7 @@ let CDIF = {
             src:      line,
             quantity: quantity,
             set:      set,
+            number:   number,
             oracle:   name
           });
         }
@@ -139,7 +159,7 @@ let CDIF = {
     let lines = CDIF.parse(cdif);
     for (let i = 0; i < lines.length; i++) {
       let l = lines[i];
-      let card = vault.clarify(l.set, l.oracle);
+      let card = vault.clarify(l.set, l.number, l.oracle);
       if (card instanceof Array) {
         probs.push({
           id     : l.line + ': ' + l.src,

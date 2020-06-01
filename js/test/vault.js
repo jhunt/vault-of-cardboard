@@ -24,6 +24,7 @@ describe('Vault.ingest()', () => {
       rarity    : 'common', // from flags
       image     : 'MIR/MIR-51657034-2c30-40a2-a215-a00277f01642.jpg',
       name      : 'Talruum Minotaur',
+      others    : 0,
       type      : 'Creature — Minotaur Berserker',
       oracle    : 'Haste',
       cmc       : 4,
@@ -246,76 +247,95 @@ describe('Vault.previous_set()', () => {
 
 describe('Vault.clarify()', () => {
   let $v = new cardboard.Vault().ingest($CARDS);
-  let included = (results, set, card) => {
-    for (var i = 0; i < results.length; i++) {
-      if (results[i].set == set && results[i].name == card) {
-        return true;
-      }
-    }
-    return false;
-  };
+  let $results = (ll, n) => ll.map(l => { return { set: l.set, name: l.name, type: l.type } }).splice(0,n);
 
   it('should be able to clarify an exact match', () => {
-    let card = $v.clarify('MIR', 'Bone Mask');
+    let card = $v.clarify('MIR', '', 'Bone Mask');
     expect(card).to.include({name: 'Bone Mask'});
   });
 
   it('should be able to clarify what you meant by "Bone Mask"', () => {
-    let clarifications = $v.clarify(undefined, "Bone Mask");
-    let best = clarifications[0];
-    expect(best).to.include({
+    let r = $v.clarify(undefined, '', "Bone Mask");
+    expect(r).to.be.an('array');
+    expect($results(r, 2)).to.deep.include({
       set:  'MIR',
       name: 'Bone Mask',
       type: 'global'
     });
   });
 
-  it('should be able to clarify what you meant by "[VIS] Talruum Minotaur"', () => {
-    let clarifications = $v.clarify('VIS', "Talruum Minotaur");
-    expect(clarifications).to.be.an('array');
+  it('should be able to clarify what you meant by "BOne Mask"', () => {
+    let r = $v.clarify(undefined, '', "BOne Mask");
+    expect(r).to.be.an('array');
+    expect($results(r, 2)).to.deep.equal([{
+      set:  'MIR',
+      name: 'Bone Mask',
+      type: 'global'
+    }, {
+      set:  'VIS',
+      name: 'Dragon Mask',
+      type: 'global'
+    }]);
+  });
 
-    let best = clarifications[0];
-    expect(best).to.include({
+  it('should be able to clarify what you meant by "[VIS] Talruum Minotaur"', () => {
+    let r = $v.clarify('VIS', '', "Talruum Minotaur");
+    expect(r).to.be.an('array');
+    expect($results(r, 3)).to.deep.equal([{
       set:  'MIR',
       name: 'Talruum Minotaur',
       type: 'global'
-    });
+    },{
+      set:  'M11',
+      name: 'Canyon Minotaur',
+      type: 'global'
+    },{
+      set:  'VIS',
+      name: 'Talruum Piper',
+      type: 'in-set'
+    }]);
   });
 
   it('should be able to clarify what you meant by "[MIR] Talrun Minoatur"', () => {
-    let clarifications = $v.clarify('MIR', "Talrun Minoatur");
-    expect(clarifications).to.be.an('array');
-
-    let best = clarifications[0];
-    expect(best).to.include({
+    let r = $v.clarify('MIR', '', "Talrun Minoatur");
+    expect(r).to.be.an('array');
+    expect($results(r, 3)).to.deep.equal([{
       set:  'MIR',
       name: 'Talruum Minotaur',
       type: 'in-set'
-    });
+    }, {
+      set: 'M11',
+      name: 'Canyon Minotaur',
+      type: 'global'
+    }]);
   });
 
   it('should be able to clarify what you meant by "Talrun Minoatur"', () => {
-    let clarifications = $v.clarify('', "Talrun Minoatur");
-    expect(clarifications).to.be.an('array');
-
-    let best = clarifications[0];
-    expect(best).to.include({
+    let r = $v.clarify('', '', "Talrun Minoatur");
+    expect(r).to.be.an('array');
+    expect($results(r, 3)).to.deep.equal([{
       set:  'MIR',
       name: 'Talruum Minotaur',
       type: 'global'
-    });
+    }, {
+      set: 'M11',
+      name: 'Canyon Minotaur',
+      type: 'global'
+    }]);
   });
 
   it('should be able to clarify what you meant by "Burning-SHIELD Askari"', () => {
-    let clarifications = $v.clarify('', "Burning-SHIELD Askari");
-    expect(clarifications).to.be.an('array');
-
-    let best = clarifications[0];
-    expect(best).to.include({
+    let r = $v.clarify('', '', "Burning-SHIELD Askari");
+    expect(r).to.be.an('array');
+    expect($results(r, 3)).to.deep.equal([{
       set:  'MIR',
       name: 'Burning Shield Askari',
       type: 'global'
-    });
+    }, {
+      set:  'MIR',
+      name: 'Searing Spear Askari',
+      type: 'global'
+    }]);
   });
 });
 
@@ -451,14 +471,14 @@ describe('CDIF.validate()', () => {
 
   it('should ignore perfectly good lines in a partially bad CDIF', () => {
     let $v = new cardboard.Vault().ingest($CARDS);
-    let problems = cardboard.CDIF.validate("4x MIR Island\n1 mir shield\n", $v);
+    let problems = cardboard.CDIF.validate("4x MIR Bone Mask\n1 mir shield\n", $v);
     expect(problems).to.be.an('array');
     expect(problems.length).to.be.equal(1);
   });
 
   it('should find all problems in a partially bad CDIF', () => {
     let $v = new cardboard.Vault().ingest($CARDS);
-    let problems = cardboard.CDIF.validate("4x MIR Island\n1 mir shield\n1 mir askari\n", $v);
+    let problems = cardboard.CDIF.validate("4x MIR Bone Mask\n1 mir shield\n1 mir askari\n", $v);
     expect(problems).to.be.an('array');
     expect(problems.length).to.be.equal(2);
   });

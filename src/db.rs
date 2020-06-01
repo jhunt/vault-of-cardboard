@@ -803,8 +803,8 @@ mod test {
                 "lookup.json",
                 r#"
 {
-  "XLN Opt": "xln-opt-fake-id",
-  "GRN Radical Idea": "grn-rad-fake-id"
+  "XLN * Opt": "xln-opt-fake-id",
+  "GRN * Radical Idea": "grn-rad-fake-id"
 }
 "#,
             )

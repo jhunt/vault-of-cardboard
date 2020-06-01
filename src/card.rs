@@ -29,7 +29,7 @@ impl Pile {
         let mut cards = vec![];
 
         for (_, line) in file.lines {
-            match lookup.get(&format!("{} {}", &line.set, &line.oracle)) {
+            match lookup.get(&format!("{} *{} {}", &line.set, &line.number, &line.oracle)) {
                 Some(id) => cards.push(Card {
                     id: id.to_string(),
                     quantity: line.quantity,
@@ -155,7 +155,9 @@ impl Pool {
 
                 let oracle = &self.cards[&card.oracle_id];
                 self.lookup
-                    .insert(format!("{} {}", &code, oracle.name), card.id.to_string());
+                    .insert(format!("{} *{} {}", &code, card.collector_number.to_string(), oracle.name), card.id.to_string());
+                self.lookup
+                    .insert(format!("{} * {}", &code, oracle.name), card.id.to_string());
 
                 self.prices.insert(
                     card.id.to_string(),
@@ -914,7 +916,11 @@ mod test {
     fn should_be_able_to_convert_cdif_to_a_pile() {
         let map = Map::from_file("test/lookup.json").expect("reading lookup map");
         assert_eq!(
-            map.get("MIR Barbed-Back Wurm"),
+            map.get("MIR * Barbed-Back Wurm"),
+            Some(&"1b96810d-72d3-4dee-a29f-cdf85ea5ce6f".to_string())
+        );
+        assert_eq!(
+            map.get("MIR *105 Barbed-Back Wurm"),
             Some(&"1b96810d-72d3-4dee-a29f-cdf85ea5ce6f".to_string())
         );
 
@@ -933,7 +939,7 @@ mod test {
     fn should_be_able_to_invert_a_cdif_pile() {
         let map = Map::from_file("test/lookup.json").expect("reading lookup map");
         assert_eq!(
-            map.get("MIR Barbed-Back Wurm"),
+            map.get("MIR *105 Barbed-Back Wurm"),
             Some(&"1b96810d-72d3-4dee-a29f-cdf85ea5ce6f".to_string())
         );
 

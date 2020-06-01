@@ -18,6 +18,8 @@ digraph lang {
    { node [style=filled,fillcolor="#b5ead7"]             9 10}
    { node [style=filled,fillcolor="#c7ceea",label="12†"] 12 }
    { node [style=filled,fillcolor="#b7d0e3"]             14 }
+   { node [style=filled,fillcolor="#3886df",fontcolor="#ffffff"] 16 }
+   { node [style=filled,fillcolor="#eeeeee",fontcolor="#777777",color="#dddddd"] 15 17 }
    { node [shape=none] START 99 [label="END"] }
 
 
@@ -39,7 +41,20 @@ digraph lang {
 
         5  after(set)       The parser has seen at least one whitespace character, and now
                             knows the entirety of the set code.  It is now expecting to
-                            find either whitespace, or the start of an Oracle card name.
+                            find either whitespace, a collector number, or the start of an
+                            Oracle card name.
+
+       15  before(num)      The parser has seen the opening '*' character denoting an optional
+                            collector number clarifying clause.  It is now expecting to find
+                            a numeric (0-9) digit to start off a collector number.
+
+       16  in(num)          The parser has seen the first (numeric) digit of the collector
+                            number clarifier, and is now expecting either whitespace (the
+                            end of the collector number), or more (alphanumeric) digit.
+
+       17  after(num)       The parser has seen at least one whitespace character following
+                            a valid collector number.  It is now expecting either more
+                            whitespace, or the start of an Oracle card name.
 
         6  in(oracle)       The parser has seen a non-whitespace character, and has started
                             tracking the full text of the Oracle card name.  This will
@@ -131,4 +146,12 @@ digraph lang {
    13 -> 99 [label="EOL"]
    14 -> 14 [label="*"]
    14 -> 99 [label="EOL"]
+
+    5 -> 15 [label="'*'"]
+   15 -> 16 [label="DIGIT"]
+   16 -> 16 [label="LETTER"]
+   16 -> 16 [label="DIGIT"]
+   16 -> 17 [label="WS"]
+   17 -> 17 [label="WS"]
+   17 ->  6 [label="LETTER"]
 }

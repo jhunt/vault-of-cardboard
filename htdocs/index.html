@@ -1424,7 +1424,9 @@ Vue.component('clarifier', {
     replace(n, card) {
       let o = {}; o[card.id] = n;
       Object.assign(this.counts, o);
-      let spec = card.set.code + ' ' + card.name;
+      let spec = card.others
+               ? card.set.code + ' *' + card.number + ' ' + card.name
+               : card.set.code +                      ' ' + card.name;
       for (let i = 0; i < this.replacements.length; i++) {
         if (this.replacements[i][1] == spec) {
           if (n == 0) {

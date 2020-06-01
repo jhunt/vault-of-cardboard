@@ -50,6 +50,7 @@ class Vault {
       });
 
       this.cards[code] = [];
+      let named = {};
       for (var i = 0; i < data.sets[code].cards.length; i++) {
         var card = data.sets[code].cards[i];
         card = {
@@ -100,18 +101,33 @@ class Vault {
             release : data.sets[code].released_at.replace(/-/g, '')
           },
         };
+        // track set name collisions
+        if (!(card.name in named)) { named[card.name] = []; }
+        named[card.name].push(card.id);
+
+        // keep track of the card itself
         this.cards[code].push(card);
-        this.index[card.id] = card;
+
+        // inform the search engine
         fuse.push({
-          set:   code,
-          name:  card.name,
-          id:    card.id
+          needle: card.name.toLowerCase(),
+          set:    code,
+          number: card.number,
+          name:   card.name,
+          id:     card.id
         });
+      }
+      for (var i = 0; i < this.cards[code].length; i++) {
+        // count up set-wide collisions
+        this.cards[code][i].others = named[this.cards[code][i].name].length - 1;
+
+        // track the card in the index, for quick lookups
+        this.index[this.cards[code][i].id] = this.cards[code][i];
       }
     }
 
     this.fuse = new Fuse(fuse, {
-      keys: ['name'],
+      keys: ['needle'],
       includeScore: true,
       threshold: 0.4
     });
@@ -251,25 +267,32 @@ class Vault {
     return pile;
   }
 
-  clarify(set, name) {
+  clarify(set, number, name) {
+    let res = [];
     if (set in this.cards) {
       for (let i = 0; i < this.cards[set].length; i++) {
         let card = this.cards[set][i];
-        if (card.name == name) {
-          return card;
+        if (card.name == name && (!number || number == card.number)) {
+          res.push(card);
         }
+      }
+      if (res.length == 1) {
+        return res[0];
       }
     }
 
+    name = name.toLowerCase();
     return this.fuse.search(name).map(r => {
+      let local = set && r.item.set == set;
       return {
-        set   : r.item.set,
-        name  : r.item.name,
-        id    : r.item.id,
-        score : r.score,
-        type  : (set && r.item.set == set) ? 'in-set' : 'global'
+        set    : r.item.set,
+        number : r.item.number,
+        name   : r.item.name,
+        id     : r.item.id,
+        score  : parseInt(r.score / 1000 * (local ? 2 : 1)),
+        type   : local ? 'in-set' : 'global'
       };
-    }).sort((a, b) => { return a.score - b.score; });
+    }).sort((a, b) => { return b.score - a.score; });
   }
 };
 
