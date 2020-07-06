@@ -673,7 +673,7 @@ Vue.component('deck-form', {
                   class="cdif"
                   data-validate="present;max=100k"></textarea>
       </div>
-      <gainloss-status :working="blurred" :ok="are_we_ok()"></gain-loss>
+      <gainloss-status :status="status()"></gainloss-status>
     </div>
     <div>
       <div class="help no-frills">
@@ -1111,11 +1111,11 @@ Vue.component('timeline', {
 });
 
 Vue.component('gainloss-status', {
-  props: ['working', 'ok'],
+  props: ['status'],
   template: `
     <div class="status">
-      <span v-if="working" class="in-progress">⌛ validating these cards...</span>
-      <span v-else-if="ok" class="ok">👍 everything checks out with these cards!</span>
+      <span v-if="status == 'working'" class="in-progress">⌛ validating these cards...</span>
+      <span v-else-if="status == 'ok'" class="ok">👍 everything checks out with these cards!</span>
     </div>
 `
 });
@@ -1139,7 +1139,7 @@ Vue.component('transaction-form', {
   data() {
     return {
       ok: true,
-      blurred: false,
+      working: false,
       problems: {
         gain: [],
         loss: []
@@ -1157,16 +1157,19 @@ Vue.component('transaction-form', {
     },
 
     validate(bucket) {
-      this.blurred = true;
-      if (bucket == 'gain') {
-        this.problems.gain = cardboard.CDIF.validate(this.transaction.gain, UI.vault ,1);
-        this.valid.gain = this.transaction.gain;
-      } else {
-        this.problems.loss = cardboard.CDIF.validate(this.transaction.loss, UI.vault ,1);
-        this.valid.loss = this.transaction.loss;
-      }
-      this.ok = this.can_we_submit();
-      this.blurred = false;
+      this.working = true;
+
+      window.setTimeout(() => { // add a barely perceptible delay
+        if (bucket == 'gain') {
+          this.problems.gain = cardboard.CDIF.validate(this.transaction.gain, UI.vault ,1);
+          this.valid.gain = this.transaction.gain;
+        } else {
+          this.problems.loss = cardboard.CDIF.validate(this.transaction.loss, UI.vault ,1);
+          this.valid.loss = this.transaction.loss;
+        }
+        this.ok = this.can_we_submit();
+        this.working = false;
+      }, 400);
     },
 
     changed() {
@@ -1190,6 +1193,16 @@ Vue.component('transaction-form', {
             && this.transaction.loss.replace(/\s+/, '') != ""
             && this.can_we_submit();
       }
+    },
+
+    status() {
+      if (this.working) {
+        return "working";
+      }
+      if (this.are_we_ok()) {
+        return "ok";
+      }
+      return "invalid";
     },
 
     can_we_submit() {
@@ -1225,12 +1238,12 @@ Vue.component('transaction-form', {
     },
 
     clarified(type, $event) {
+      this.working = true;
       if (type == 'gain') {
         this.problems.gain = [];
       } else {
         this.problems.loss = [];
       }
-      this.blurred = true;
 
       let lines = this.transaction[type].split("\n");
       lines.splice($event.problem.line - 1, 1, ...$event.replacements.map(r => r[0]+'x '+r[1]));
@@ -1311,7 +1324,7 @@ Vue.component('transaction-form', {
                   @blur="validate('gain')"
                   data-validate="present;max=100k"></textarea>
       </div>
-      <gainloss-status :working="blurred" :ok="are_we_ok()"></gain-loss>
+      <gainloss-status :status="status()"></gainloss-status>
     </div>
     <div v-else
          class="gainloss">
@@ -1322,7 +1335,7 @@ Vue.component('transaction-form', {
                   @blur="validate('gain')"
                   data-validate="present;max=100k"></textarea>
       </div>
-      <gainloss-status :working="blurred" :ok="are_we_ok()"></gain-loss>
+      <gainloss-status :status="status()"></gainloss-status>
     </div>
     <div>
       <div class="help no-frills">
@@ -1349,7 +1362,7 @@ Vue.component('transaction-form', {
                   class="cdif"
                   @blur="validate('loss')"
                   data-validate="present;max=100k"></textarea>
-        <gainloss-status :working="blurred" :ok="are_we_ok()"></gain-loss>
+        <gainloss-status :status="status()"></gainloss-status>
       </div>
       <clarifier v-for="problem in problems.loss" :key="problem.id"
                  @clarified="clarified('loss', $event)"
@@ -1378,7 +1391,7 @@ Vue.component('transaction-form', {
                     @blur="validate('gain')"
                     data-validate="present;max=100k"></textarea>
         </div>
-        <gainloss-status :working="blurred" :ok="are_we_ok()"></gain-loss>
+        <gainloss-status :status="status()"></gainloss-status>
         <clarifier v-for="problem in problems.loss" :key="problem.id"
                    @clarified="clarified('loss', $event)"
                    :problem="problem"></clarifier>
