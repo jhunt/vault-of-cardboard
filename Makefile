@@ -12,6 +12,13 @@ htdocs/changelog.json: changelog.yml
 
 test: unit-tests integration-tests
 
+rescry-for-tests:
+	cargo run --bin cardboard rescry \
+	  --raw test/scryfall/sets/ \
+	  --cards test/cards.json \
+	  --lookup test/lookup.json  \
+	  --prices test/prices.json
+
 unit-tests:
 	source test/unit/envrc \
 	&& ./test/unit/setup \
