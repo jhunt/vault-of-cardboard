@@ -1,4 +1,3 @@
-VERSION ?= 0.0.1
 TAG     ?= dev
 
 REGISTRY ?= docker.zyxl.xyz/vcb
@@ -61,6 +60,15 @@ push: tag
 	docker push $(REGISTRY)/ingester:$(TAG)
 	docker push $(REGISTRY)/perimeter:$(TAG)
 	docker push $(REGISTRY)/proxycache:$(TAG)
+
+release:
+	@echo "Checking that VERSION was defined in the calling environment"
+	@test -n "$(VERSION)"
+	@echo "OK.  VERSION=$(VERSION)"
+	make TAG=$(VERSION) REGISTRY=$(REGISTRY) push
+
+next:
+	@date +v%Y%m%d.%H%M%S
 
 compose-up:
 	docker-compose -p vcb -f deploy/docker-compose.yml up -d
