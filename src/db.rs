@@ -176,13 +176,17 @@ impl Transaction {
 
     pub fn set_gain(&self) -> Vec<String> {
         match self.metadata.get("set_gain") {
-            Some(serde_json::Value::Array(v)) => v.iter().map(|x| x.as_str().unwrap().to_string()).collect(),
+            Some(serde_json::Value::Array(v)) => {
+                v.iter().map(|x| x.as_str().unwrap().to_string()).collect()
+            }
             _ => vec![],
         }
     }
     pub fn set_loss(&self) -> Vec<String> {
         match self.metadata.get("set_loss") {
-            Some(serde_json::Value::Array(v)) => v.iter().map(|x| x.as_str().unwrap().to_string()).collect(),
+            Some(serde_json::Value::Array(v)) => {
+                v.iter().map(|x| x.as_str().unwrap().to_string()).collect()
+            }
             _ => vec![],
         }
     }
@@ -352,7 +356,7 @@ impl Database {
         .chain_err(|| "failed to insert session object into session store")?;
 
         let mut cmd = redis::cmd("EXPIRE");
-        let cmd = cmd.arg(&key).arg(self.idle.to_string());
+        let cmd = cmd.arg(&key).arg(self.idle.to_string()); // FIXME
         cmd.query::<bool>(
             &mut self
                 .rd
@@ -551,32 +555,14 @@ impl Database {
         let mut meta = serde_json::Map::new();
 
         let (total, unique) = gain.count();
-        meta.insert(
-            "total_gain".to_string(),
-            json!(total as f64),
-        );
-        meta.insert(
-            "unique_gain".to_string(),
-            json!(unique as f64),
-        );
-        meta.insert(
-            "set_gain".to_string(),
-            json!(gain.unique_sets()),
-        );
+        meta.insert("total_gain".to_string(), json!(total as f64));
+        meta.insert("unique_gain".to_string(), json!(unique as f64));
+        meta.insert("set_gain".to_string(), json!(gain.unique_sets()));
 
         let (total, unique) = loss.count();
-        meta.insert(
-            "total_loss".to_string(),
-            json!(total as f64),
-        );
-        meta.insert(
-            "unique_loss".to_string(),
-            json!(unique as f64),
-        );
-        meta.insert(
-            "set_loss".to_string(),
-            json!(loss.unique_sets()),
-        );
+        meta.insert("total_loss".to_string(), json!(total as f64));
+        meta.insert("unique_loss".to_string(), json!(unique as f64));
+        meta.insert("set_loss".to_string(), json!(loss.unique_sets()));
 
         let txn = diesel::insert_into(transactions::table)
             .values((
@@ -615,18 +601,9 @@ impl Database {
                     .chain_err(|| "failed to parse updated gains during transaction update")?;
 
                 let (total, unique) = cdif.count();
-                meta.insert(
-                    "total_gain".to_string(),
-                    json!(total as f64),
-                );
-                meta.insert(
-                    "unique_gain".to_string(),
-                    json!(unique as f64),
-                );
-                meta.insert(
-                    "set_gain".to_string(),
-                    json!(cdif.unique_sets()),
-                );
+                meta.insert("total_gain".to_string(), json!(total as f64));
+                meta.insert("unique_gain".to_string(), json!(unique as f64));
+                meta.insert("set_gain".to_string(), json!(cdif.unique_sets()));
 
                 Some(cdif)
             }
@@ -639,18 +616,9 @@ impl Database {
                     .chain_err(|| "failed to parse updated losses during transaction update")?;
 
                 let (total, unique) = cdif.count();
-                meta.insert(
-                    "total_loss".to_string(),
-                    json!(total as f64),
-                );
-                meta.insert(
-                    "unique_loss".to_string(),
-                    json!(unique as f64),
-                );
-                meta.insert(
-                    "set_loss".to_string(),
-                    json!(cdif.unique_sets()),
-                );
+                meta.insert("total_loss".to_string(), json!(total as f64));
+                meta.insert("unique_loss".to_string(), json!(unique as f64));
+                meta.insert("set_loss".to_string(), json!(cdif.unique_sets()));
 
                 Some(cdif)
             }
@@ -784,9 +752,9 @@ impl Database {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::collections::HashSet;
     use tempdir::TempDir;
     use uuid::Uuid;
-    use std::collections::HashSet;
 
     fn connect() -> (TempDir, Database) {
         use std::env;

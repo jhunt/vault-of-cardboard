@@ -1,7 +1,7 @@
+use iron::headers::ContentType;
+use iron::mime::{Mime, SubLevel, TopLevel};
 use iron::prelude::*;
 use iron::status;
-use iron::mime::{Mime,TopLevel, SubLevel};
-use iron::headers::ContentType;
 use router::Router;
 use serde_json::json;
 use std::env;
@@ -72,7 +72,11 @@ macro_rules! auth {
 
 fn json_response(code: status::Status, json: String) -> Response {
     let mut r = Response::with((code, format!("{}\n", json)));
-    r.headers.set(ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![])));
+    r.headers.set(ContentType(Mime(
+        TopLevel::Application,
+        SubLevel::Json,
+        vec![],
+    )));
     r
 }
 
@@ -91,7 +95,9 @@ macro_rules! done {
 
     (401 => $s: expr) => {{
         let mut r = Response::with((status::Unauthorized, format!("{}\n", $s)));
-        r.headers.set(WwwAuthenticate(r#"Basic realm="vaultofcardboard.com""#.to_owned()));
+        r.headers.set(WwwAuthenticate(
+            r#"Basic realm="vaultofcardboard.com""#.to_owned(),
+        ));
         Ok(r)
     }};
 
@@ -119,7 +125,8 @@ macro_rules! done {
                 Object::NotFound(_) => status::NotFound,
                 _ => status::Ok,
             },
-            json!(&$object).to_string()))
+            json!(&$object).to_string(),
+        ))
     };
 }
 
@@ -134,9 +141,10 @@ pub fn run() {
                 Ok(f) => {
                     let mut r = Response::with((status::Ok, f));
                     r.headers.set(ContentType(Mime(
-                                TopLevel::Application,
-                                SubLevel::Json,
-                                vec![])));
+                        TopLevel::Application,
+                        SubLevel::Json,
+                        vec![],
+                    )));
                     Ok(r)
                 }
                 Err(e) => {
@@ -156,9 +164,10 @@ pub fn run() {
                 Ok(f) => {
                     let mut r = Response::with((status::Ok, f));
                     r.headers.set(ContentType(Mime(
-                                TopLevel::Application,
-                                SubLevel::Json,
-                                vec![])));
+                        TopLevel::Application,
+                        SubLevel::Json,
+                        vec![],
+                    )));
                     Ok(r)
                 }
                 Err(e) => {
@@ -179,9 +188,10 @@ pub fn run() {
                 Ok(f) => {
                     let mut r = Response::with((status::Ok, f));
                     r.headers.set(ContentType(Mime(
-                                TopLevel::Application,
-                                SubLevel::Json,
-                                vec![])));
+                        TopLevel::Application,
+                        SubLevel::Json,
+                        vec![],
+                    )));
                     Ok(r)
                 }
                 Err(e) => {
