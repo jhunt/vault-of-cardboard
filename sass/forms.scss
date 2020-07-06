@@ -222,6 +222,16 @@ form.data-entry {
       &.gained { background-color: #e7f7ea; }
       &.lost   { background-color: #f2f2f2; }
     }
+    .gainloss {
+      div.status {
+        font-style: italic;
+        font-size: 10pt;
+        height: 1.75em;
+
+        .in-progress { color: #0071bc; }
+        .ok          { color: #088610; }
+      }
+    }
 
     .help {
       font-size: 0.85rem;

@@ -1,10 +1,4 @@
 .clarify {
-  &.ok {
-    color: forestgreen;
-    font-size: 10pt;
-    font-style: italic;
-  }
-
   .results {
     width: 100%;
   }
@@ -40,6 +34,9 @@
   }
 
   div.problem {
+    &.resolving {
+      opacity: 0.3;
+    }
     .lineno {
       font-weight: bold;
       border-bottom: 2px solid #000;
