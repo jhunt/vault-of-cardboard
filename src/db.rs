@@ -280,6 +280,7 @@ pub struct Database {
     pg: PgConnection,
     rd: redis::Client,
     fs: FStore,
+    idle: u32, // in seconds
 }
 
 embed_migrations!("migrations/");
@@ -300,11 +301,12 @@ impl Database {
     }
 
     // Connect to a DSN (must be PostgreSQL) and run migrations.
-    pub fn connect(pg: &str, rd: &str, fsroot: &Path) -> Result<Database> {
+    pub fn connect(pg: &str, rd: &str, fsroot: &Path, idle: u32) -> Result<Database> {
         Ok(Database {
             pg: PgConnection::establish(pg).chain_err(|| "unable to connect to database")?,
             rd: redis::Client::open(rd).chain_err(|| "unable to connect to session store")?,
             fs: FStore::new(fsroot),
+            idle: idle,
         })
     }
 
@@ -350,7 +352,7 @@ impl Database {
         .chain_err(|| "failed to insert session object into session store")?;
 
         let mut cmd = redis::cmd("EXPIRE");
-        let cmd = cmd.arg(&key).arg("3600"); // FIXME
+        let cmd = cmd.arg(&key).arg(self.idle.to_string());
         cmd.query::<bool>(
             &mut self
                 .rd

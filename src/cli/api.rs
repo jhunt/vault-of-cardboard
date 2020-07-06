@@ -13,11 +13,20 @@ use crate::api::{Object, API};
 use crate::db::Database;
 
 fn boot() -> API {
+    let idle = 3600;
+    let idle = match env::var("VCB_SESSION_IDLE") {
+        Ok(v) => match v.parse::<u32>() {
+            Ok(v) => v,
+            Err(_) => idle,
+        },
+        Err(_) => idle,
+    };
     API::new(
         Database::connect(
             &env::var("VCB_DATABASE_URL").expect("VCB_DATABASE_URL must be set in environment"),
             &env::var("VCB_REDIS_URL").expect("VCB_REDIS_URL must be set in environment"),
             &Path::new(&env::var("VCB_FS_ROOT").expect("VCB_FS_ROOT must be set in environment")),
+            idle,
         )
         .unwrap(),
     )
