@@ -366,8 +366,14 @@ Vue.component('signup', {
       <h2>Sign Up Today!</h2>
       <p class="divert">Already a proud Vaulter?  <a href="#!/login">sign in</a>!</p>
 
-      <div class="oops" v-if="error == 'signup-failed'">
-        Invalid username or password.
+      <div class="oops" v-if="error == 'username-too-short'">
+        The username you picked is too short.  Username really ought to be at least four (4) characters long.
+      </div>
+      <div class="oops" v-else-if="error == 'invalid-email'">
+        Your email address doesn't look quite right; it should have an at sign ('@') and at least one dot ('.')...
+      </div>
+      <div class="oops" v-else-if="error == 'password-too-short'">
+        The password you chose is too short; try for at least eight (8) characters, or use a password manager.
       </div>
       <div class="oops" v-else-if="error">
         Uh-oh, something broke pretty bad.</br>Pay <span v-html="colorize('2UUU')"></span> and summon James, Fixer of Codes!

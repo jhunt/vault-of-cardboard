@@ -1,6 +1,8 @@
 use chrono::{naive::NaiveDate, DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use regex::Regex;
+use unicode_segmentation::UnicodeSegmentation;
 
 use super::db;
 
@@ -95,6 +97,21 @@ pub struct SignupAttempt {
     pub username: String,
     pub password: String,
     pub email: String,
+}
+
+impl SignupAttempt {
+    pub fn valid(&self) -> Result<()> {
+        let re = Regex::new(r"^\S+@\S+\.\S+$").unwrap();
+        if self.username.graphemes(true).count() < 4 {
+            Err("username-too-short".into())
+        } else if !re.is_match(&self.email) {
+            Err("invalid-email".into())
+        } else if self.password.graphemes(true).count() < 8 {
+            Err("password-too-short".into())
+        } else {
+            Ok(())
+        }
+    }
 }
 
 #[derive(Deserialize)]
@@ -300,28 +317,33 @@ impl API {
     }
 
     pub fn signup(&self, a: SignupAttempt) -> Result<Object> {
-        let who = self
-            .db
-            .create_collector(
-                None,
-                db::NewCollector {
-                    username: &a.username,
-                    email: &a.email,
-                },
-                Some(&a.password),
-            )
-            .chain_err(|| "unable to sign up new collector")?;
+        match a.valid() {
+            Ok(_) => {
+                let who = self
+                    .db
+                    .create_collector(
+                        None,
+                        db::NewCollector {
+                            username: &a.username,
+                            email: &a.email,
+                        },
+                        Some(&a.password),
+                    )
+                    .chain_err(|| "unable to sign up new collector")?;
 
-        let mut session = db::Session::new(None);
-        session.set("fresh", "signup");
-        session.set("user-id", &who.id.to_string());
-        match self.db.set_session(session) {
-            Ok(session) => Ok(Object::Authenticated(Authenticated {
-                uid: who.id.to_string(),
-                username: who.username.to_string(),
-                session: session.id.to_string(),
-            })),
-            _ => Ok(Object::fail("signup-failed")),
+                let mut session = db::Session::new(None);
+                session.set("fresh", "signup");
+                session.set("user-id", &who.id.to_string());
+                match self.db.set_session(session) {
+                    Ok(session) => Ok(Object::Authenticated(Authenticated {
+                        uid: who.id.to_string(),
+                        username: who.username.to_string(),
+                        session: session.id.to_string(),
+                    })),
+                    _ => Ok(Object::fail("signup-failed")),
+                }
+            }
+            Err(e) => Ok(Object::fail(&e.to_string())),
         }
     }
 
