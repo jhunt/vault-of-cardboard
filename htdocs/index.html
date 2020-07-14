@@ -249,14 +249,9 @@ Vue.component('loading', {
 });
 
 Vue.component('login', {
-  props: {
-    error: {
-      type: String,
-      required: false,
-    }
-  },
   data() {
     return {
+      error: undefined,
       username: '',
       password: ''
     };
@@ -282,7 +277,7 @@ Vue.component('login', {
           UI.browse('/q/owned');
 
         } else {
-          UI.error = data.response.message;
+          this.error = data.response.message;
         }
       });
     }
@@ -304,8 +299,7 @@ Vue.component('login', {
         Invalid username or password.
       </div>
       <div class="oops" v-else-if="error">
-        Uh-oh, something broke pretty bad.  Tap {{ colorize("2UUU") }} and summon James, Fixer of Codes!
-        <!-- Uh-oh, something broke pretty bad.  Tap {{ colorize("4BR") }} to cast James Legendary Bug Fix -->
+        Uh-oh, something broke pretty bad.  Tap <span v-html="colorize('2UUU')"></span> and summon James, Fixer of Codes!
       </div>
       <div class="control">
         <label>Username</label>
@@ -324,14 +318,9 @@ Vue.component('login', {
 });
 
 Vue.component('signup', {
-  props: {
-    error: {
-      type: String,
-      required: false,
-    }
-  },
   data() {
     return {
+      error:    undefined,
       username: '',
       email:    '',
       password: ''
@@ -359,7 +348,7 @@ Vue.component('signup', {
             UI.browse('/q/owned');
 
           } else {
-            UI.error = data.response.message;
+            this.error = data.response.message;
           }
         });
     }
@@ -381,8 +370,7 @@ Vue.component('signup', {
         Invalid username or password.
       </div>
       <div class="oops" v-else-if="error">
-        Uh-oh, something broke pretty bad.  Tap {{ colorize("2UUU") }} and summon James, Fixer of Codes!
-        <!-- Uh-oh, something broke pretty bad.  Tap {{ colorize("4BR") }} to cast James Legendary Bug Fix -->
+        Uh-oh, something broke pretty bad.</br>Pay <span v-html="colorize('2UUU')"></span> and summon James, Fixer of Codes!
       </div>
       <div class="control">
         <label>Username</label>
@@ -1535,11 +1523,6 @@ Vue.component('clarifier', {
 window.UI = new Vue({
   el: '#app',
   data: {
-    // A general error, to be propagated down to all interested
-    // sub-components, and conditional displayed, as needed.
-    //
-    error: undefined,
-
     // A session object, representing the currently authenticated
     // collector.  Contains their username, personal details, and
     // internal identifiers as sub-keys.
@@ -1884,12 +1867,8 @@ window.UI = new Vue({
     </form></div>
     -->
     <loading v-if="mode == 'loading'"></loading>
-    <signup
-      v-else-if="mode == 'signup'"
-      :error="error"></signup>
-    <login
-      v-else-if="mode == 'login'"
-      :error="error"></login>
+    <signup v-else-if="mode == 'signup'"></signup>
+    <login v-else-if="mode == 'login'"></login>
     <card-grid
       v-else-if="mode == 'search'"
       :q="search.query"
