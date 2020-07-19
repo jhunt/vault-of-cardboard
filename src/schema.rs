@@ -32,6 +32,21 @@ table! {
 }
 
 table! {
+    goals (id) {
+        id -> Uuid,
+        collector -> Uuid,
+        name -> Text,
+        ordinal -> Int4,
+        target -> Text,
+        goal -> Text,
+        total -> Nullable<Int4>,
+        progress -> Nullable<Int4>,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+table! {
     transactions (id) {
         id -> Uuid,
         collection -> Uuid,
@@ -50,11 +65,13 @@ table! {
 
 joinable!(collections -> collectors (collector));
 joinable!(decks -> collectors (collector));
+joinable!(goals -> collectors (collector));
 joinable!(transactions -> collections (collection));
 
 allow_tables_to_appear_in_same_query!(
     collections,
     collectors,
     decks,
+    goals,
     transactions,
 );

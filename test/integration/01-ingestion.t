@@ -340,6 +340,63 @@ cmp_deeply(
 
 ######################################################################
 ###
+###   GOAL MANAGEMENT
+###
+###   These tests exercise the creation, retrieval, update, and delete
+###   logic of collector goals, without actually evaluating them
+###   (that's mostly a front-end thing)
+###
+
+my $res = get("/v1/collectors/$UID/goals");
+ok($res->is_success, "should be able to retrieve the (empty) goal list, as JSON")
+	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
+cmp_deeply(
+	from_json($res->content),
+	{
+		goals => [],
+	},
+	"without creating any goals, we should get an empty goal list");
+
+my $res = post("/v1/collectors/$UID/goals", as => $SID, payload => {
+	name        => 'All Mirage commons',
+	ordinal     => 0,
+	target      => 'set:MIR and =common',
+	goal        => 'owned',
+	total       => undef,
+	progress    => undef,
+});
+ok($res->is_success, "should be able to post a new goal, as JSON")
+	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
+
+my $res = get("/v1/collectors/$UID/goals");
+ok($res->is_success, "should be able to retrieve the (now-populated) goal list, as JSON")
+	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
+cmp_deeply(
+	from_json($res->content),
+	{
+		goals => [
+			{
+				id          => is_uuid(),
+				collector   => $UID,
+				created_at  => ignore(),
+				updated_at  => ignore(),
+				ordinal     => 0,
+				name        => 'All Mirage commons',
+				target      => 'set:MIR and =common',
+				goal        => 'owned',
+				total       => undef,
+				progress    => undef,
+			},
+		],
+	},
+	"after createing a goal, we should get it back in the main goal list");
+
+
+######################################################################
+###
 ###   DECK MANAGEMENT
 ###
 ###   These tests exercise the creation, retrieval, update, and delete

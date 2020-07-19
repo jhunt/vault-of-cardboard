@@ -18,6 +18,8 @@ pub enum Object {
     NotFound(NotFound),
     Response(Response),
     Authenticated(Authenticated),
+    Goal(Goal),
+    Goals(Vec<Goal>),
     Deck(Deck),
     Decks(Vec<Deck>),
     Transaction(Transaction),
@@ -37,6 +39,14 @@ impl Object {
             ok: false,
             message: msg.to_string(),
         })
+    }
+
+    fn list_of_goals(other: Vec<db::Goal>) -> Self {
+        let mut goals = vec![];
+        for goal in other {
+            goals.push(Goal::from(goal));
+        }
+        Self::Goals(goals)
     }
 
     fn list_of_decks(other: Vec<db::Deck>) -> Self {
@@ -176,6 +186,57 @@ impl std::convert::From<db::Transaction> for Transaction {
             gain: other.gain,
             loss: other.loss,
             paid: other.paid,
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct GoalCreationAttempt {
+    pub name: String,
+    pub ordinal: i32,
+    pub target: String,
+    pub goal: String,
+    pub total: Option<i32>,
+    pub progress: Option<i32>,
+}
+
+#[derive(Deserialize)]
+pub struct GoalUpdateAttempt {
+    pub name: Option<String>,
+    pub ordinal: Option<i32>,
+    pub target: Option<String>,
+    pub goal: Option<String>,
+    pub total: Option<Option<i32>>,
+    pub progress: Option<Option<i32>>,
+}
+
+#[derive(Serialize)]
+pub struct Goal {
+    pub id: String,        // uuid
+    pub collector: String, // uuid
+    pub name: String,
+    pub ordinal: i32,
+    pub target: String,
+    pub goal: String,
+    pub total: Option<i32>,
+    pub progress: Option<i32>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl std::convert::From<db::Goal> for Goal {
+    fn from(other: db::Goal) -> Goal {
+        Goal {
+            id: other.id.to_string(),
+            collector: other.collector.to_string(),
+            name: other.name,
+            ordinal: other.ordinal,
+            target: other.target,
+            goal: other.goal,
+            total: other.total,
+            progress: other.progress,
+            created_at: other.created_at,
+            updated_at: other.updated_at,
         }
     }
 }
@@ -499,6 +560,149 @@ impl API {
         match self.db.delete_transaction(transaction.id) {
             Ok(_) => Ok(Object::ok("transaction-removed")),
             _ => Ok(Object::fail("transaction-removal-failed")),
+        }
+    }
+
+    pub fn create_goal(&self, uid: &str, new: GoalCreationAttempt) -> Result<Object> {
+        let collector = match self
+            .db
+            .find_collector_by_uuid(
+                Uuid::parse_str(uid).chain_err(|| "unable to parse collector uuid")?,
+            )
+            .chain_err(|| "unable to find collector to create goal for")?
+        {
+            Some(collector) => collector,
+            None => return Ok(not_found("collector", uid, None)),
+        };
+
+        match self.db.create_goal(
+            None,
+            db::NewGoal {
+                collector: collector.id,
+                name: &new.name,
+                ordinal: new.ordinal,
+                target: &new.target,
+                goal: &new.goal,
+                total: new.total,
+                progress: new.progress,
+            },
+        ) {
+            Ok(goal) => Ok(Object::Goal(Goal::from(goal))),
+            _ => Ok(Object::fail("goal-creation-failed")),
+        }
+    }
+
+    pub fn update_goal(&self, uid: &str, gid: &str, upd: GoalUpdateAttempt) -> Result<Object> {
+        let collector = match self
+            .db
+            .find_collector_by_uuid(
+                Uuid::parse_str(uid).chain_err(|| "unable to parse collector uuid")?,
+            )
+            .chain_err(|| "unable to find collector to update goal for")?
+        {
+            Some(collector) => collector,
+            None => return Ok(not_found("collector", uid, None)),
+        };
+
+        let goal = match self
+            .db
+            .find_goal_by_uuid(
+                collector.id,
+                Uuid::parse_str(gid).chain_err(|| "unable to parse goal uuid")?,
+            )
+            .chain_err(|| "unable to find goal to update")?
+        {
+            Some(goal) => goal,
+            None => return Ok(not_found("goal", gid, None)),
+        };
+
+        match self.db.update_goal(
+            &goal,
+            db::UpdateGoal {
+                name: upd.name,
+                ordinal: upd.ordinal,
+                target: upd.target,
+                goal: upd.goal,
+                total: upd.total,
+                progress: upd.progress,
+            },
+        ) {
+            Ok(goal) => Ok(Object::Goal(Goal::from(goal))),
+            _ => Ok(Object::fail("goal-update-failed")),
+        }
+    }
+
+    pub fn delete_goal(&self, uid: &str, gid: &str) -> Result<Object> {
+        let collector = match self
+            .db
+            .find_collector_by_uuid(
+                Uuid::parse_str(uid).chain_err(|| "unable to parse collector uuid")?,
+            )
+            .chain_err(|| "unable to find collector to update goal for")?
+        {
+            Some(collector) => collector,
+            None => return Ok(not_found("collector", uid, None)),
+        };
+
+        let goal = match self
+            .db
+            .find_goal_by_uuid(
+                collector.id,
+                Uuid::parse_str(gid).chain_err(|| "unable to parse goal uuid")?,
+            )
+            .chain_err(|| "unable to find goal to update")?
+        {
+            Some(goal) => goal,
+            None => return Ok(Object::ok("goal-already-gone")),
+        };
+
+        match self.db.delete_goal(goal.id) {
+            Ok(_) => Ok(Object::ok("goal-removed")),
+            _ => Ok(Object::fail("goal-removal-failed")),
+        }
+    }
+
+    pub fn retrieve_goals_for_collector(&self, uid: &str) -> Result<Object> {
+        let collector = match self
+            .db
+            .find_collector_by_uuid(
+                Uuid::parse_str(uid).chain_err(|| "unable to parse collector uuid")?,
+            )
+            .chain_err(|| "unable to find collector to retrieve goals from")?
+        {
+            Some(collector) => collector,
+            None => return Ok(not_found("collector", uid, None)),
+        };
+
+        Ok(Object::list_of_goals(
+            self.db
+                .find_goals_for_collector(collector.id)
+                .chain_err(|| "unable to find goals by collector uuid")?,
+        ))
+    }
+
+    pub fn retrieve_goal(&self, uid: &str, gid: &str) -> Result<Object> {
+        let collector = match self
+            .db
+            .find_collector_by_uuid(
+                Uuid::parse_str(uid).chain_err(|| "unable to parse collector uuid")?,
+            )
+            .chain_err(|| "unable to find collector to retrieve goal for")?
+        {
+            Some(collector) => collector,
+            None => return Ok(not_found("collector", uid, None)),
+        };
+
+        match self
+            .db
+            .find_goal_by_uuid(
+                collector.id,
+                Uuid::parse_str(gid).chain_err(|| "unable to parse goal uuid")?,
+            )
+            .chain_err(|| "unable to find goal by uuid")?
+        {
+            Some(goal) => Ok(Object::Goal(Goal::from(goal))),
+            None => Ok(not_found("goal", gid, None)),
         }
     }
 

@@ -367,6 +367,109 @@ pub fn run() {
     );
 
     router.get(
+        "/v1/collectors/:uid/goals",
+        |r: &mut Request| {
+            let api = boot();
+            let uid = param!(r, "uid");
+
+            match api.retrieve_goals_for_collector(&uid) {
+                Ok(res) => done!(res),
+                Err(e) => {
+                    println!("goals retrieval fail: {}", e);
+                    done!(500 => "goals retrieval failed")
+                }
+            }
+        },
+        "v1_get_all_goals_handler",
+    );
+
+    router.post(
+        "/v1/collectors/:uid/goals",
+        |r: &mut Request| {
+            let api = boot();
+            let uid = param!(r, "uid");
+            auth!(api, r, &uid);
+
+            match serde_json::from_reader(&mut r.body) {
+                Err(e) => {
+                    println!("error: {}", e);
+                    done!(400 => "bad request")
+                }
+                Ok(attempt) => match api.create_goal(&uid, attempt) {
+                    Ok(res) => done!(res),
+                    Err(e) => {
+                        println!("goal fail: {}", e);
+                        done!(500 => "goal creation failed")
+                    }
+                },
+            }
+        },
+        "v1_post_new_goal_handler",
+    );
+
+    router.get(
+        "/v1/collectors/:uid/goals/:gid",
+        |r: &mut Request| {
+            let api = boot();
+            let uid = param!(r, "uid");
+            let gid = param!(r, "gid");
+
+            match api.retrieve_goal(&uid, &gid) {
+                Ok(res) => done!(res),
+                Err(e) => {
+                    println!("goal retrieval fail: {}", e);
+                    done!(500 => "goal retrieval failed")
+                }
+            }
+        },
+        "v1_get_single_goal_handler",
+    );
+
+    router.patch(
+        "/v1/collectors/:uid/goals/:gid",
+        |r: &mut Request| {
+            let api = boot();
+            let uid = param!(r, "uid");
+            let gid = param!(r, "gid");
+            auth!(api, r, &uid);
+
+            match serde_json::from_reader(&mut r.body) {
+                Err(e) => {
+                    println!("error: {}", e);
+                    done!(400 => "bad request")
+                }
+                Ok(attempt) => match api.update_goal(&uid, &gid, attempt) {
+                    Ok(res) => done!(res),
+                    Err(e) => {
+                        println!("goal update fail: {}", e);
+                        done!(500 => "goal update failed")
+                    }
+                },
+            }
+        },
+        "v1_update_single_goal_handler",
+    );
+
+    router.delete(
+        "/v1/collectors/:uid/goals/:gid",
+        |r: &mut Request| {
+            let api = boot();
+            let uid = param!(r, "uid");
+            let gid = param!(r, "gid");
+            auth!(api, r, &uid);
+
+            match api.delete_goal(&uid, &gid) {
+                Ok(res) => done!(res),
+                Err(e) => {
+                    println!("goal removal fail: {}", e);
+                    done!(500 => "goal removal failed")
+                }
+            }
+        },
+        "v1_delete_single_goal_handler",
+    );
+
+    router.get(
         "/v1/collectors/:uid/decks",
         |r: &mut Request| {
             let api = boot();

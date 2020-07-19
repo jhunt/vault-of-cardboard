@@ -1,4 +1,4 @@
-use super::schema::{collections, collectors, decks, transactions};
+use super::schema::{collections, collectors, decks, goals, transactions};
 use bcrypt;
 use chrono::{naive::NaiveDate, DateTime, Utc};
 use diesel::pg::PgConnection;
@@ -216,6 +216,43 @@ pub struct UpdateTransaction {
     pub gain: Option<String>,
     pub loss: Option<String>,
     pub paid: Option<Option<i32>>,
+}
+
+#[derive(Identifiable, Queryable)]
+pub struct Goal {
+    pub id: Uuid,
+    pub collector: Uuid,
+    pub name: String,
+    pub ordinal: i32,
+    pub target: String,
+    pub goal: String,
+    pub total: Option<i32>,
+    pub progress: Option<i32>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Insertable)]
+#[table_name = "goals"]
+pub struct NewGoal<'a> {
+    pub collector: Uuid,
+    pub name: &'a str,
+    pub ordinal: i32,
+    pub target: &'a str,
+    pub goal: &'a str,
+    pub total: Option<i32>,
+    pub progress: Option<i32>,
+}
+
+#[derive(AsChangeset)]
+#[table_name = "goals"]
+pub struct UpdateGoal {
+    pub name: Option<String>,
+    pub ordinal: Option<i32>,
+    pub target: Option<String>,
+    pub goal: Option<String>,
+    pub total: Option<Option<i32>>,
+    pub progress: Option<Option<i32>>,
 }
 
 #[derive(Identifiable, Queryable)]
@@ -695,6 +732,56 @@ impl Database {
 
     pub fn apply_collection_debit(&self, id: Uuid, debit: cdif::File) -> Result<()> {
         self.apply_collection_diff(id, debit, false)
+    }
+
+    pub fn find_goals_for_collector(&self, uid: Uuid) -> Result<Vec<Goal>> {
+        Ok(goals::dsl::goals
+            .filter(goals::dsl::collector.eq(uid))
+            .get_results::<Goal>(&self.pg)
+            .chain_err(|| "unable to retrieve goals for collector uuid")?)
+    }
+
+    pub fn find_goal_by_uuid(&self, uid: Uuid, id: Uuid) -> Result<Option<Goal>> {
+        match goals::dsl::goals
+            .find(id)
+            .filter(goals::dsl::collector.eq(uid))
+            .get_result::<Goal>(&self.pg)
+        {
+            Ok(goal) => Ok(Some(goal)),
+            Err(diesel::NotFound) => Ok(None),
+            Err(e) => Err(Error::with_chain(
+                e,
+                "failed to retrieve goal record from database",
+            )),
+        }
+    }
+
+    pub fn create_goal(&self, id: Option<Uuid>, new: NewGoal) -> Result<Goal> {
+        let now = Utc::now();
+        let id = gen_uuid(id);
+        Ok(diesel::insert_into(goals::table)
+            .values((
+                &new,
+                goals::dsl::id.eq(id),
+                goals::dsl::created_at.eq(now),
+                goals::dsl::updated_at.eq(now),
+            ))
+            .get_result(&self.pg)
+            .chain_err(|| "failed to insert goal record into database")?)
+    }
+
+    pub fn update_goal(&self, obj: &Goal, upd: UpdateGoal) -> Result<Goal> {
+        Ok(diesel::update(obj)
+            .set((&upd, goals::dsl::updated_at.eq(Utc::now())))
+            .get_result(&self.pg)
+            .chain_err(|| "failed to update goal record in database")?)
+    }
+
+    pub fn delete_goal(&self, id: Uuid) -> Result<()> {
+        diesel::delete(goals::dsl::goals.filter(goals::dsl::id.eq(id)))
+            .execute(&self.pg)
+            .chain_err(|| "failed to delete goal record from database")?;
+        Ok(())
     }
 
     pub fn find_decks_for_collector(&self, uid: Uuid) -> Result<Vec<Deck>> {

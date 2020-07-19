@@ -477,6 +477,212 @@ Vue.component('set-list', {
 `
 })
 
+Vue.component('goal-form', {
+  props: ['n', 'mode', 'object'],
+  data: function() {
+    return {
+      title: this.object.name || '',
+      goal: {
+        id:      this.object.id      || undefined,
+        name:    this.object.name    || '',
+        target:  this.object.target  || '',
+        goal:    this.object.goal    || 'owned',
+        ordinal: this.object.ordinal || this.n    || 0,
+      }
+    };
+  },
+  methods: {
+    save() {
+      event.preventDefault();
+
+      if (this.goal.id) {
+        cardboard.API.patch_goal(UI.session, this.goal)
+          .then(data => this.$emit('updated-goal', data));
+
+      } else {
+        cardboard.API.post_goal(UI.session, this.goal)
+          .then(data => this.$emit('created-goal', data));
+      }
+    },
+    remove() {
+      event.preventDefault();
+
+      cardboard.API.delete_goal(UI.session, this.goal.id)
+        .then(data => this.$emit('deleted-goal', this.goal.id));
+    },
+  },
+  template: `
+<form :class="'goal data-entry ' + mode" @submit="save()">
+  <h2 v-if="mode == 'new'">Set a New Goal</h2>
+  <h2 v-else="mode == 'edit'">Update &ldquo;{{ title }}&rdquo;</h2>
+  <div class="band">
+    <div>
+      <div class="control">
+        <label for="name">Name</label>
+         <input type="text" name="name" v-model="goal.name"
+                class="autofocus"
+                placeholder="A name for this goal"
+                data-error-if-missing="Please provide a name for this goal."
+                autocomplete="off">
+      </div>
+    </div>
+  </div>
+  <div class="band">
+    <div>
+      <div class="control">
+        <label for="target">Target Query</label>
+         <input type="text" name="target" v-model="goal.target"
+                class="autofocus"
+                placeholder="What are you hoping to collect?"
+                data-error-if-missing="Please provide a target query for this goal."
+                autocomplete="off">
+      </div>
+    </div>
+  </div>
+  <div class="band">
+    <div>
+      <div class="control">
+        <label for="goal">Success Query</label>
+         <input type="text" name="goal" v-model="goal.goal"
+                class="autofocus"
+                placeholder="When will you know you've succeeded?"
+                data-error-if-missing="Please provide a success query for this goal."
+                autocomplete="off">
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <button class="default safe" type="submit">{{ mode == 'new' ? "Set" : "Update" }} Goal</button>
+    <button v-if="mode == 'edit'" @click="remove()" class="danger">Delete This Goal</button>
+  </div>
+</form>
+`
+});
+Vue.component('goal-list', {
+  data: function () {
+    return {
+      mode: 'view',
+      goal: undefined,
+      goals: []
+    }
+  },
+  mounted() {
+    fetch('/v1/collectors/'+UI.session.uid+'/goals')
+      .then(r => r.json())
+      .then(data => {
+        this.goals = data.goals.map(goal => {
+          if (typeof(goal.total) === 'undefined' || goal.total == null) {
+            let l = UI.vault.search(goal.target)
+            console.log('found %d cards for target only [%s]', l.length, goal.target);
+            goal.total = l.length;
+          }
+          if (typeof(goal.progress) === 'undefined' || goal.progress == null) {
+            let l = UI.vault.search('('+goal.target+') and ('+goal.goal+')');
+            console.log('found %d cards for target+goal [%s]', l.length, '('+goal.target+') and ('+goal.goal+')');
+            goal.progress = l.length;
+          }
+
+          return goal;
+        });
+      });
+  },
+  methods: {
+    dated:    dated,
+    strftime: strftime,
+
+    query(t,g) {
+      if (typeof(g) == 'undefined') {
+        document.location.hash = '!/q/'+encodeURIComponent(t);
+      } else {
+        document.location.hash = '!/q/'+encodeURIComponent('('+t+') and ('+g+')');
+      }
+    },
+
+    start_new_goal() {
+      event.preventDefault();
+      this.mode = 'new';
+    },
+
+    show_goal(goal) {
+      UI.goal = goal;
+      UI.redraw('goal');
+    },
+
+    create_goal(ev) {
+      this.goals.push(ev.goal);
+      this.mode = 'view';
+    },
+
+    edit_goal(goal) {
+      this.mode = 'edit';
+      this.goal = goal;
+    },
+
+    update_goal(ev) {
+      for (var i = 0; i < this.goals.length; i++) {
+        if (this.goals[i].id == ev.goal.id) {
+          Object.assign(this.goals[i], ev.goal);
+          break;
+        }
+      }
+      this.mode = 'view';
+    },
+
+    delete_goal(id) {
+      for (var i = 0; i < this.goals.length; i++) {
+        if (this.goals[i].id == id) {
+          this.goals.splice(i, 1);
+          break;
+        }
+      }
+      this.mode = 'view';
+    },
+
+  },
+  template: `
+<div class="goals listing prose">
+  <h1>It's Good To Have Goals</h1>
+  <div class="buttons" v-if="mode == 'view'">
+    <button class="action" @click="start_new_goal()">Set New Goal</button>
+  </div>
+  <goal-form v-else-if="mode == 'edit'"
+    :object="goal"
+    @updated-goal="update_goal($event)"
+    mode="edit"></goal-form>
+  <goal-form
+    v-else
+    :n="goals.length"
+    @created-goal="create_goal($event)"
+    mode="new"></goal-form>
+  <table class="goals sortable listing">
+    <thead><tr>
+      <th class="sortable">Name</th>
+      <th>Target</th>
+      <th></th>
+      <th>Goal</th>
+      <th>Progress</th>
+      <th class="sortable" data-sort-as="number">Created</th>
+      <th class="sortable" data-sort-as="number">Last Updated</th>
+      <th></th>
+    </tr></thead>
+    <tbody>
+      <tr v-for="goal in goals" :key="goal.id">
+        <td>{{ goal.name }}</td>
+        <td>(<tt @click="query(goal.target)">{{ goal.target }}</tt>)</td>
+        <td>and</td>
+        <td>(<tt @click="query(goal.target, goal.goal)">{{ goal.goal }}</tt>)</td>
+        <td>{{ goal.progress }}/{{ goal.total }} ({{ parseInt(goal.progress * 100 / goal.total) }}%)</td>
+        <td :data-sort="goal.created_at">{{ strftime("%B %Oe, %Y", dated(goal.created_at)) }}</td>
+        <td :data-sort="goal.updated_at">{{ strftime("%B %Oe, %Y", dated(goal.updated_at)) }}</td>
+        <td><a href="#" @click="edit_goal(goal)">edit</a></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+`
+})
+
 Vue.component('deck-list', {
   props: ['decks'],
   data: function () {
@@ -1683,6 +1889,12 @@ window.UI = new Vue({
             UI.redraw('decks');
           }));
 
+      } else if (sub == "goals") {
+        UI.redraw('loading');
+        cardboard.When('authenticated', () => {
+          UI.redraw('goals');
+        });
+
       } else if (sub.match(/^draft(\/.*)?$/)) {
         var set = sub.replace(/^draft\//, '')
                      .replace(/\/.*/, '')
@@ -1818,6 +2030,7 @@ window.UI = new Vue({
         <nav>
           <li><a href="#!/timeline">My Collection</a></li>
           <li v-if="session.cohort != 'stable'"><a href="#!/decks">Decks</a></li>
+          <li v-if="session.cohort != 'stable'"><a href="#!/goals">Goals</a></li>
           <li><a href="#!/logout" rel="logout">Sign out</a></li>
         </nav></li>
     </nav>
@@ -1922,6 +2135,8 @@ window.UI = new Vue({
     <set-list
       v-else-if="mode == 'sets'"
       :sets="sets"></set-list>
+    <goal-list
+      v-else-if="mode == 'goals'"></goal-list>
     <deck-list
       v-else-if="mode == 'decks'"
       :decks="decks"></deck-list>
