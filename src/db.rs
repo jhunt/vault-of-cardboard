@@ -769,7 +769,7 @@ mod test {
 
         let fs = TempDir::new("vcb-test").expect("Failed to create temp directory");
 
-        let db = Database::connect(&pg, &rd, &fs.path()).unwrap();
+        let db = Database::connect(&pg, &rd, &fs.path(), 3600).unwrap();
         db.testmode().unwrap();
         db.fs
             .create(
