@@ -89,7 +89,8 @@ let API = {
         notes:       txn.notes       || '',
         dated:       txn.dated       || '',
         gain:        txn.gain        || '',
-        loss:        txn.loss        || ''
+        loss:        txn.loss        || '',
+        paid:        txn.paid        || null
       })
     }).then(r => {
       if (!r.ok) {
@@ -109,7 +110,8 @@ let API = {
         notes:       txn.notes       || '',
         dated:       txn.dated       || '',
         gain:        txn.gain        || '',
-        loss:        txn.loss        || ''
+        loss:        txn.loss        || '',
+        paid:        txn.paid        || null
       })
     }).then(r => {
       if (!r.ok) {

@@ -120,6 +120,7 @@ pub struct TransactionCreationAttempt {
     pub notes: String,
     pub dated: NaiveDate,
     pub disposition: String,
+    pub paid: Option<i32>,
     pub gain: String,
     pub loss: String,
 }
@@ -132,6 +133,7 @@ pub struct TransactionUpdateAttempt {
     pub disposition: Option<String>,
     pub gain: Option<String>,
     pub loss: Option<String>,
+    pub paid: Option<i32>,
 }
 
 #[derive(Serialize)]
@@ -144,6 +146,7 @@ pub struct Transaction {
     pub disposition: String,
     pub gain: String,
     pub loss: String,
+    pub paid: Option<i32>,
 
     pub total_card_gain: u32,
     pub total_card_loss: u32,
@@ -172,6 +175,7 @@ impl std::convert::From<db::Transaction> for Transaction {
             disposition: other.disposition.to_string(),
             gain: other.gain,
             loss: other.loss,
+            paid: other.paid,
         }
     }
 }
@@ -388,6 +392,7 @@ impl API {
                 disposition: &new.disposition,
                 gain: &new.gain,
                 loss: &new.loss,
+                paid: new.paid,
             },
         ) {
             Ok(txn) => Ok(Object::Transaction(Transaction::from(txn))),
@@ -459,6 +464,7 @@ impl API {
                 disposition: upd.disposition,
                 gain: upd.gain,
                 loss: upd.loss,
+                paid: Some(upd.paid),
             },
         ) {
             Ok(txn) => Ok(Object::Transaction(Transaction::from(txn))),

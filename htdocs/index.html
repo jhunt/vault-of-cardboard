@@ -1086,6 +1086,7 @@ Vue.component('timeline', {
         <ul>
           <li v-for="txn in d[1].transactions" :class="txn.type">
             <em :class="gainloss(txn.total_delta)">{{ txn.total_delta }}</em> cards in {{ txn.dated }} {{ txn.type }} <strong>{{ txn.summary }}</strong>
+            <span v-if="txn.paid">($\{{ txn.paid / 100.0 }})</span>
             <span v-for="set in txn.set_gain" :class="'ss ss-' + set.toLowerCase()"></span>
             <span v-for="set in txn.set_loss" :class="'ss ss-' + set.toLowerCase()"></span>
             <span class="actions"><a href="#" @click="start_edit_transaction(txn.id)">edit</a></span>
@@ -1170,6 +1171,27 @@ Vue.component('transaction-form', {
       let trim = s => s.replace(/(^\s+|\s+$)/g, '').replace(/\s+/g, ' ');
       return trim(this.valid.gain) != trim(this.transaction.gain)
           || trim(this.valid.loss) != trim(this.transaction.loss);
+    },
+
+    setPaid(v) {
+      v = v.replace(/^\s*$\s*/, '');
+      this.transaction.paid = parseInt(parseFloat(v) * 100);
+      if (isNaN(this.transaction.paid)) {
+        this.transaction.paid = null;
+      }
+    },
+
+    getPaid() {
+      if (!this.transaction.paid) {
+        return "";
+      }
+      let dollars = parseInt(this.transaction.paid / 100);
+      let cents = this.transaction.paid % 100;
+      if (cents < 10) {
+        return dollars.toString() + '.0' + cents.toString();
+      } else {
+        return dollars.toString() + '.' + cents.toString();
+      }
     },
 
     are_we_ok() {
@@ -1305,6 +1327,15 @@ Vue.component('transaction-form', {
           <input type="radio" name="disposition" value="trade" v-model="transaction.disposition">
           <label><strong>Trade</strong> &mdash; this transaction does <em>both</em>.</label>
         </li></ul>
+      </div>
+    </div>
+  </div>
+  <div class="band" v-if="transaction.disposition == 'buy'">
+    <div v-if="mode != 'import'">
+      <div class="control">
+        <label>Amount Spent (optional)</label>
+        <input type="text" :value="getPaid()"  @change="setPaid($event.target.value)"
+               placeholder="(how much did you spend on these new cards?)"></input>
       </div>
     </div>
   </div>

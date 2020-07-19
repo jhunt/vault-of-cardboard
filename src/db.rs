@@ -145,6 +145,7 @@ pub struct Transaction {
     pub metadata: serde_json::Value,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    pub paid: Option<i32>,
 }
 
 impl Transaction {
@@ -202,6 +203,7 @@ pub struct NewTransaction<'a> {
     pub disposition: &'a str,
     pub gain: &'a str,
     pub loss: &'a str,
+    pub paid: Option<i32>,
 }
 
 #[derive(AsChangeset)]
@@ -213,6 +215,7 @@ pub struct UpdateTransaction {
     pub disposition: Option<String>,
     pub gain: Option<String>,
     pub loss: Option<String>,
+    pub paid: Option<Option<i32>>,
 }
 
 #[derive(Identifiable, Queryable)]
@@ -1150,6 +1153,7 @@ mod test {
                 dated: &NaiveDate::from_ymd(2020, 01, 14),
                 gain: "1x XLN Opt\n",
                 loss: "",
+                paid: None,
             },
         );
         assert!(txn.is_ok());
@@ -1182,6 +1186,7 @@ mod test {
                     disposition: None,
                     gain: Some("1x XLN Opt\n3x GRN Radical Idea\n".to_string()),
                     loss: None,
+                    paid: None,
                 },
             )
             .unwrap();
