@@ -480,14 +480,15 @@ Vue.component('set-list', {
 Vue.component('goal-form', {
   props: ['n', 'mode', 'object'],
   data: function() {
+    let o = this.object || {};
     return {
-      title: this.object.name || '',
+      title: o.name || '',
       goal: {
-        id:      this.object.id      || undefined,
-        name:    this.object.name    || '',
-        target:  this.object.target  || '',
-        goal:    this.object.goal    || 'owned',
-        ordinal: this.object.ordinal || this.n    || 0,
+        id:      o.id      || undefined,
+        name:    o.name    || '',
+        target:  o.target  || '',
+        goal:    o.goal    || 'owned',
+        ordinal: o.ordinal || this.n    || 0,
       }
     };
   },

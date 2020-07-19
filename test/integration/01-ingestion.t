@@ -443,6 +443,23 @@ my $res = post("/v1/collectors/$UID/goals", as => $SID, payload => {
 ok($res->is_success, "should be able to post a new goal, as JSON")
 	or diag $res->as_string;
 is($res->header('Content-Type'), 'application/json', "response should be JSON");
+cmp_deeply(
+	from_json($res->content),
+	{
+		goal => {
+			id          => is_uuid(),
+			collector   => $UID,
+			created_at  => ignore(),
+			updated_at  => ignore(),
+			ordinal     => 0,
+			name        => 'All Mirage commons',
+			target      => 'set:MIR and =common',
+			goal        => 'owned',
+			total       => undef,
+			progress    => undef,
+		}
+	},
+	"creating a goal should return the goal details, as JSON");
 
 my $res = get("/v1/collectors/$UID/goals");
 ok($res->is_success, "should be able to retrieve the (now-populated) goal list, as JSON")
@@ -466,7 +483,7 @@ cmp_deeply(
 			},
 		],
 	},
-	"after createing a goal, we should get it back in the main goal list");
+	"after creating a goal, we should get it back in the main goal list");
 
 
 ######################################################################
