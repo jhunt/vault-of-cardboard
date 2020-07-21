@@ -1043,12 +1043,71 @@ Vue.component('deck', {
 `
 });
 
+let Formatter = {
+  methods: {
+    dollar$(n) {
+      let value = parseInt(n * 100);
+      if (isNaN(value)) { return ''; }
+
+      let cents = value % 100;
+      let dollars = parseInt(value / 100);
+
+      dollars = dollars.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      if (cents < 10) {
+        return dollars + ".0" + cents.toString();
+      } else {
+        return dollars + "." + cents.toString();
+      }
+    }
+  }
+};
+
 Vue.component('card-grid', {
+  mixins: [Formatter],
   props: ['q', 'found', 'more', 'oops', 'cards', 'actual', 'sleeve'],
+  data: function () {
+    return {
+      summary: this.summarize(this.cards),
+    };
+  },
+  methods: {
+    summarize(found) {
+      let summary = {
+        cost:     0.0,
+        worth:    0.0,
+        common:   0,
+        uncommon: 0,
+        rare:     0,
+        mythic:   0,
+      };
+
+      found.forEach(card => {
+        if (typeof(card.price) !== 'undefined') {
+          let price = parseFloat(card.price);
+          if (!isNaN(price)) {
+            summary.cost  += price;
+            summary.worth += price * parseInt(card.owned);
+          }
+        }
+        if (card.flags.indexOf('1') >= 0) { summary.common++; }
+        if (card.flags.indexOf('2') >= 0) { summary.uncommon++; }
+        if (card.flags.indexOf('3') >= 0) { summary.rare++; }
+        if (card.flags.indexOf('4') >= 0) { summary.mythic++; }
+      });
+
+      return summary;
+    }
+  },
   template: `
 <div class="search">
   <div v-if="oops" class="oops">{{ q }}: {{ oops }}</div>
-  <div v-if="q" class="meta-results">found <span class="count">{{ found }}</span> card{{ cards.length == 1 ? '' : 's' }}.</div>
+  <div v-if="q" class="meta-results"><div>found <span class="count">{{ found }}</span> card{{ cards.length == 1 ? '' : 's' }}.</div>
+    <ul>
+      <li v-if="summary.cost > 0.0">$\{{ dollar$(summary.cost) }} <span>1x</span></li>
+      <li v-if="summary.worth > 0.0">$\{{ dollar$(summary.worth) }} <span>owned</span></li>
+      <li>{{ summary.common }} / {{ summary.uncommon }} / {{ summary.rare }} / {{ summary.mythic }}</li>
+    </ul>
+  </div>
   <div class="results grid" v-if="actual">
     <card v-for="c in cards" :key="c.id"
           :sleeve="sleeve" :card="c.card"></card>
