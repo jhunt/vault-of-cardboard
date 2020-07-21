@@ -543,7 +543,7 @@ cmp_deeply(
 			},
 		],
 	},
-	"without creating any decks, we should get an empty deck list");
+	"after creating a deck, we should get it back in the main deck list");
 
 
 ######################################################################
