@@ -19,21 +19,21 @@ rescry-for-tests:
 	  --prices test/prices.json
 
 unit-tests:
-	source test/unit/envrc \
+	. test/unit/envrc \
 	&& ./test/unit/setup \
 	&& cargo test --lib
 
 integration-api:
-	source test/integration/envrc \
+	. test/integration/envrc \
 	&& ./test/integration/setup \
 	&& cargo run --bin cardboard api
 integration-tests:
-	source test/integration/envrc \
+	. test/integration/envrc \
 	&& ./test/integration/setup \
 	&& prove test/integration/*.t
 
 watch-and-test:
-	source test/unit/envrc \
+	. test/unit/envrc \
 	&& ./test/unit/setup \
 	&& cargo watch -x 'test --lib'
 
