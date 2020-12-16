@@ -70,6 +70,16 @@ macro_rules! auth {
     };
 }
 
+macro_rules! bulk {
+    ($api: expr, $r: expr) => {
+        match $api.guard_bulk(auth($r), &env::var("VCB_BULK_TOKEN").unwrap_or("".to_string())) {
+            Some(401) => return done!(401 => "authentication required"),
+            Some(403) => return done!(403 => "forbidden"),
+            _ => (),
+        };
+    };
+}
+
 fn json_response(code: status::Status, json: String) -> Response {
     let mut r = Response::with((code, format!("{}\n", json)));
     r.headers.set(ContentType(Mime(
@@ -137,7 +147,7 @@ pub fn run() {
         "/cards.json",
         |_: &mut Request| {
             let api = boot();
-            match api.file("cards.json") {
+            match api.retrieve("cards.json") {
                 Ok(f) => {
                     let mut r = Response::with((status::Ok, f));
                     r.headers.set(ContentType(Mime(
@@ -156,11 +166,29 @@ pub fn run() {
         "cards_json_file",
     );
 
+    router.post(
+        "/cards.json",
+        |r: &mut Request| {
+            let api = boot();
+            bulk!(api, r);
+            match api.store("cards.json", &mut r.body) {
+                Err(e) => {
+                    println!("error: {}", e);
+                    done!(500 => "update failed")
+                }
+                Ok(_) => {
+                    done!(204)
+                }
+            }
+        },
+        "update_cards_json_file"
+    );
+
     router.get(
         "/prices.json",
         |_: &mut Request| {
             let api = boot();
-            match api.file("prices.json") {
+            match api.retrieve("prices.json") {
                 Ok(f) => {
                     let mut r = Response::with((status::Ok, f));
                     r.headers.set(ContentType(Mime(
@@ -179,12 +207,30 @@ pub fn run() {
         "prices_json_file",
     );
 
+    router.post(
+        "/prices.json",
+        |r: &mut Request| {
+            let api = boot();
+            bulk!(api, r);
+            match api.store("prices.json", &mut r.body) {
+                Err(e) => {
+                    println!("error: {}", e);
+                    done!(500 => "update failed")
+                }
+                Ok(_) => {
+                    done!(204)
+                }
+            }
+        },
+        "update_prices_json_file"
+    );
+
     router.get(
         "/collectors/:uid/collections/_/collection.json",
         |r: &mut Request| {
             let api = boot();
             let uid = param!(r, "uid");
-            match api.file(&format!("c/{}/_/collection.json", uid)) {
+            match api.retrieve(&format!("c/{}/_/collection.json", uid)) {
                 Ok(f) => {
                     let mut r = Response::with((status::Ok, f));
                     r.headers.set(ContentType(Mime(

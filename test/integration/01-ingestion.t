@@ -47,10 +47,10 @@ sub post {
 	my ($reluri, %opts) = @_;
 	my $req = HTTP::Request->new(POST => "$URL$reluri", [
 			Accept => 'application/json',
-			ContentType => 'application/json',
-			($opts{as} ? (Authorization => "Basic ".encode_base64("$opts{as}:")) : ()),
+			(ref($opts{payload}) ? (ContentType   => 'application/json')                   : ()),
+			($opts{as}           ? (Authorization => "Basic ".encode_base64("$opts{as}:")) : ()),
 		],
-		to_json($opts{payload}),
+		(ref($opts{payload}) ? to_json($opts{payload}) : $opts{payload}),
 	);
 	diag $req->as_string if $ENV{TRACE};
 	$UA->request($req);
@@ -59,6 +59,8 @@ sub post {
 $UA = LWP::UserAgent->new(agent => "vcb-integration-tests/1.0");
 $URL = $ENV{TEST_VAULTD_URL};
 ok($URL, "should have a TEST_VAULTD_URL in the environment...");
+
+my $BULK_TOKEN = "testing-bulk-token";
 
 ######################################################################
 ###
@@ -143,6 +145,48 @@ cmp_deeply(
 
 ######################################################################
 ###
+###   UPDATE CARD DATA
+###
+###   This test attempts to upload new card data, using a modified
+###   version of the on-disk card data (retrieved in the last test)
+###   with key (tested-for) amounts changed.
+###
+
+$cards->{sets}{WTH}{cards} = []; # no more weatherlight!
+my $res = post("/cards.json", payload => to_json($cards));
+is($res->code, 401, "cards.json bulk updates must be authorized")
+	or diag $res->as_string;
+
+my $res = post("/cards.json", payload => to_json($cards), as => $BULK_TOKEN);
+ok($res->is_success, "should be able to update cards.json")
+	or diag $res->as_string;
+ok !$res->content, 'bulk updates should return no content (http 204)'
+	or diag $res->as_string;
+
+my $res = get("/cards.json");
+ok($res->is_success, "should be able to re-retrieve all cards, as JSON")
+	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
+
+my $cards = from_json($res->content);
+cmp_deeply(
+	$cards,
+	superhashof({
+		cards => superhashof({
+			'01fc5bb3-ebd7-4ab4-8aef-2ece1e1d9b7c' => superhashof({
+				name => "Lotus Vale"
+			}),
+		}),
+		sets => superhashof({
+			WTH => superhashof({
+				cards => [], # all of weatherlight just got "un" printed!
+			}),
+		}),
+	}),
+	"The WTH set is now empty (after our update)");
+
+######################################################################
+###
 ###   RETRIEVE PRICING DATA
 ###
 
@@ -155,6 +199,36 @@ my $prices = from_json($res->content);
 is($prices->{'2e5cd12a-2a07-44a8-8eac-de00d26fe9e3'}, '19.63',
 	"WTH Lotus Vale should be priced at \$19.63 (well, it shouldn't; but it WAS when the test data was retrieved...)");
 ok(!exists $prices->{'01fc5bb3-ebd7-4ab4-8aef-2ece1e1d9b7c'}, "pricing should not exist for oracle cards.");
+
+######################################################################
+###
+###   UPDATE PRICING DATA
+###
+###   This test attempts to upload new pricing data, using a modified
+###   version of the on-disk pricing data (retrieved in the last test)
+###   with key (tested-for) amounts changed.
+###
+
+$prices->{'2e5cd12a-2a07-44a8-8eac-de00d26fe9e3'} = '100.23';
+my $res = post("/prices.json", payload =>to_json($prices));
+is($res->code, 401, "cards.json bulk updates must be authorized")
+	or diag $res->as_string;
+
+my $res = post("/prices.json", payload =>to_json($prices), as => $BULK_TOKEN);
+ok($res->is_success, "should be able to update prices.json")
+	or diag $res->as_string;
+ok !$res->content, 'bulk updates should return no content (http 204)'
+	or diag $res->as_string;
+
+my $res = get("/prices.json");
+ok($res->is_success, "should be able to re-retrieve pricing data, as JSON")
+	or diag $res->as_string;
+is($res->header('Content-Type'), 'application/json', "response should be JSON");
+
+my $prices = from_json($res->content);
+is($prices->{'2e5cd12a-2a07-44a8-8eac-de00d26fe9e3'}, '100.23',
+	"WTH Lotus Vale should be priced at \$100.23 (after our update)");
+ok(!exists $prices->{'01fc5bb3-ebd7-4ab4-8aef-2ece1e1d9b7c'}, "pricing still should not exist for oracle cards.");
 
 ######################################################################
 ###

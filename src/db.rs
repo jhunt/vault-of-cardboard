@@ -76,6 +76,28 @@ impl FStore {
         Ok(s)
     }
 
+    pub fn overwrite<R: Read>(&self, filename: &str, mut reader: R) -> Result<File> {
+        let pb = self.path_to(filename);
+        let mut tmp_pb = pb.clone();
+        tmp_pb.pop();
+        tmp_pb.push(match pb.file_name() {
+            None => ".file",
+            Some(f) => f.to_str().chain_err(|| "unable to construct a path for file storage")?,
+        });
+
+        let mut tmp_f = File::create(
+            tmp_pb
+                .to_str()
+                .chain_err(|| "failed to construct a path for file storage")?,
+        )
+        .chain_err(|| "failed to open file for writing")?;
+
+        io::copy(&mut reader, &mut tmp_f).chain_err(|| "unable to write data to filesystem")?;
+        fs::rename(tmp_pb, pb).chain_err(|| "unable to overwrite destination file")?;
+
+        self.get_as_reader(filename)
+    }
+
     pub fn append_to_json_list<T: Serialize>(&self, filename: &str, item: T) -> Result<()> {
         let pb = self.path_to(filename);
         let mut file = fs::OpenOptions::new()
@@ -373,6 +395,13 @@ impl Database {
             .fs
             .get_as_reader(rel)
             .chain_err(|| "unable to retrieve file from filesystem")?)
+    }
+
+    pub fn put_file<R: Read>(&self, rel: &str, from: R) -> Result<std::fs::File> {
+        Ok(self
+            .fs
+            .overwrite(rel, from)
+            .chain_err(|| "unable to store file into filesystem")?)
     }
 
     // Persist a Session object to Redis.

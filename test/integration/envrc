@@ -10,6 +10,7 @@ export VCB_REDIS_URL=redis://${LOCALHOST}:${DOCKER_REDIS_PORT}
 export VCB_FS_ROOT=$PWD/test/integration/fs
 export VCB_LISTEN=${LOCALHOST}:3000
 export VCB_SESSION_IDLE=7776000 # 90d
+export VCB_BULK_TOKEN=testing-bulk-token
 
 export TEST_VAULTD_URL=http://${LOCALHOST}:3000
 

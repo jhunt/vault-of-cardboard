@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use regex::Regex;
 use unicode_segmentation::UnicodeSegmentation;
+use std::io::Read;
 
 use super::db;
 
@@ -325,8 +326,20 @@ impl API {
         }
     }
 
-    pub fn file(&self, rel: &str) -> Result<std::fs::File> {
+    pub fn guard_bulk(&self, sid: Option<String>, bulk: &str) -> Option<i16> {
+        match sid {
+            Some(sid) if sid == bulk => None,
+            Some(_) => Some(403),
+            None => Some(401),
+        }
+    }
+
+    pub fn retrieve(&self, rel: &str) -> Result<std::fs::File> {
         Ok(self.db.get_file(rel).chain_err(|| "unable to get file")?)
+    }
+
+    pub fn store<R: Read>(&self, rel: &str, from: R) -> Result<std::fs::File> {
+        Ok(self.db.put_file(rel, from).chain_err(|| "unable to overwrite file")?)
     }
 
     pub fn whoami(&self, sid: Option<String>) -> Object {
