@@ -90,7 +90,7 @@ class Vault {
           art       : card.illustration,
 
           back      : "", // FIXME - seems to be missing
-          back      : card.layout == 'transform'
+          back      : card.layout == 'transform' || card.layout == 'modal_dfc' || card.layout == 'double_faced_token'
             ? data.sets[code].code + "/" + data.sets[code].code + "-" + card.id + ".flip.jpg"
             : "",
 

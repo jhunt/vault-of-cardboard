@@ -278,7 +278,7 @@ pub struct OracleCard {
 impl std::convert::From<&scryfall::Card> for OracleCard {
     fn from(card: &scryfall::Card) -> Self {
         match card.layout.as_str() {
-            "transform" => OracleCard {
+            "transform" | "modal_dfc" | "double_faced_token" => OracleCard {
                 id: card.oracle_id.to_string(),
                 name: card.name.to_string(),
                 type_line: card.type_line.to_string(),
@@ -587,7 +587,7 @@ impl std::convert::From<&scryfall::Card> for PrintCard {
             rarity: card.rarity.to_string(),
         };
         match card.layout.as_str() {
-            "transform" => PrintCard {
+            "transform" | "modal_dfc" | "double_faced_token" => PrintCard {
                 id: card.id.to_string(),
                 oid: card.oracle_id.to_string(),
                 artist: card.artist.to_string(),

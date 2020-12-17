@@ -116,14 +116,14 @@ for code in "$@"; do
   fi
 
   if [[ ${IMAGES} = "yes" ]]; then
-    jq <$CACHE/dat/$code.json -Mr '.cards[] | select(.layout == "transform" or .layout == "modal_dfc") | [.id,.card_faces[0].image_uris.large,.card_faces[1].image_uris.large] | @tsv' |\
+    jq <$CACHE/dat/$code.json -Mr '.cards[] | select(.layout == "transform" or .layout == "modal_dfc" or .layout == "double_faced_token") | [.id,.card_faces[0].image_uris.large,.card_faces[1].image_uris.large] | @tsv' |\
       while IFS=$'\t' read -r id front back; do
         echo " >> uploading cards images for (transform) card [$id]..."
         upload $front cards/$code/$code-$id.jpg
         upload $back  cards/$code/$code-$id.flip.jpg
       done
 
-    jq <$CACHE/dat/$code.json -Mr '.cards[] | select(.layout != "transform" and .layout != "modal_dfc") | [.id,.image_uris.large] | @tsv' |\
+    jq <$CACHE/dat/$code.json -Mr '.cards[] | select(.layout != "transform" and .layout != "modal_dfc" and .layout != "double_faced_token") | [.id,.image_uris.large] | @tsv' |\
     while IFS=$'\t' read -r id front; do
         echo " >> uploading cards images for card [$id]..."
         upload $front cards/$code/$code-$id.jpg

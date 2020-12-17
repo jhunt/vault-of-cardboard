@@ -15,7 +15,7 @@
 
 <script type="text/html" id="template:play-card"><!-- {{{ -->
   <img class="c" id="[[= _.id ]]" src="[[= $CONFIG.imgroot ]]/cards/[[= _.card.image ]]"
-       [[ if (_.card.layout == 'transform') { ]]data-flip-src="[[= $CONFIG.imgroot ]]/cards/[[= _.card.back ]]"[[ } ]]
+       [[ if (_.card.layout == 'transform' || _.card.layout == 'modal_dfc' || _.card.layout == 'double_faced_token') { ]]data-flip-src="[[= $CONFIG.imgroot ]]/cards/[[= _.card.back ]]"[[ } ]]
        draggable="true"
        alt="[[= _.card.name ]]" title="[[= _.card.name ]]">
 </script><!-- }}} -->
@@ -1132,7 +1132,7 @@ Vue.component('card', {
 <span :class="'card ' + (sleeve ? ('sleeved sl-'+sleeve) : '')">
   <span v-if="backed" class="back"><span><img src="/img/mtgback.jpg"></span></span>
   <span :class="'face ' + card.layout">
-    <span><a v-if="card.layout == 'transform'" href="#" rel="flip"></a>
+    <span><a v-if="card.layout == 'transform' || card.layout == 'modal_dfc' || card.layout == 'double_faced_token'" href="#" rel="flip"></a>
     <img :data-id="card.id" :src="imgroot + '/cards/' + card.image"
          :alt="card.name + ' [' + card.set.code + ']'"
          :title="card.name + ' [' + card.set.code + ']'"
@@ -2291,7 +2291,7 @@ $(function () {
     var $card = $(event.target).closest('.face');
     var $img  = $(event.target).closest('.face').find('img');
 
-    if ($card.is('.transform') || $card.is('.double_faced_token')) {
+    if ($card.is('.transform') || $card.is('.modal_dfc') || $card.is('.double_faced_token')) {
       var src = $img.attr('src');
       $img.attr('src', $img.attr('data-flip-src'));
       $img.attr('data-flip-src', src);
