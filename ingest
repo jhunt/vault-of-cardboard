@@ -18,6 +18,11 @@ if [[ -z "${CACHE:-}" ]]; then
   ok=no
 fi
 
+if [[ "${1:-}" = "--with-images" ]]; then
+  shift
+  IMAGES=yes
+fi
+
 IMAGES=${IMAGES:-no}
 if [[ ${IMAGES} == "yes" ]]; then
   if [[ -z "${S3_AKI:-}" ]]; then
@@ -61,11 +66,11 @@ for code in "$@"; do
   mkdir -p $CACHE/scry/$code/
   if [[ ! -s $CACHE/scry/$code/set.json ]]; then
     echo " - fetching set metadata from Scryfall API..."
-    curl -sF https://api.scryfall.com/sets/$code -H Accept:application/json > $CACHE/scry/$code/set.json
+    curl -sf https://api.scryfall.com/sets/$code -H Accept:application/json > $CACHE/scry/$code/set.json
   fi
   if [[ ! -s $CACHE/scry/$code/tok.json ]]; then
     echo " - fetching (token) set metadata from Scryfall API..."
-    curl -sF https://api.scryfall.com/sets/T$code -H Accept:application/json > $CACHE/scry/$code/tok.json || echo '{}' > $CACHE/scry/$code/tok.json
+    curl -sf https://api.scryfall.com/sets/T$code -H Accept:application/json > $CACHE/scry/$code/tok.json || echo '{}' > $CACHE/scry/$code/tok.json
   fi
 
   n=1
@@ -75,7 +80,7 @@ for code in "$@"; do
     while [[ $next != "null" && $more == "true" ]]; do
       if [[ ! -s $CACHE/scry/$code/cards$n.json ]]; then
         echo "  - fetching card results page $n from Scryfall API..."
-        curl -sF $next -H Accept:application/json > $CACHE/scry/$code/cards$n.json
+        curl -sf $next -H Accept:application/json > $CACHE/scry/$code/cards$n.json
       fi
       more=`jq -r .has_more  < $CACHE/scry/$code/cards$n.json`
       next=`jq -r .next_page < $CACHE/scry/$code/cards$n.json`
@@ -111,14 +116,14 @@ for code in "$@"; do
   fi
 
   if [[ ${IMAGES} = "yes" ]]; then
-    jq <$CACHE/dat/$code.json -Mr '.cards[] | select(.layout == "transform") | [.id,.card_faces[0].image_uris.large,.card_faces[1].image_uris.large] | @tsv' |\
+    jq <$CACHE/dat/$code.json -Mr '.cards[] | select(.layout == "transform" or .layout == "modal_dfc") | [.id,.card_faces[0].image_uris.large,.card_faces[1].image_uris.large] | @tsv' |\
       while IFS=$'\t' read -r id front back; do
         echo " >> uploading cards images for (transform) card [$id]..."
         upload $front cards/$code/$code-$id.jpg
         upload $back  cards/$code/$code-$id.flip.jpg
       done
 
-    jq <$CACHE/dat/$code.json -Mr '.cards[] | select(.layout != "transform") | [.id,.image_uris.large] | @tsv' |\
+    jq <$CACHE/dat/$code.json -Mr '.cards[] | select(.layout != "transform" and .layout != "modal_dfc") | [.id,.image_uris.large] | @tsv' |\
     while IFS=$'\t' read -r id front; do
         echo " >> uploading cards images for card [$id]..."
         upload $front cards/$code/$code-$id.jpg
