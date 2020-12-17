@@ -158,11 +158,13 @@ fn main() {
         }
         println!("  |");
         }
-        println!("  | purchase at");
-        println!("  |   tcgplayer:   {}", card.purchase_uris.tcgplayer);
-        println!("  |   cardhoarder: {}", card.purchase_uris.cardhoarder);
-        println!("  |   cardmarket:   {}", card.purchase_uris.cardmarket);
-        println!("  |");
+        if let Some(uris) = card.purchase_uris {
+            println!("  | purchase at");
+            println!("  |   tcgplayer:   {}", uris.tcgplayer);
+            println!("  |   cardhoarder: {}", uris.cardhoarder);
+            println!("  |   cardmarket:  {}", uris.cardmarket);
+            println!("  |");
+        }
         if let Some(uris) = card.image_uris {
             println!("  | available imagery");
             println!("  |   png:         {}", uris.png);
@@ -171,9 +173,9 @@ fn main() {
             println!("  |   normal:      {}", uris.normal);
             println!("  |   large:       {}", uris.large);
             println!("  |   border_crop: {}", uris.border_crop);
+            println!("  |   high res?    {}", yn(&Some(card.highres_image)));
+            println!("  |");
         }
-        println!("  |   high res?    {}", yn(&Some(card.highres_image)));
-        println!("  |");
         println!("  | other web resources:");
         println!("  |    - uri: {}", card.uri);
         println!("  |    - scryfall: {}", card.scryfall_uri);

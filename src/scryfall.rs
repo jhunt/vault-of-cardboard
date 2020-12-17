@@ -157,7 +157,7 @@ pub struct Card {
     pub mana_cost: Option<String>,
 
     pub legalities: Legality,
-    pub purchase_uris: PurchaseURIs,
+    pub purchase_uris: Option<PurchaseURIs>,
     pub set: String,
     pub set_name: String,
     pub set_type: Option<String>,
