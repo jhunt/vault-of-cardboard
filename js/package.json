@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "coverage": "^0.4.1",
-    "fuse.js": "^5.1.0"
+    "fuse.js": "^5.1.0",
+    "node-sass": "^5.0.0"
   }
 }

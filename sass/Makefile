@@ -1,5 +1,6 @@
 build:
-	sass main.scss > vcb.css
+	sassc main.scss > vcb.css
+	#../js/node_modules/.bin/node-sass main.scss > vcb.css
 
 install: build
 	npx minify vcb.css > ../htdocs/css/vcb.css
@@ -10,11 +11,11 @@ install: build
 
 refresh:
 	rm -rf keyrune/ && mkdir keyrune/
-	curl -L https://github.com/andrewgioia/Keyrune/archive/master.tar.gz | tar -xz
-	rm -rf keyrune/ && mv Keyrune-master/ keyrune
+	curl -L https://github.com/andrewgioia/keyrune/archive/master.tar.gz | tar -xz
+	rm -rf keyrune/ && mv keyrune-master/ keyrune
 	
 	rm -rf mana/ && mkdir mana/
-	curl -L https://github.com/andrewgioia/Mana/archive/master.tar.gz | tar -xz
-	rm -rf mana/ && mv Mana-master/ mana
+	curl -L https://github.com/andrewgioia/mana/archive/master.tar.gz | tar -xz
+	rm -rf mana/ && mv mana-master/ mana
 
 .PHONY: build refresh
