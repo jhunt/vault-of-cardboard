@@ -42,7 +42,6 @@ schema:
 
 docker:
 	docker build -t cardboard:$(TAG) .
-	docker build -t ingester:$(TAG)   -f docker/ingester/Dockerfile   docker/ingester
 	docker build -t proxycache:$(TAG) -f docker/proxycache/Dockerfile docker/proxycache
 	
 	rm -rf docker/perimeter/htdocs
@@ -51,13 +50,11 @@ docker:
 
 tag: docker
 	docker tag cardboard:$(TAG)  $(REGISTRY)/cardboard:$(TAG)
-	docker tag ingester:$(TAG)   $(REGISTRY)/ingester:$(TAG)
 	docker tag perimeter:$(TAG)  $(REGISTRY)/perimeter:$(TAG)
 	docker tag proxycache:$(TAG) $(REGISTRY)/proxycache:$(TAG)
 
 push: tag
 	docker push $(REGISTRY)/cardboard:$(TAG)
-	docker push $(REGISTRY)/ingester:$(TAG)
 	docker push $(REGISTRY)/perimeter:$(TAG)
 	docker push $(REGISTRY)/proxycache:$(TAG)
 
