@@ -41,22 +41,19 @@ schema:
 	./util/schema > src/schema.rs
 
 docker:
-	docker build -t cardboard:$(TAG) .
-	docker build -t proxycache:$(TAG) -f docker/proxycache/Dockerfile docker/proxycache
-	
-	rm -rf docker/perimeter/htdocs
-	cp -a htdocs/ docker/perimeter/htdocs
-	docker build -t perimeter:$(TAG)  -f docker/perimeter/Dockerfile  docker/perimeter
+	DOCKER_BUILDKIT=1 docker build -t api:$(TAG)   -f oci/api/Dockerfile   .
+	DOCKER_BUILDKIT=1 docker build -t proxy:$(TAG) -f oci/proxy/Dockerfile .
+	DOCKER_BUILDKIT=1 docker build -t ux:$(TAG)    -f oci/ux/Dockerfile    .
 
 tag: docker
-	docker tag cardboard:$(TAG)  $(REGISTRY)/cardboard:$(TAG)
-	docker tag perimeter:$(TAG)  $(REGISTRY)/perimeter:$(TAG)
-	docker tag proxycache:$(TAG) $(REGISTRY)/proxycache:$(TAG)
+	docker tag api:$(TAG)   $(REGISTRY)/api:$(TAG)
+	docker tag ux:$(TAG)    $(REGISTRY)/ux:$(TAG)
+	docker tag proxy:$(TAG) $(REGISTRY)/proxy:$(TAG)
 
 push: tag
-	docker push $(REGISTRY)/cardboard:$(TAG)
-	docker push $(REGISTRY)/perimeter:$(TAG)
-	docker push $(REGISTRY)/proxycache:$(TAG)
+	docker push $(REGISTRY)/api:$(TAG)
+	docker push $(REGISTRY)/ux:$(TAG)
+	docker push $(REGISTRY)/proxy:$(TAG)
 
 release:
 	@echo "Checking that VERSION was defined in the calling environment"

@@ -23,7 +23,7 @@ spec:
 
       containers:
         - name: ingester
-          image: docker.zyxl.xyz/vcb/ingester:latest
+          image: docker.zyxl.xyz/vcb/api:latest
           imagePullPolicy: Always
           env:
             - name:  CACHE

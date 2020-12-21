@@ -1,0 +1,9 @@
+**
+!/ux/*.json
+!/ux/*.js
+!/ux/yarn.lock
+!/ux/src
+!/ux/public
+/ux/public/cards.json
+/ux/public/prices.json
+!/oci/ux/nginx.conf

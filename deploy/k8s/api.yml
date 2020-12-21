@@ -25,7 +25,7 @@ spec:
 
       containers:
         - name: web
-          image: docker.zyxl.xyz/vcb/perimeter:latest
+          image: docker.zyxl.xyz/vcb/ux:latest
           imagePullPolicy: Always
           ports:
             - name: web
@@ -36,7 +36,7 @@ spec:
               mountPath: /data
 
         - name: api
-          image: docker.zyxl.xyz/vcb/cardboard:latest
+          image: docker.zyxl.xyz/vcb/api:latest
           imagePullPolicy: Always
           env:
             - name:  VCB_DATABASE_URL

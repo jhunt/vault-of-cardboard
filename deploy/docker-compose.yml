@@ -10,7 +10,7 @@ services:
 
   api:
     depends_on: [db, redis]
-    image: docker.zyxl.xyz/vcb/cardboard:latest
+    image: docker.zyxl.xyz/vcb/api:latest
     entrypoint: ''
     ports:
       - '8090:3001'
@@ -22,24 +22,24 @@ services:
     command:
       - /bin/sh
       - -c
-      - /cardboard migrate && /cardboard api
-        # docker exec -it deploy_api_1 /cardboard rescry -r /cache/dat -c /data/cards.json -p /data/prices.json -l /data/lookup.json
+      - cardboard migrate && cardboard api
+        # docker exec -it deploy_api_1 cardboard rescry -r /cache/dat -c /data/cards.json -p /data/prices.json -l /data/lookup.json
     volumes:
       - data:/data
       - cache:/cache
 
   web:
     depends_on: [api]
-    image: docker.zyxl.xyz/vcb/perimeter:latest
+    image: docker.zyxl.xyz/vcb/ux:latest
     network_mode: 'service:api' # can't co-exist with ports:[]
     volumes:
       - data:/data
 
-  proxycache:
-    image: docker.zyxl.xyz/vcb/proxycache:latest
+  proxy:
+    image: docker.zyxl.xyz/vcb/proxy:latest
 
   ingest:
-    image: docker.zyxl.xyz/vcb/ingester:latest
+    image: docker.zyxl.xyz/vcb/api:latest
     environment:
       - CACHE=/cache
       - http_proxy=http://127.0.0.1:3128
@@ -49,7 +49,7 @@ services:
       - S3_AKI=${S3_AKI}
       - S3_KEY=${S3_KEY}
       - IMAGES=${IMAGES}
-    network_mode: 'service:proxycache' # can't co-exist with ports:[]
+    network_mode: 'service:proxy' # can't co-exist with ports:[]
     entrypoint: ''
     command:
       - /bin/sh

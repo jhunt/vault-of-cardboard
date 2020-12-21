@@ -7,16 +7,15 @@ the Vault of Cardboard architecture / topology.
 
 Those are:
 
-**perimeter** - An nginx-derived image that brings serves up the
+**ux** - An nginx-derived image that brings serves up the
 static HTML / JS / CSS / etc. files that make up web user
 interface for Vault of Cardboard.
 
-**ingester** - An alpine-based image that provides out-of-band
-data ingestion and manipulation via curl + jq, from upstream
-Scryfall data, into a format that Vault of Cardboard natively
-understands.
+**api** - The backend API implementation of Vault of Cardboard.
+This is the thing that does collection management, authentication,
+deck and goal munging, etc.
 
-**proxycache** - A standalone squid proxy server image that can be
+**proxy** - A standalone squid proxy server image that can be
 used in high-churn deployments, to cache data from upstream API
 endpoints (like Scryfall) when that data hasn't changed.  This is
 a matter of consideration and politeness to upstream operators.
