@@ -9,7 +9,7 @@
         <div class="detail">
           <a class="close" href="#" @click.prevent="$emit('close')">X</a>
           <ul class="info">
-            <li><strong>{{ card.name }}</strong></li>
+            <li><strong>{{ card.name }}</strong> <a rel="debug" href="#" @click.prevent="debug = !debug">debug</a></li>
             <li><em>{{ card.type }}</em></li>
             <li>{{ card.set.name }} ({{ card.set.code }})</li>
             <li>#{{ card.number }}/{{ card.set.total }}</li>
@@ -23,6 +23,9 @@
           <ul>
             <li class="oracle"><p v-for="(line, i) in oracles(card)" :key="i" v-html="line"></p></li>
           </ul>
+          <div class="debug" v-if="debug">
+            <pre><code>{{ dump(card) }}</code></pre>
+          </div>
           <p v-if="card.price" class="price">
             {{ price(card.price) }}
             <span v-if="card.price > 999" class="w1">remember kids, M:tG is <strong>NOT</strong> an investment...</span>
@@ -50,6 +53,7 @@ export default {
   },
   data() {
     return {
+      debug: false,
       imgroot: Config.imgroot,
     }
   },
@@ -62,6 +66,9 @@ export default {
     },
     oracles(card) {
       return this.symbolize(card.oracle.replace('//', "\n<hr>\n")).split(/\n+/)
+    },
+    dump(card) {
+      return JSON.stringify(card, null, '  ')
     }
   }
 }
@@ -138,6 +145,33 @@ export default {
         font-family: monospace;
         font-weight: bold;
         margin: 2px;
+      }
+    }
+
+    a[rel="debug"] {
+      color: transparent;
+      &:hover {
+        color: #ccc;
+      }
+      outline: none;
+      font-size: 11px;
+      text-decoration: none;
+    }
+
+    .debug {
+      pre {
+        font-family: monospace;
+        display: block;
+        height: 14em;
+        overflow: auto;
+        border: 4px solid #86ae88;
+        background-color: #2d3e34;
+        color: #d1eed7;
+        font-size: 12px;
+        line-height: 15px;
+        border-width: 5px 0;
+        padding: 1em;
+        white-space: pre-line;
       }
     }
 
