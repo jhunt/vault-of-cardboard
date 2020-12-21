@@ -67,6 +67,10 @@ release:
 next:
 	@date +v%Y%m%d.%H%M%S
 
+backend:
+	docker-compose -p vcb build
+	docker-compose -p vcb up -d
+
 compose-up:
 	docker-compose -p vcb -f deploy/docker-compose.yml up -d
 

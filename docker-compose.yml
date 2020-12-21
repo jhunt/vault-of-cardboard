@@ -1,0 +1,33 @@
+---
+version: '3'
+services:
+  redis:
+    image: redis
+  postgres:
+    image: postgres
+    environment:
+      - POSTGRES_PASSWORD=foo
+      - POSTGRES_DB=vcb
+
+  api:
+    build: .
+    depends_on: [postgres, redis]
+    entrypoint: ''
+    ports:
+      - '8090:3000'
+    environment:
+      - VCB_DATABASE_URL=postgres://postgres:foo@postgres/vcb
+      - VCB_REDIS_URL=redis://redis
+      - VCB_FS_ROOT=/data
+      - VCB_LISTEN=0.0.0.0:3000
+    command:
+      - /bin/sh
+      - -c
+      - |
+        CACHE=/cache ingest ISD DKA AVR MIR VIS STH TMP
+        cardboard rescry -r /cache/dat -c /data/cards.json -p /data/prices.json -l /data/lookup.json
+        cardboard migrate && cardboard api
+    volumes:
+      - $PWD/run/data:/data
+      - $PWD/run/cache:/cache
+
