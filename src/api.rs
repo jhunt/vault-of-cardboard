@@ -387,10 +387,20 @@ impl API {
                         username: who.username.to_string(),
                         session: session.id.to_string(),
                     })),
-                    _ => Ok(Object::fail("session-failed")),
+                    Err(e) => {
+                        println!("session-failed: {}", e);
+                        Ok(Object::fail("session-failed"))
+                    },
                 }
             }
-            _ => Ok(Object::fail("authentication-failed")),
+            Ok(None) => {
+                println!("authentication-failed: (no user returned)",);
+                Ok(Object::fail("authentication-failed"))
+            },
+            Err(e) => {
+                println!("authentication-failed: {}", e);
+                Ok(Object::fail("authentication-failed"))
+            },
         }
     }
 
@@ -418,7 +428,10 @@ impl API {
                         username: who.username.to_string(),
                         session: session.id.to_string(),
                     })),
-                    _ => Ok(Object::fail("signup-failed")),
+                    Err(e) => {
+                        println!("signup-failed: {}", e);
+                        Ok(Object::fail("signup-failed"))
+                    },
                 }
             }
             Err(e) => Ok(Object::fail(&e.to_string())),
@@ -470,7 +483,10 @@ impl API {
             },
         ) {
             Ok(txn) => Ok(Object::Transaction(Transaction::from(txn))),
-            _ => Ok(Object::fail("transaction-creation-failed")),
+            Err(e) => {
+                println!("transaction-creation-failed: {}", e);
+                Ok(Object::fail("transaction-creation-failed"))
+            },
         }
     }
 
@@ -542,7 +558,10 @@ impl API {
             },
         ) {
             Ok(txn) => Ok(Object::Transaction(Transaction::from(txn))),
-            _ => Ok(Object::fail("transaction-update-failed")),
+            Err(e) => {
+                println!("transaction-update-failed: {}", e);
+                Ok(Object::fail("transaction-update-failed"))
+            },
         }
     }
 
@@ -572,7 +591,10 @@ impl API {
 
         match self.db.delete_transaction(transaction.id) {
             Ok(_) => Ok(Object::ok("transaction-removed")),
-            _ => Ok(Object::fail("transaction-removal-failed")),
+            Err(e) => {
+                println!("transaction-removal-failed: {}", e);
+                Ok(Object::fail("transaction-removal-failed"))
+            },
         }
     }
 
@@ -601,7 +623,10 @@ impl API {
             },
         ) {
             Ok(goal) => Ok(Object::Goal(Goal::from(goal))),
-            _ => Ok(Object::fail("goal-creation-failed")),
+            Err(e) => {
+                println!("goal-creation-failed: {}", e);
+                Ok(Object::fail("goal-creation-failed"))
+            },
         }
     }
 
@@ -641,7 +666,10 @@ impl API {
             },
         ) {
             Ok(goal) => Ok(Object::Goal(Goal::from(goal))),
-            _ => Ok(Object::fail("goal-update-failed")),
+            Err(e) => {
+                println!("goal-update-failed: {}", e);
+                Ok(Object::fail("goal-update-failed"))
+            },
         }
     }
 
@@ -671,7 +699,10 @@ impl API {
 
         match self.db.delete_goal(goal.id) {
             Ok(_) => Ok(Object::ok("goal-removed")),
-            _ => Ok(Object::fail("goal-removal-failed")),
+            Err(e) => {
+                println!("goal-removal-failed: {}", e);
+                Ok(Object::fail("goal-removal-failed"))
+            },
         }
     }
 
@@ -744,7 +775,10 @@ impl API {
             },
         ) {
             Ok(deck) => Ok(Object::Deck(Deck::from(deck))),
-            _ => Ok(Object::fail("deck-creation-failed")),
+            Err(e) => {
+                println!("deck-creation-failed: {}", e);
+                Ok(Object::fail("deck-creation-failed"))
+            },
         }
     }
 
@@ -784,7 +818,10 @@ impl API {
             },
         ) {
             Ok(deck) => Ok(Object::Deck(Deck::from(deck))),
-            _ => Ok(Object::fail("deck-update-failed")),
+            Err(e) => {
+                println!("deck-update-failed: {}", e);
+                Ok(Object::fail("deck-update-failed"))
+            },
         }
     }
 
@@ -814,7 +851,10 @@ impl API {
 
         match self.db.delete_deck(deck.id) {
             Ok(_) => Ok(Object::ok("deck-removed")),
-            _ => Ok(Object::fail("deck-removal-failed")),
+            Err(e) => {
+                println!("deck-removal-failed: {}", e);
+                Ok(Object::fail("deck-removal-failed"))
+            },
         }
     }
 
