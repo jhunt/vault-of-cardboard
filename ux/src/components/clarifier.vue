@@ -35,12 +35,11 @@ import VcbCard from '@/components/card'
 export default {
   name: 'vcb-clarifier',
   components: {VcbCard},
-  props: ['problem'], //, 'line', 'cards', 'value', 'error', 'target'],
+  props: ['problem'],
   data: function () {
     return {
       applying: false,
       replacements: [], // [[n, card], [n, card] ...]
-      //counts: new Map()
       counts: {}
     };
   },
