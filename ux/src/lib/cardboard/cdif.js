@@ -161,11 +161,22 @@ let CDIF = {
       let l = lines[i]
       let card = vault.clarify(l.set, l.number, l.oracle)
       if (card instanceof Array) {
+
+        // figure out the two "halves" of a line - everything BEFORE
+        // the pipe delimiter, and everything after.  clarifiers can
+        // (and should!) use these two to show diffs / patches.
+        let halves = l.src.split(/\s*\|\s*/)
+        if (halves[1]) {
+          halves[1] = ` | ${halves[1]}`
+        }
+
         probs.push({
           id     : l.line + ': ' + l.src,
           line   : l.line,
           target : l.oracle + (l.set ? ' (in '+l.set+')' : ''),
-          value  : l.src,
+          src    : l.src,
+          value  : halves[0],
+          vars   : halves[1],
           error  : 'not found via exact(ish) match.  Did you mean one of these instead?',
           cards  : card.slice(0,8).map(c => vault.card(c.id))
         })

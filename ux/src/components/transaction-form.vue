@@ -367,7 +367,11 @@ export default {
       }
 
       let lines = this.transaction[type].split("\n")
-      lines.splice(problem.line - 1, 1, ...replacements.map(r => r[0]+'x '+r[1]))
+      let variants = lines[problem.line - 1].match(/\|/)
+                   ? lines[problem.line - 1].replace(/.*\s*\|/, ' |')
+                   : ''
+
+      lines.splice(problem.line - 1, 1, ...replacements.map(r => r[0]+'x '+r[1]+variants))
       this.transaction[type] = lines.join("\n")
 
       this.validate(type)

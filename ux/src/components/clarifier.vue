@@ -6,8 +6,8 @@
               <span class="problem">{{ problem.error }}</span></p>
       <div class="resolution" v-if="replacements.length > 0">
         <ul class="changes">
-          <li><del>{{ problem.value }}</del></li>
-          <li v-for="(r,i) in replacements" :key="i"><ins>{{ r[0] }}x {{ r[1] }}</ins></li>
+          <li><del>{{ problem.value }}{{ problem.vars }}</del></li>
+          <li v-for="(r,i) in replacements" :key="i"><ins>{{ r[0] }}x {{ r[1] }}{{ problem.vars }}</ins></li>
         </ul>
         <div>
           <button @click="apply()" rel="apply">✔ Apply</button>
