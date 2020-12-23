@@ -23,7 +23,7 @@
             <td>{{ set.code }}</td>
             <td>{{ set.name }}</td>
             <td :data-sort="set.release">{{ strftime("%B %e, %Y", dated(set.release)) }}</td>
-            <td :data-sort="set.size"><a :href="'#!/q/set:' + set.code">{{ set.size }}</a></td>
+            <td :data-sort="set.size"><router-link :to="{ name: 'search', params: { query: `set:${set.code}` } }">{{ set.size }}</router-link></td>
           </tr>
         </tbody>
       </table>
