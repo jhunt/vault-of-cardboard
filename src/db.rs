@@ -425,7 +425,7 @@ impl Database {
         .chain_err(|| "failed to insert session object into session store")?;
 
         let mut cmd = redis::cmd("EXPIRE");
-        let cmd = cmd.arg(&key).arg(self.idle.to_string()); // FIXME
+        let cmd = cmd.arg(&key).arg(self.idle.to_string());
         cmd.query::<bool>(
             &mut self
                 .rd
