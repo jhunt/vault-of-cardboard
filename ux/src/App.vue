@@ -51,11 +51,15 @@ import "keyrune"
 
 import { mapGetters } from 'vuex'
 
+import Log from '@/lib/log'
+Log.console(Log.INFO)
+
 export default {
   data() {
     return {}
   },
   mounted() {
+    Log.info('mounted; loading through $store...')
     this.$store.dispatch('load')
   },
   computed: {
@@ -66,6 +70,7 @@ export default {
   },
   methods: {
     logout() {
+      Log.info('logging out')
       this.$store.commit('session', null)
     },
 
@@ -74,10 +79,11 @@ export default {
     },
     search(q, balk) {
       if (!balk) {
+        Log.info(`initiating query [${q}]`)
         this.goto(this.q(q))
       }
     }
-  },
+  }
 }
 </script>
 
@@ -85,7 +91,6 @@ export default {
 <style lang="scss">
 @import "./reset.scss";
 @import "./legacy.scss";
-
 
 body {
   min-height: 100vh;
