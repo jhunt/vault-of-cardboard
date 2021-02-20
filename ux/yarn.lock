@@ -5210,9 +5210,9 @@ jsprim@^1.2.2:
     verror "1.10.0"
 
 keyrune@^3.7.1:
-  version "3.7.1"
-  resolved "https://registry.yarnpkg.com/keyrune/-/keyrune-3.7.1.tgz#2c3aa433a3d05b70d4c88656a4247e818866f492"
-  integrity sha512-j5ToeuW5KWVxdEXov+1vYaKhpebTYTDJjBaQtcOvoy1Z7jK8x4w0nhKwwrg0DFTZxpxp2VP0wecNw2yujXye9g==
+  version "3.7.2"
+  resolved "https://registry.yarnpkg.com/keyrune/-/keyrune-3.7.2.tgz#e55d47af56956d87601f6821dd5c334f9ca48ac6"
+  integrity sha512-OyC5MTrVUjJkjF7L2aeBdJFgS+Jonl30FcjPrTXhOdF+8anmjqKpgvPc0dmOJm3jv2dnhBoyj7uAE1BlnQjd2Q==
 
 killable@^1.0.1:
   version "1.0.1"
@@ -5434,9 +5434,9 @@ make-dir@^3.0.2, make-dir@^3.1.0:
     semver "^6.0.0"
 
 mana-font@^1.9.4:
-  version "1.9.4"
-  resolved "https://registry.yarnpkg.com/mana-font/-/mana-font-1.9.4.tgz#b62f753a38750420552d4524c657299931ce657c"
-  integrity sha512-g0QdZPZSkSwvSDVOaBR2zTDRdrsqbZIbLis60Eo8QP2d8g+MsJwZu9D51QuzL2wVKg0lDKokNntwMsaFHEIKLA==
+  version "1.10.0"
+  resolved "https://registry.yarnpkg.com/mana-font/-/mana-font-1.10.0.tgz#19155db8ae4ab3b94494cc238b186d5dfeb6ac0a"
+  integrity sha512-FfwMSsRW1Hnjav12mLnOcP7BDEsZYNGMGbO808++eIYiyHW9vfJ7CUcVuGDjkd06hHt1m2IPBgZ3Oqw6JjhCpQ==
 
 map-cache@^0.2.2:
   version "0.2.2"
