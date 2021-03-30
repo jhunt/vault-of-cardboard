@@ -1,7 +1,0 @@
-**
-!/src
-!/Cargo.toml
-!/Cargo.lock
-!/migrations
-!/changelog.yml
-!/ingest

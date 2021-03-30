@@ -41,19 +41,16 @@ schema:
 	./util/schema > src/schema.rs
 
 docker:
-	DOCKER_BUILDKIT=1 docker build -t api:$(TAG)   -f oci/api/Dockerfile   .
-	DOCKER_BUILDKIT=1 docker build -t proxy:$(TAG) -f oci/proxy/Dockerfile .
-	DOCKER_BUILDKIT=1 docker build -t ux:$(TAG)    -f oci/ux/Dockerfile    .
+	DOCKER_BUILDKIT=1 docker build -t api:$(TAG) -f Dockerfile.api .
+	DOCKER_BUILDKIT=1 docker build -t ux:$(TAG)  -f Dockerfile.ux .
 
 tag: docker
-	docker tag api:$(TAG)   $(REGISTRY)/api:$(TAG)
-	docker tag ux:$(TAG)    $(REGISTRY)/ux:$(TAG)
-	docker tag proxy:$(TAG) $(REGISTRY)/proxy:$(TAG)
+	docker tag api:$(TAG) $(REGISTRY)/api:$(TAG)
+	docker tag ux:$(TAG)  $(REGISTRY)/ux:$(TAG)
 
 push: tag
 	docker push $(REGISTRY)/api:$(TAG)
 	docker push $(REGISTRY)/ux:$(TAG)
-	docker push $(REGISTRY)/proxy:$(TAG)
 
 release:
 	@echo "Checking that VERSION was defined in the calling environment"

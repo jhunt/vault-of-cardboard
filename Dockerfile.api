@@ -1,8 +1,14 @@
-# vim:ft=Dockerfile
+# vim:ft=dockerfile
 FROM rust:1.42 AS build
 
 WORKDIR /src
-COPY . .
+COPY Cargo.toml    Cargo.toml
+COPY Cargo.lock    Cargo.lock
+COPY ingest        ingest
+COPY migrations    migrations
+COPY changelog.yml changelog.yaml
+COPY src           src
+RUN ls -l /src -a
 RUN cargo install --locked --path . --root /vcb
 
 FROM ubuntu:20.04

@@ -109,3 +109,17 @@ and afterwards:
             └── set.json
 
 The `out/dat/IKO.json` contains our combined data.
+
+Docker Images
+-------------
+
+In the root of this repository are multiple Dockerfiles, each
+with a suffix identifying the container image it builds:
+
+**Dockefile.ux** - An nginx-derived image that brings serves
+static HTML / JS / CSS / etc. files that make up web user
+interface for Vault of Cardboard.
+
+**Dockerfile.api** - The backend API of Vault of Cardboard.
+This is the thing that does collection management, authentication,
+deck and goal munging, etc.

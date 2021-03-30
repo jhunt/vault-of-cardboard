@@ -10,7 +10,9 @@ services:
       - POSTGRES_DB=vcb
 
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.api
     depends_on: [postgres, redis]
     entrypoint: ''
     ports:
@@ -31,3 +33,13 @@ services:
       - $PWD/run/data:/data
       - $PWD/run/cache:/cache
 
+  ux:
+    build:
+      context: .
+      dockerfile: Dockerfile.ux
+    depends_on: [api]
+    environment:
+      - VCB_BACKEND=http://api:3000
+      - PORT=3001
+    ports:
+      - '8091:3001'

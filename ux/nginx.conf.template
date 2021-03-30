@@ -1,0 +1,21 @@
+# vim:ft=nginx
+server {
+  listen ${PORT};
+  root   /vault-of-cardboard;
+
+  location /v1/ {
+    try_files $uri $uri/ @rust;
+  }
+  location ~ /(cards|prices|collection).json {
+    try_files $uri $uri/ @rust;
+  }
+  try_files $uri $uri/ /index.html;
+
+  location @rust {
+    proxy_pass              ${VCB_BACKEND};
+    proxy_redirect          off;
+    proxy_set_header        Host            $host;
+    proxy_set_header        X-Real-IP       $remote_addr;
+    proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+  }
+}

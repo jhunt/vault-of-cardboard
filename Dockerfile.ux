@@ -1,0 +1,12 @@
+# vim:ft=dockerfile
+FROM node:latest AS build
+WORKDIR /src
+COPY ux/ .
+RUN yarn install
+RUN yarn build
+
+FROM nginx:1.19
+COPY ux/nginx.conf.template /etc/nginx/templates/vcb.conf.template
+COPY --from=build /src/dist /vault-of-cardboard
+ENV VCB_BACKEND http://localhost:3000
+ENV PORT 3001
