@@ -17,6 +17,10 @@ let API = {
     ]).then(data => vault.ingest(data[0], data[1]))
   },
 
+  fetch_config() {
+    return fetch_the_json('/v1/config')
+  },
+
   fetch_cards() {
     return fetch_the_json('/cards.json')
   },

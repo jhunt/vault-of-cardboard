@@ -67,7 +67,6 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import Config from '@/config'
 import cardboard from '@/lib/cardboard/index'
 import _ from '@/lib/helpers'
 
@@ -87,14 +86,13 @@ export default {
   props: ['deck'],
   data: function () {
     return {
-      imgroot: Config.imgroot,
       sleeve: 'n',
       shuffled: undefined,
       mode:     'view',
     }
   },
   computed: {
-    ...mapGetters(['loaded', 'vault']),
+    ...mapGetters(['loaded', 'vault', 'imgroot']),
     cards() {
       return this.loaded
         ? this.vault.resolve(this.deck.main)

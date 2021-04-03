@@ -20,6 +20,7 @@ services:
       - VCB_REDIS_URL=redis://redis
       - VCB_FS_ROOT=/data
       - VCB_LISTEN=0.0.0.0:3000
+      - VCB_IMGROOT=//vault-of-cardboard.s3.amazonaws.com
       - PATH=/usr/local/vcb/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/sbin
     ports:
       - '8090:3000'

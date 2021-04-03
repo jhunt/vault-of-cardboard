@@ -146,9 +146,12 @@ pub fn needenv(v: &str) {
 }
 
 pub fn run() {
+    println!("checking environment...");
     needenv("VCB_DATABASE_URL");
     needenv("VCB_REDIS_URL");
     needenv("VCB_FS_ROOT");
+    needenv("VCB_IMGROOT");
+    println!("environment ok!");
 
     let mut router = Router::new();
 
@@ -256,6 +259,16 @@ pub fn run() {
             }
         },
         "default_collection_json_file",
+    );
+
+    router.get(
+        "/v1/config",
+        |_: &mut Request| {
+            let api = boot();
+            let r = api.config();
+            done!(r)
+        },
+        "v1_config_handler"
     );
 
     router.post(

@@ -9,18 +9,18 @@
 </template>
 
 <script>
-import Config from '@/config'
+import { mapGetters } from 'vuex'
 
 export default {
   name: 'vcb-card',
   props: ['card', 'backed', 'sleeve'],
   data() {
     return {
-      imgroot: Config.imgroot,
       flipped: false,
     };
   },
   computed: {
+    ...mapGetters(['imgroot']),
     cssClass() {
       return "card " + (this.sleeve ? "sleeved sl-"+this.sleeve : '')
     },
@@ -30,7 +30,7 @@ export default {
           || this.card.layout == 'double_faced_token'
     },
     img() {
-      return Config.imgroot + '/cards/' + (this.flipped ? this.card.back : this.card.image)
+      return this.imgroot + '/cards/' + (this.flipped ? this.card.back : this.card.image)
     },
     altText() {
       return this.card.name + ' [' + (this.card.set ? this.card.set.code : '???') + ']'

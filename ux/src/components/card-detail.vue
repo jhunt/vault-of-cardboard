@@ -39,7 +39,7 @@
 </template>
 
 <script>
-import Config from '@/config'
+import { mapGetters } from 'vuex'
 
 import VcbCard from '@/components/card'
 import VcbMana from '@/components/mana'
@@ -54,8 +54,10 @@ export default {
   data() {
     return {
       debug: false,
-      imgroot: Config.imgroot,
     }
+  },
+  computed: {
+    ...mapGetters(['imgroot']),
   },
   methods: {
     price(d) {
