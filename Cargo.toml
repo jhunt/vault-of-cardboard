@@ -1,5 +1,6 @@
 [package]
 name = "vault-of-cardboard"
+description = "Vault of Cardboard: a Magic: the Gathering Collection Manager and Card Search Interface"
 version = "0.1.0"
 authors = ["James Hunt <james@niftylogic.com>"]
 edition = "2018"
@@ -28,3 +29,11 @@ router = "0.6"
 
 unicode-segmentation = "1.6.0"
 regex = "1"
+
+[[bin]]
+name = "cardboard"
+path = "src/bin/cardboard.rs"
+
+[[bin]]
+name = "cdif"
+path = "src/bin/cdif.rs"
