@@ -1,9 +1,9 @@
 use chrono::{naive::NaiveDate, DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use regex::Regex;
-use unicode_segmentation::UnicodeSegmentation;
+use serde::{Deserialize, Serialize};
 use std::io::Read;
+use unicode_segmentation::UnicodeSegmentation;
+use uuid::Uuid;
 
 use super::db;
 
@@ -339,7 +339,10 @@ impl API {
     }
 
     pub fn store<R: Read>(&self, rel: &str, from: R) -> Result<std::fs::File> {
-        Ok(self.db.put_file(rel, from).chain_err(|| "unable to overwrite file")?)
+        Ok(self
+            .db
+            .put_file(rel, from)
+            .chain_err(|| "unable to overwrite file")?)
     }
 
     pub fn whoami(&self, sid: Option<String>) -> Object {
@@ -390,17 +393,17 @@ impl API {
                     Err(e) => {
                         println!("session-failed: {}", e);
                         Ok(Object::fail("session-failed"))
-                    },
+                    }
                 }
             }
             Ok(None) => {
                 println!("authentication-failed: (no user returned)",);
                 Ok(Object::fail("authentication-failed"))
-            },
+            }
             Err(e) => {
                 println!("authentication-failed: {}", e);
                 Ok(Object::fail("authentication-failed"))
-            },
+            }
         }
     }
 
@@ -431,7 +434,7 @@ impl API {
                     Err(e) => {
                         println!("signup-failed: {}", e);
                         Ok(Object::fail("signup-failed"))
-                    },
+                    }
                 }
             }
             Err(e) => Ok(Object::fail(&e.to_string())),
@@ -486,7 +489,7 @@ impl API {
             Err(e) => {
                 println!("transaction-creation-failed: {}", e);
                 Ok(Object::fail("transaction-creation-failed"))
-            },
+            }
         }
     }
 
@@ -561,7 +564,7 @@ impl API {
             Err(e) => {
                 println!("transaction-update-failed: {}", e);
                 Ok(Object::fail("transaction-update-failed"))
-            },
+            }
         }
     }
 
@@ -594,7 +597,7 @@ impl API {
             Err(e) => {
                 println!("transaction-removal-failed: {}", e);
                 Ok(Object::fail("transaction-removal-failed"))
-            },
+            }
         }
     }
 
@@ -626,7 +629,7 @@ impl API {
             Err(e) => {
                 println!("goal-creation-failed: {}", e);
                 Ok(Object::fail("goal-creation-failed"))
-            },
+            }
         }
     }
 
@@ -669,7 +672,7 @@ impl API {
             Err(e) => {
                 println!("goal-update-failed: {}", e);
                 Ok(Object::fail("goal-update-failed"))
-            },
+            }
         }
     }
 
@@ -702,7 +705,7 @@ impl API {
             Err(e) => {
                 println!("goal-removal-failed: {}", e);
                 Ok(Object::fail("goal-removal-failed"))
-            },
+            }
         }
     }
 
@@ -778,7 +781,7 @@ impl API {
             Err(e) => {
                 println!("deck-creation-failed: {}", e);
                 Ok(Object::fail("deck-creation-failed"))
-            },
+            }
         }
     }
 
@@ -821,7 +824,7 @@ impl API {
             Err(e) => {
                 println!("deck-update-failed: {}", e);
                 Ok(Object::fail("deck-update-failed"))
-            },
+            }
         }
     }
 
@@ -854,7 +857,7 @@ impl API {
             Err(e) => {
                 println!("deck-removal-failed: {}", e);
                 Ok(Object::fail("deck-removal-failed"))
-            },
+            }
         }
     }
 
