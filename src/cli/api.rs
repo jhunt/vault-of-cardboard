@@ -140,7 +140,16 @@ macro_rules! done {
     };
 }
 
+pub fn needenv(v: &str) {
+    &env::var(v).expect(&format!("{} must be set in the environment", v).to_string());
+    ()
+}
+
 pub fn run() {
+    needenv("VCB_DATABASE_URL");
+    needenv("VCB_REDIS_URL");
+    needenv("VCB_FS_ROOT");
+
     let mut router = Router::new();
 
     router.get(
