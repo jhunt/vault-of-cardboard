@@ -1,0 +1,48 @@
+---
+version: '3'
+services:
+  redis:
+    image: redis
+  postgres:
+    image: postgres
+    environment:
+      - POSTGRES_PASSWORD=foo
+      - POSTGRES_DB=vcb
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.deps
+    depends_on: [postgres, redis]
+    entrypoint: ''
+    environment:
+      - VCB_DATABASE_URL=postgres://postgres:foo@postgres/vcb
+      - VCB_REDIS_URL=redis://redis
+      - VCB_FS_ROOT=/data
+      - VCB_LISTEN=0.0.0.0:3000
+      - PATH=/usr/local/vcb/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/sbin
+    ports:
+      - '8090:3000'
+    command:
+      - /bin/sh
+      - -c
+      - |
+        which cardboard
+        CACHE=/cache ingest ISD DKA AVR MIR VIS STH TMP
+        cardboard rescry -r /cache/dat -c /data/cards.json -p /data/prices.json -l /data/lookup.json
+        cardboard migrate && cardboard api
+    volumes:
+      - $PWD/run/data:/data
+      - $PWD/run/cache:/cache
+      - $PWD/target/debug:/usr/local/vcb/bin
+
+  ux:
+    build:
+      context: .
+      dockerfile: Dockerfile.ux
+    depends_on: [api]
+    environment:
+      - VCB_BACKEND=http://api:3000
+      - PORT=3001
+    ports:
+      - '8091:3001'

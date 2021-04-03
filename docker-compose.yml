@@ -6,19 +6,15 @@ services:
   postgres:
     image: postgres
     environment:
-      - POSTGRES_PASSWORD=foo
-      - POSTGRES_DB=vcb
+      - POSTGRES_PASSWORD=a-sekrit-you-should-change
+      - POSTGRES_DB=a-sekrit-you-should-change
 
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile.api
+    image: docker.zyxl.zyx/vcb:api
     depends_on: [postgres, redis]
     entrypoint: ''
-    ports:
-      - '8090:3000'
     environment:
-      - VCB_DATABASE_URL=postgres://postgres:foo@postgres/vcb
+      - VCB_DATABASE_URL=postgres://postgres:a-sekrit-you-should-change@postgres/vcb
       - VCB_REDIS_URL=redis://redis
       - VCB_FS_ROOT=/data
       - VCB_LISTEN=0.0.0.0:3000
@@ -26,20 +22,16 @@ services:
       - /bin/sh
       - -c
       - |
-        CACHE=/cache ingest ISD DKA AVR MIR VIS STH TMP
-        cardboard rescry -r /cache/dat -c /data/cards.json -p /data/prices.json -l /data/lookup.json
         cardboard migrate && cardboard api
     volumes:
       - $PWD/run/data:/data
       - $PWD/run/cache:/cache
 
   ux:
-    build:
-      context: .
-      dockerfile: Dockerfile.ux
+    image: docker.zyxl.zyx/vcb:ux
     depends_on: [api]
     environment:
       - VCB_BACKEND=http://api:3000
       - PORT=3001
     ports:
-      - '8091:3001'
+      - '80:3001'

@@ -10,6 +10,24 @@ This section contains my personal notes on how to do stuff with
 this codebase, since I touch it so infrequently and my children
 have utterly destroyed my memory banks.
 
+Hacking on the Vault
+--------------------
+
+This repository contains a Docker Compose recipe that is suitable
+for doing Rust development _outside_ of the Docker Image build
+pipeline (by essentially bind-mounting in the `cardboard` binary).
+This recipe is stored in `dev-env.yml` -- a non-standard file for
+Docker Compose.  That's why we have this lovely `./hack` script:
+
+    ./hack up       # spin up the env
+    ./hack up -d    # the same, in the background
+    ./hack down     # spin it down again
+
+In reality, `./hack` is little more than a wrapper around the
+`docker-compose` command, with the correct arguments to name the
+containers and locate the recipe file.
+
+
 Run the Integration Tests
 -------------------------
 
@@ -123,3 +141,8 @@ interface for Vault of Cardboard.
 **Dockerfile.api** - The backend API of Vault of Cardboard.
 This is the thing that does collection management, authentication,
 deck and goal munging, etc.
+
+**Dockerfile.deps** - This contains the "outer shell" of the image
+that the `Dockerfile.api` recipe builds, and it is used by the
+development environment (see "Hacking on the Vault", above) to
+scaffold a bind-mounted copy of the `cardboard` binary.

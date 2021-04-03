@@ -1,11 +1,4 @@
 # vim:ft=dockerfile
-FROM rust:1.42 AS build
-WORKDIR /app
-COPY Cargo.toml Cargo.lock ingest changelog.yml ./
-COPY migrations .
-COPY src .
-RUN cargo install --locked --path . --root /vcb
-
 FROM ubuntu:20.04
 RUN apt-get update \
  && apt-get install -y libpq5 curl ca-certificates jq \
@@ -14,5 +7,4 @@ RUN apt-get update \
 RUN curl -sLo /usr/bin/s3 https://github.com/jhunt/s3/releases/download/v0.3.1/s3-linux-amd64 \
  && chmod 0755 /usr/bin/s3
 
-COPY --from=build /vcb/bin/cardboard /usr/bin/cardboard
 COPY ingest /usr/bin/ingest
