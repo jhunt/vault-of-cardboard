@@ -9,8 +9,6 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
-
 export default {
   name: 'vcb-card',
   props: ['card', 'backed', 'sleeve'],
@@ -20,7 +18,6 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(['imgroot']),
     cssClass() {
       return "card " + (this.sleeve ? "sleeved sl-"+this.sleeve : '')
     },
@@ -30,7 +27,7 @@ export default {
           || this.card.layout == 'double_faced_token'
     },
     img() {
-      return this.imgroot + '/cards/' + (this.flipped ? this.card.back : this.card.image)
+      return '/cards/' + (this.flipped ? this.card.back : this.card.image)
     },
     altText() {
       return this.card.name + ' [' + (this.card.set ? this.card.set.code : '???') + ']'

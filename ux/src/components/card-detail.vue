@@ -39,8 +39,6 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
-
 import VcbCard from '@/components/card'
 import VcbMana from '@/components/mana'
 
@@ -55,9 +53,6 @@ export default {
     return {
       debug: false,
     }
-  },
-  computed: {
-    ...mapGetters(['imgroot']),
   },
   methods: {
     price(d) {

@@ -1,7 +1,8 @@
 use iron::headers::ContentType;
 use iron::mime::{Mime, SubLevel, TopLevel};
+use iron::modifiers::Redirect;
 use iron::prelude::*;
-use iron::status;
+use iron::{status, Url};
 use router::Router;
 use serde_json::json;
 use std::env;
@@ -99,6 +100,10 @@ macro_rules! done {
         Ok(json_response(status::Ok, json!($o).to_string()))
     };
 
+    (302 => $url: expr) => {
+        Ok(Response::with((status::Found, Redirect($url))))
+    };
+
     (400 => $s: expr) => {
         Ok(Response::with((status::BadRequest, format!("{}\n", $s))))
     };
@@ -193,7 +198,7 @@ pub fn run() {
                 }
             }
         },
-        "update_cards_json_file"
+        "update_cards_json_file",
     );
 
     router.get(
@@ -234,7 +239,18 @@ pub fn run() {
                 }
             }
         },
-        "update_prices_json_file"
+        "update_prices_json_file",
+    );
+
+    router.get(
+        "/cards/*card",
+        |r: &mut Request| {
+            done!(302 => Url::parse(
+                format!("{}/{}",
+                        env::var("VCB_IMGROOT").unwrap(),
+                        param!(r, "card")).as_str()).unwrap())
+        },
+        "card_image",
     );
 
     router.get(
@@ -259,16 +275,6 @@ pub fn run() {
             }
         },
         "default_collection_json_file",
-    );
-
-    router.get(
-        "/v1/config",
-        |_: &mut Request| {
-            let api = boot();
-            let r = api.config();
-            done!(r)
-        },
-        "v1_config_handler"
     );
 
     router.post(

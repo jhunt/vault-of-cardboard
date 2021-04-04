@@ -20,7 +20,6 @@ pub enum Object {
     NotFound(NotFound),
     Response(Response),
     Authenticated(Authenticated),
-    Config(Config),
     Goal(Goal),
     Goals(Vec<Goal>),
     Deck(Deck),
@@ -97,11 +96,6 @@ pub struct Authenticated {
     pub uid: String,
     pub username: String,
     pub session: String,
-}
-
-#[derive(Serialize)]
-pub struct Config {
-    pub imgroot: String,
 }
 
 #[derive(Deserialize)]
@@ -350,12 +344,6 @@ impl API {
             .db
             .put_file(rel, from)
             .chain_err(|| "unable to overwrite file")?)
-    }
-
-    pub fn config(&self) -> Object {
-        Object::Config(Config {
-            imgroot: env::var("VCB_IMGROOT").expect("VCB_IMGROOT must be set in environment"),
-        })
     }
 
     pub fn whoami(&self, sid: Option<String>) -> Object {

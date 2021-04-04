@@ -40,7 +40,7 @@
         <div v-for="(stack, cmc) in curve" :key="cmc">
           <ul>
             <li v-for="(card,i) in stack" :key="i">
-               <img :src="imgroot + '/cards/' + card.image"
+               <img :src="'/cards/' + card.image"
                     :alt="card.name + ' [' + card.set.code + ']'"
                     :title="card.name + ' [' + card.set.code + ']'"></li>
             <li><img src="/img/mtgback.jpg"></li>
@@ -92,7 +92,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['loaded', 'vault', 'imgroot']),
+    ...mapGetters(['loaded', 'vault']),
     cards() {
       return this.loaded
         ? this.vault.resolve(this.deck.main)

@@ -8,6 +8,12 @@ set -eu
 #  S3_KEY    -  Credentials for S3 card image storage
 #  S3_BUCKET -  S3 card image storage bucket
 #
+# OPTIONAL environment variables
+# (transparently picked up by `s3`):
+#
+#  S3_URL    -  API endpoint URL
+#  S3_REGION -  Which region the bucket is native to
+#
 
 ok=yes
 if [[ -z "${CACHE:-}" ]]; then

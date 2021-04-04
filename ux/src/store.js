@@ -12,7 +12,6 @@ export default new Vuex.Store({
     query: '',
     colorband: null,
     session: null,
-    imgroot: null,
   },
 
   mutations: {
@@ -28,10 +27,6 @@ export default new Vuex.Store({
     init(state) {
       state.initialized = true
       state.generation++
-    },
-
-    configure(state, config) {
-      state.imgroot = config.imgroot
     },
 
     search(state, q) {
@@ -58,20 +53,16 @@ export default new Vuex.Store({
   actions: {
     reloadCollection(ctx, auth) {
       vault.unload_collection()
-      cardboard.API.fetch_config()
-        .then(c =>{
-          ctx.commit('configure', c.config)
-          if (auth) {
-            cardboard.API.fetch_collection_for(auth.uid)
-              .then(c => vault.on(cardboard.CardsLoaded, () => {
-                vault.load_collection(c.base, c.patches)
-                ctx.commit('init')
-              }))
-          } else {
-            vault.no_collection()
+      if (auth) {
+        cardboard.API.fetch_collection_for(auth.uid)
+          .then(c => vault.on(cardboard.CardsLoaded, () => {
+            vault.load_collection(c.base, c.patches)
             ctx.commit('init')
-          }
-        })
+          }))
+      } else {
+        vault.no_collection()
+        ctx.commit('init')
+      }
     },
 
     auth(ctx, auth) {
@@ -128,10 +119,6 @@ export default new Vuex.Store({
 
     session(state) {
       return state.session
-    },
-
-    imgroot(state) {
-      return state.imgroot
     },
 
     colorband(state) {
