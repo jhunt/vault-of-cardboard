@@ -1,6 +1,8 @@
 TAG      ?= dev
 REGISTRY ?= docker.zyxl.xyz/vcb
 
+DO_BUILDKIT ?= 1
+
 default: test
 build:
 	cargo build
@@ -40,16 +42,16 @@ schema:
 	./util/schema > src/schema.rs
 
 docker:
-	DOCKER_BUILDKIT=1 docker build -t api:$(TAG) -f Dockerfile.api .
-	DOCKER_BUILDKIT=1 docker build -t ux:$(TAG)  -f Dockerfile.ux .
+	DOCKER_BUILDKIT=$(DO_BUILDKIT) docker build -t api:$(TAG) -f Dockerfile.api .
+	DOCKER_BUILDKIT=$(DO_BUILDKIT) docker build -t ux:$(TAG)  -f Dockerfile.ux .
 
 release:
 	@echo "Checking that VERSION was defined in the calling environment"
 	@test -n "$(VERSION)"
 	@echo "OK.  VERSION=$(VERSION)"
-	DOCKER_BUILDKIT=1 docker build -t $(REGISTER)/api:$(VERSION) -f Dockerfile.api .
-	DOCKER_BUILDKIT=1 docker build -t $(REGISTRY)/ux:$(VERSION)  -f Dockerfile.ux .
-	docker push $(REGISTER)/api:$(VERSION)
+	DOCKER_BUILDKIT=$(DO_BUILDKIT) docker build -t $(REGISTRY)/api:$(VERSION) -f Dockerfile.api .
+	DOCKER_BUILDKIT=$(DO_BUILDKIT) docker build -t $(REGISTRY)/ux:$(VERSION)  -f Dockerfile.ux .
+	docker push $(REGISTRY)/api:$(VERSION)
 	docker push $(REGISTRY)/ux:$(VERSION)
 
 next:
