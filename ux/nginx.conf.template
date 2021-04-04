@@ -6,6 +6,9 @@ server {
   location /v1/ {
     try_files $uri $uri/ @rust;
   }
+  location /cards/ {
+    try_files $uri $uri/ @rust;
+  }
   location ~ /(cards|prices|collection).json {
     try_files $uri $uri/ @rust;
   }
