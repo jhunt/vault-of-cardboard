@@ -2,8 +2,8 @@
 FROM rust:1.42 AS build
 WORKDIR /app
 COPY Cargo.toml Cargo.lock ingest changelog.yml ./
-COPY migrations .
-COPY src .
+COPY migrations ./migrations
+COPY src ./src
 RUN cargo install --locked --path . --root /vcb
 
 FROM ubuntu:20.04
