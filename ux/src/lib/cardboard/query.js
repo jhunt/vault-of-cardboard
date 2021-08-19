@@ -45,6 +45,7 @@ class Query {
     case 'REPRINT':
     case 'VANILLA':
     case 'COLOR':
+    case 'COLORS':
       return '('+this.type+' '+this.a.string+')'
 
     case 'EQUIP':
@@ -94,6 +95,8 @@ class Query {
       return this.a.call(card, card.set.release)
     case 'COLOR':
       return this.a.call(card, card.color)
+    case 'COLORS':
+      return this.a.call(card, card.color.length)
     case 'P':
         for (let i = 0; i < card.power.length; i++) {
           if (this.a.call(card, card.power[i])) {
@@ -772,6 +775,7 @@ function parse(tok) {
       case 'EQUIP':
       case 'OWN':
       case 'USD':
+      case 'COLORS':
       case 'P':
       case 'T':
       case 'CPT':

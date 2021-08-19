@@ -57,6 +57,11 @@
           <td>color:red<br>color:UR<br>color:izzet</td>
         </tr>
         <tr>
+          <td>colors</td>
+          <td>Match cards based on how many distinct colors comprise the card's color identity.  For example, <tt>colors:0</tt> finds colorless cards, and <tt>colors:2+</tt> finds multi-colored cards indiscriminately.</td>
+          <td>colors:0<br>colors:3+</td>
+        </tr>
+        <tr>
           <td>cpt</td>
           <td>Match (creature) cards based on their combined power + toughness values.</td>
           <td>cpt:&lt;4</td>
