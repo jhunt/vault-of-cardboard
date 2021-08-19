@@ -43,6 +43,7 @@ class Query {
     case 'SPOTLIGHT':
     case 'RESERVED':
     case 'REPRINT':
+    case 'VANILLA':
     case 'COLOR':
       return '('+this.type+' '+this.a.string+')';
 
@@ -158,6 +159,8 @@ class Query {
         return this.a.call(card, card.flags.indexOf('!') >= 0);
     case 'REPRINT':
         return this.a.call(card, card.flags.indexOf('+') >= 0);
+    case 'VANILLA':
+        return this.a.call(card, card.oracle == "");
     case 'OWN':
       return this.a.call(card, card.owned);
     case 'USD':
@@ -254,6 +257,7 @@ function tokenize(s) {
     UNIQUE: [['QUALIFIER', 'UNIQUE'],
              ['IDENTIFIER', 'card']],
 
+    VANILLA:   autobool('VANILLA'),
     REPRINT:   autobool('REPRINT'),
     RESERVED:  autobool('RESERVED'),
     SPOTLIGHT: autobool('SPOTLIGHT'),
@@ -750,6 +754,7 @@ function parse(tok) {
       case 'RARITY':  fn = rarity;   break;
       case 'LEGAL':   fn = legalese; break;
       case 'FRAME':   fn = framer;   break;
+      case 'VANILLA':
       case 'FULLART':
       case 'OVERSIZED':
       case 'VARIANT':

@@ -71,6 +71,7 @@ describe('Cardboard Query Parser', () => {
   });
 
   [
+    'vanilla',
     'fullart',
     'oversized',
     'variant',
@@ -295,8 +296,10 @@ describe('Individual Card Querying', () => {
   should_match('based on variant predicate',   'variant:no');
   should_match('based on reserved predicate',  'reserved:no');
   should_match('based on reprint predicate',   'reprint:no');
+  should_match('based on vanilla predicate',   'vanilla:no');
 
   should_match('based on (negated) reprint predicate', '!reprint');
+  should_match('based on (negated) vanilla predicate', '!vanilla');
 
   should_match('based on usd predicate',       'usd:1.15');
   should_match('based on usd predicate',       'usd:1+');
@@ -310,6 +313,12 @@ describe('Individual Card Querying', () => {
 
   should_match('based on a complicated query',
     'Talruum and Minotaur and (@U or @R) and !=mythic');
+
+  it('should allow matching vanilla cards (those without oracle text', () => {
+    let c = { oracle: '' };
+    expect(cardboard.Query.parse('vanilla').match(c)).to.be.true;
+    expect(cardboard.Query.parse('vanilla:yes').match(c)).to.be.true;
+  });
 
   it('should allow matching cards based on equip costs', () => {
     let c = { oracle: 'Equip {2}.' };

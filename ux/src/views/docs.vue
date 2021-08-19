@@ -146,7 +146,8 @@
         </tr>
         <tr>
           <td>oracle</td>
-          <td>Match cards based on the contents of their oracle text.</td>
+          <td>Match cards based on the contents of their oracle text.  If you're looking for cards that have
+          no oracle text, you want the <tt>vanilla</tt> predicate.</td>
           <td>oracle:draw</td>
         </tr>
         <tr>
@@ -214,6 +215,11 @@
           <td>usd</td>
           <td>Match cards based on their current value/price (per Scryfall)</td>
           <td>usd:&lt;5.25</td>
+        </tr>
+        <tr>
+          <td>vanilla</td>
+          <td>A <em>vanilla</em> card means a card with no oracle text.</td>
+          <td>vanilla</td>
         </tr>
       </tbody>
     </table>
