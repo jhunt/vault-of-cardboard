@@ -311,14 +311,14 @@ describe('Individual Card Querying', () => {
   should_match('based on a complicated query',
     'Talruum and Minotaur and (@U or @R) and !=mythic');
 
-  it('should allowi matching cards based on equip costs', () => {
+  it('should allow matching cards based on equip costs', () => {
     let c = { oracle: 'Equip {2}.' };
     expect(cardboard.Query.parse('equip:2').match(c)).to.be.true;
     expect(cardboard.Query.parse('equip:1+').match(c)).to.be.true;
     expect(cardboard.Query.parse('equip:<=3').match(c)).to.be.true;
   });
 
-  it('should allowi matching cards based on {T} activation', () => {
+  it('should allow matching cards based on {T} activation', () => {
     let c = { oracle: '{T}: Do the thing' };
     expect(cardboard.Query.parse('activate:do the thing').match(c)).to.be.true;
     expect(cardboard.Query.parse('activate:"Do the thing"').match(c)).to.be.true;
@@ -331,7 +331,7 @@ describe('Individual Card Querying', () => {
     expect(cardboard.Query.parse('tap: and +do the thing').match(c)).to.be.true;
   });
 
-  it('should allowi matching cards based on {Q} activation', () => {
+  it('should allow matching cards based on {Q} activation', () => {
     let c = { oracle: '{Q}: Do the thing' };
     expect(cardboard.Query.parse('activate:do the thing').match(c)).to.be.true;
     expect(cardboard.Query.parse('activate:"Do the thing"').match(c)).to.be.true;
@@ -344,7 +344,7 @@ describe('Individual Card Querying', () => {
     expect(cardboard.Query.parse('untap: and +do the thing').match(c)).to.be.true;
   });
 
-  it('should allowi matching cards based on "sacrifice" activation', () => {
+  it('should allow matching cards based on "sacrifice" activation', () => {
     let c = { oracle: 'Sacrifice a creature: Do the thing' };
     expect(cardboard.Query.parse('activate:do the thing').match(c)).to.be.true;
     expect(cardboard.Query.parse('activate:"Do the thing"').match(c)).to.be.true;
@@ -357,7 +357,7 @@ describe('Individual Card Querying', () => {
     expect(cardboard.Query.parse('sacrifice: and +do the thing').match(c)).to.be.true;
   });
 
-  it('should allowi matching cards based on "discard" activation', () => {
+  it('should allow matching cards based on "discard" activation', () => {
     let c = { oracle: 'Discard a card: Do the thing' };
     expect(cardboard.Query.parse('activate:do the thing').match(c)).to.be.true;
     expect(cardboard.Query.parse('activate:"Do the thing"').match(c)).to.be.true;
@@ -370,7 +370,7 @@ describe('Individual Card Querying', () => {
     expect(cardboard.Query.parse('discard: and +do the thing').match(c)).to.be.true;
   });
 
-  it('should allowi matching cards based on "exile" activation', () => {
+  it('should allow matching cards based on "exile" activation', () => {
     let c = { oracle: 'Exile a token: Do the thing' };
     expect(cardboard.Query.parse('activate:do the thing').match(c)).to.be.true;
     expect(cardboard.Query.parse('activate:"Do the thing"').match(c)).to.be.true;
@@ -383,7 +383,7 @@ describe('Individual Card Querying', () => {
     expect(cardboard.Query.parse('exile: and +do the thing').match(c)).to.be.true;
   });
 
-  it('should allowi matching cards based on "pay" activation', () => {
+  it('should allow matching cards based on "pay" activation', () => {
     let c = { oracle: 'Exile a token: Do the thing' };
     expect(cardboard.Query.parse('activate:do the thing').match(c)).to.be.true;
     expect(cardboard.Query.parse('activate:"Do the thing"').match(c)).to.be.true;
