@@ -1,7 +1,6 @@
 use chrono::{naive::NaiveDate, DateTime, Utc};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::env;
 use std::io::Read;
 use unicode_segmentation::UnicodeSegmentation;
 use uuid::Uuid;
