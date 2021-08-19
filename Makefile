@@ -42,8 +42,8 @@ schema:
 	./util/schema > src/schema.rs
 
 docker:
-	DOCKER_BUILDKIT=$(DO_BUILDKIT) docker build -t api:$(TAG) -f Dockerfile.api .
-	DOCKER_BUILDKIT=$(DO_BUILDKIT) docker build -t ux:$(TAG)  -f Dockerfile.ux .
+	DOCKER_BUILDKIT=$(DO_BUILDKIT) docker build -t $(REGISTRY)/api:$(TAG) -f Dockerfile.api .
+	DOCKER_BUILDKIT=$(DO_BUILDKIT) docker build -t $(REGISTRY)/ux:$(TAG)  -f Dockerfile.ux .
 
 release:
 	@echo "Checking that VERSION was defined in the calling environment"

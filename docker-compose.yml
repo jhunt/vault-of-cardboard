@@ -7,10 +7,10 @@ services:
     image: postgres
     environment:
       - POSTGRES_PASSWORD=a-sekrit-you-should-change
-      - POSTGRES_DB=a-sekrit-you-should-change
+      - POSTGRES_DB=vcb
 
   api:
-    image: docker.zyxl.zyx/vcb:api
+    image: docker.zyxl.xyz/vcb/api:dev
     depends_on: [postgres, redis]
     entrypoint: ''
     environment:
@@ -18,6 +18,8 @@ services:
       - VCB_REDIS_URL=redis://redis
       - VCB_FS_ROOT=/data
       - VCB_LISTEN=0.0.0.0:3000
+      - VCB_IMGROOT=https://vault-of-cardboard.us-east-1.linodeobjects.com/cards
+      - CACHE=/cache
     command:
       - /bin/sh
       - -c
@@ -28,10 +30,12 @@ services:
       - $PWD/run/cache:/cache
 
   ux:
-    image: docker.zyxl.zyx/vcb:ux
+    image: docker.zyxl.xyz/vcb/ux:dev
     depends_on: [api]
     environment:
       - VCB_BACKEND=http://api:3000
       - PORT=3001
+    volumes:
+      - $PWD/run/data:/data
     ports:
-      - '80:3001'
+      - '3380:3001'
