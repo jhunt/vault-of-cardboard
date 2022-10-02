@@ -105,7 +105,8 @@
       </div>
     </div>
     <template v-if="transaction.disposition == 'buy'">
-      <vcb-clarifier v-for="problem in problems.gain" :key="problem.id"
+      <div class="error" v-if="problems.gainError">{{ problems.gainError }}</div>
+      <vcb-clarifier v-else v-for="problem in problems.gain" :key="problem.id"
                      @clarified="clarified('gain', $event.problem, $event.replacements)"
                      :problem="problem"></vcb-clarifier>
     </template>
@@ -120,7 +121,8 @@
                     data-validate="present;max=100k"></textarea>
           <vcb-gainloss-status :status="status()"></vcb-gainloss-status>
         </div>
-        <vcb-clarifier v-for="problem in problems.loss" :key="problem.id"
+        <div class="error" v-if="problems.lossError">{{ problems.lossError }}</div>
+        <vcb-clarifier v-else v-for="problem in problems.loss" :key="problem.id"
                        @clarified="clarified('loss', $event.problem, $event.replacements)"
                        :problem="problem"></vcb-clarifier>
       </div>
@@ -148,8 +150,9 @@
                       data-validate="present;max=100k"></textarea>
           </div>
           <vcb-gainloss-status :status="status()"></vcb-gainloss-status>
-          <vcb-clarifier v-for="problem in problems.loss" :key="problem.id"
-                         @clarified="clarified('loss', $event.problem, $event.replacements)"
+          <div class="error" v-if="problems.gainError">{{ problems.gainError }}</div>
+          <vcb-clarifier v-else v-for="problem in problems.gain" :key="problem.id"
+                         @clarified="clarified('gain', $event.problem, $event.replacements)"
                          :problem="problem"></vcb-clarifier>
         </div>
         <div>
@@ -174,6 +177,11 @@
                       @blur="validate('loss')"
                       data-validate="present;max=100k"></textarea>
           </div>
+          <vcb-gainloss-status :status="status()"></vcb-gainloss-status>
+          <div class="error" v-if="problems.lossError">{{ problems.lossError }}</div>
+          <vcb-clarifier v-else v-for="problem in problems.loss" :key="problem.id"
+                         @clarified="clarified('loss', $event.problem, $event.replacements)"
+                         :problem="problem"></vcb-clarifier>
         </div>
         <div>
           <div class="help no-frills">
@@ -232,8 +240,8 @@ export default {
       ok: true,
       working: false,
       problems: {
-        gain: [],
-        loss: []
+        gain: [], gainError: null,
+        loss: [], lossError: null,
       },
       valid: {
         gain: "",
@@ -255,11 +263,22 @@ export default {
 
       window.setTimeout(() => { // add a barely perceptible delay
         if (bucket == 'gain') {
-          this.problems.gain = cardboard.CDIF.validate(this.transaction.gain, this.vault, 1)
-          this.valid.gain = this.transaction.gain
+          this.problems.gainError = null
+          try {
+            this.problems.gain = cardboard.CDIF.validate(this.transaction.gain, this.vault, 1)
+            this.valid.gain = this.transaction.gain
+          } catch (e) {
+            this.problems.gainError = e.toString()
+          }
+
         } else {
-          this.problems.loss = cardboard.CDIF.validate(this.transaction.loss, this.vault, 1)
-          this.valid.loss = this.transaction.loss
+          this.problems.lossError = null
+          try {
+            this.problems.loss = cardboard.CDIF.validate(this.transaction.loss, this.vault, 1)
+            this.valid.loss = this.transaction.loss
+          } catch (e) {
+            this.problems.lossError = e.toString()
+          }
         }
         this.ok = this.can_we_submit()
         this.working = false
@@ -362,8 +381,10 @@ export default {
       this.working = true
       if (type == 'gain') {
         this.problems.gain = []
+        this.problems.gainError = null
       } else {
         this.problems.loss = []
+        this.problems.lossError = null
       }
 
       let lines = this.transaction[type].split("\n")

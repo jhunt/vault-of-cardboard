@@ -306,6 +306,13 @@ form.data-entry {
   position: relative;
   padding-bottom: 5rem;
 
+  .error {
+    font-size: 0.85rem;
+    line-height: 1.1em;
+    color: firebrick;
+    padding: 1em 0;
+  }
+
   button {
     border: 1px solid #ccc;
     color: #000;

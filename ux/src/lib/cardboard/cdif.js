@@ -163,7 +163,7 @@ let CDIF = {
           name += c
           state = 6
         } else {
-          throw new Error('syntax error on line '+lineno.toString()+' '+JSON.stringify({s:state,c:c}))
+          throw new Error('syntax error on line '+lineno.toString()+': unexpected character "'+c+'" (state '+state+')')
         }
       }
 
