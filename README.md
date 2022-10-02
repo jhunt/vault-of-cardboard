@@ -27,6 +27,12 @@ In reality, `./hack` is little more than a wrapper around the
 `docker-compose` command, with the correct arguments to name the
 containers and locate the recipe file.
 
+It does however have some smarts around ingesting sets locally and
+rescrying – two activities that have proven problematic in the
+past:
+
+    ./hack ingest IKO NEO AFR     # ingest 3 new sets and rescry
+
 
 Run the Integration Tests
 -------------------------
@@ -78,55 +84,6 @@ you can set up a local web UI for browsing on loopback via the
 it will bring up a web server on `localhost:3001`, which you can
 use to try out the Javascript.
 
-
-Ingest a Set Locally
---------------------
-
-To ingest a set locally, with all the pagination logic, use the
-Docker image, and bind-mount a local directory.
-
-    docker run -it \
-      -v $PWD/out:/cache \
-      -e CACHE=/cache \
-      docker.zyxl.xyz/vcb/ingester:latest \
-      IKO [...]
-
-This will paginate, re-assemble, and dump the files in
-`/out/dat/`, one file per code (and you can specify multiple
-set codes).
-
-Here's an example session from ingesting Ikoria: Lair of
-Behemoths:
-
-    INGESTING set IKO...
-     - fetching set metadata from Scryfall API...
-     - fetching (token) set metadata from Scryfall API...
-      - fetching card results page 1 from Scryfall API...
-      - fetching card results page 2 from Scryfall API...
-      - fetching card results page 3 from Scryfall API...
-      - fetching card results page 4 from Scryfall API...
-
-and afterwards:
-
-    $ tree -l out
-    out
-    ├── dat
-    │   └── IKO.json
-    ├── scry
-    │   └── IKO
-    │       ├── cards1.json
-    │       ├── cards2.json
-    │       ├── cards3.json
-    │       ├── cards4.json
-    │       ├── set.json
-    │       └── tok.json
-    └── work
-        └── IKO
-            ├── cards.json
-            ├── next.json
-            └── set.json
-
-The `out/dat/IKO.json` contains our combined data.
 
 Docker Images
 -------------
