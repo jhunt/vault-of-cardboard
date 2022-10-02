@@ -1,5 +1,5 @@
 # vim:ft=dockerfile
-FROM rust:1.42 AS build
+FROM rust:1.64 AS build
 WORKDIR /app
 COPY Cargo.toml Cargo.lock ingest changelog.yml ./
 COPY migrations ./migrations
