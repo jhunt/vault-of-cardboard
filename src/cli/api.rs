@@ -146,7 +146,7 @@ macro_rules! done {
 }
 
 pub fn needenv(v: &str) {
-    &env::var(v).expect(&format!("{} must be set in the environment", v).to_string());
+    let _ = &env::var(v).expect(&format!("{} must be set in the environment", v).to_string());
     ()
 }
 
