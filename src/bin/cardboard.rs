@@ -11,6 +11,10 @@ fn main() {
      (about: "The Vault of Cardboard server API daemon"))
     (@subcommand migrate =>
      (about: "Apply Vault of Cardboard API Database Migrations"))
+    (@subcommand passwd =>
+     (about: "Encrypt passwords on the CLI for insertion into the database.")
+     (@arg password: -p --password +takes_value +required "The password to encrypt.")
+     (@arg check:    -c --check    +takes_value           "A bcrypt hash to check the given password against."))
     (@subcommand reconciler =>
      (about: "Reconciles a collection by applying outstanding patches to it.")
      (@arg FILE: +required "Path to the collection.json file to reconcile."))
@@ -27,6 +31,11 @@ fn main() {
         cli::api::run();
     } else if args.is_present("migrate") {
         cli::migrate::run();
+    } else if let Some(subargs) = args.subcommand_matches("passwd") {
+        cli::passwd::run(
+            subargs.value_of("password"),
+            subargs.value_of("check"),
+        );
     } else if let Some(subargs) = args.subcommand_matches("reconciler") {
         cli::reconciler::run(subargs.value_of("FILE").unwrap());
     } else if let Some(subargs) = args.subcommand_matches("rescry") {
