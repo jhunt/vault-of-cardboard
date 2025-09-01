@@ -60,6 +60,13 @@ body > .colors {
   flex-wrap: wrap;
   width: 97vw;
   margin: 8px auto;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-auto-flow: dense;
+
+  .card-detail {
+    grid-column: 1 / 6;
+  }
 }
 
 .modal-bg,

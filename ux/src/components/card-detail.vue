@@ -1,39 +1,34 @@
 <template>
-  <div>
-    <div class="modal-bg"></div>
-    <div class="modal-fg card-detail" v-if="card">
-      <div>
-        <div>
-          <vcb-card :card="card"></vcb-card>
-        </div>
-        <div class="detail">
-          <a class="close" href="#" @click.prevent="$emit('close')">X</a>
-          <ul class="info">
-            <li><strong>{{ card.name }}</strong> <a rel="debug" href="#" @click.prevent="debug = !debug">debug</a></li>
-            <li><em>{{ card.type }}</em></li>
-            <li>{{ card.set.name }} ({{ card.set.code }})</li>
-            <li>#{{ card.number }}/{{ card.set.total }}</li>
-            <li><vcb-mana :mana="card.color"></vcb-mana></li>
-            <li><strong>CMC:</strong> {{ card.cmc }}</li>
-            <li>{{ card.rarity }}</li>
-          </ul>
-          <ul class="owned">
-            <li><strong>Owned:</strong> {{ card.owned }}</li>
-          </ul>
-          <ul>
-            <li class="oracle"><p v-for="(line, i) in oracles(card)" :key="i" v-html="line"></p></li>
-          </ul>
-          <div class="debug" v-if="debug">
-            <pre><code>{{ dump(card) }}</code></pre>
-          </div>
-          <p v-if="card.price" class="price">
-            {{ price(card.price) }}
-            <span v-if="card.price > 999" class="w1">remember kids, M:tG is <strong>NOT</strong> an investment...</span>
-            <span v-else-if="card.price > 99" class="w2">oof</span>
-            <span v-else-if="card.price > 9" class="w3">that's a bit much, don't you think?</span>
-          </p>
-        </div>
+  <div class="card-detail">
+    <div>
+      <vcb-card :card="card"></vcb-card>
+    </div>
+    <div class="detail">
+      <a class="close" href="#" @click.prevent="$emit('close')">X</a>
+      <ul class="info">
+        <li><strong>{{ card.name }}</strong> <a rel="debug" href="#" @click.prevent="debug = !debug">debug</a></li>
+        <li><em>{{ card.type }}</em></li>
+        <li>{{ card.set.name }} ({{ card.set.code }})</li>
+        <li>#{{ card.number }}/{{ card.set.total }}</li>
+        <li><vcb-mana :mana="card.color"></vcb-mana></li>
+        <li><strong>CMC:</strong> {{ card.cmc }}</li>
+        <li>{{ card.rarity }}</li>
+      </ul>
+      <ul class="owned">
+        <li><strong>Owned:</strong> {{ card.owned }}</li>
+      </ul>
+      <ul>
+        <li class="oracle"><p v-for="(line, i) in oracles(card)" :key="i" v-html="line"></p></li>
+      </ul>
+      <div class="debug" v-if="debug">
+        <pre><code>{{ dump(card) }}</code></pre>
       </div>
+      <p v-if="card.price" class="price">
+        {{ price(card.price) }}
+        <span v-if="card.price > 999" class="w1">remember kids, M:tG is <strong>NOT</strong> an investment...</span>
+        <span v-else-if="card.price > 99" class="w2">oof</span>
+        <span v-else-if="card.price > 9" class="w3">that's a bit much, don't you think?</span>
+      </p>
     </div>
   </div>
 </template>

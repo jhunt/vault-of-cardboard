@@ -10,15 +10,16 @@
         </ul>
       </div>
       <div class="results grid">
-        <vcb-card v-for="(card,i) in visible" :key="i"
-                  @click.prevent="showcase = card"
-                  :backed="!actual && card.owned > 0"
-                  :sleeve="sleeve" :card="card"></vcb-card>
+        <template v-for="(card,i) in visible">
+          <vcb-card @click.prevent="showcase = card" :key="i"
+                    :backed="!actual && card.owned > 0"
+                    :sleeve="sleeve" :card="card"></vcb-card>
+          <vcb-card-detail :key="i" :card="showcase" v-if="showcase && card == showcase"
+                           @close="showcase = null"></vcb-card-detail>
+        </template>
       </div>
       <div class="note meta-results" v-if="more">Not all {{ found }} matching cards displayed.  Have you tried narrowing your search criteria?</div>
 
-      <vcb-card-detail :card="showcase" v-if="showcase"
-                       @close="showcase = null"></vcb-card-detail>
     </template>
   </div>
 </template>
