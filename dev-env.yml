@@ -28,6 +28,7 @@ services:
       - /bin/sh
       - -c
       - |
+        set -xeu
         which cardboard
         CACHE=/cache ingest ISD DKA AVR MIR VIS STH TMP
         cardboard rescry -r /cache/dat -c /data/cards.json -p /data/prices.json -l /data/lookup.json
@@ -46,4 +47,4 @@ services:
       - VCB_BACKEND=http://api:3000
       - PORT=3001
     ports:
-      - '8091:3001'
+      - '8200:3001'
