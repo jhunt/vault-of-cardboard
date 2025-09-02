@@ -35,6 +35,9 @@
     </header>
     <div v-if="colorband && searching" class="color" :style="colorband"></div>
     <div id="main"><router-view></router-view></div>
+    <svg width="1mm" height="1mm" viewBox="0 0 1 1" xmlns="http://www.w3.org/2000/svg">
+      <clipPath clipPathUnits="objectBoundingBox" id="card-clip"><rect x="0" y="0" width="1" height="1" rx="0.040" ry="0.040" fill="none" stroke="#000000" stroke-width="0.5"></rect></clipPath>
+    </svg>
 
     <!--
     <div class="modal-bg" v-if="modal"></div>

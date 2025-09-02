@@ -43,6 +43,7 @@ export default {
   cursor: pointer;
   transform: rotate(5deg);
   transform-origin: 50% 50%;
+  clip-path: url(#card-clip);
 
   @media only screen and (max-width: 759px) {
     transform: none;
@@ -50,21 +51,10 @@ export default {
 
   .face, .back {
     display: block;
-    width: 18vw;
-    height: 25.14vw;
-    margin: 0.68vw;
-    border-radius: 0.9vw;
-
-    @media only screen and (max-width: 759px) {
-      width: 95vw;
-      height: 132.666666667vw;
-      margin: 3vw 0;
-    }
 
     span {
       display: block;
 
-      border-radius: 0.9vw;
       overflow: hidden;
 
       background-image: url(/img/mtgback.jpg);
@@ -73,7 +63,6 @@ export default {
       img {
         display: block;
         width: 100%;
-        border-radius: 0.9vw;
         overflow: hidden;
 
         &.flipped {
