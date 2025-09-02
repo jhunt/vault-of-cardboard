@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="app" @click.stop.prevent="search_out = false">
     <header>
       <h1 @click="goto('/')">Vault of Cardboard</h1>
       <input name="q" placeholder="i.e.: Ral color:RU +draw" autocomplete="off"
@@ -7,7 +7,7 @@
             @change="search($event.target.value)"
             @keyup="search($event.target.value, $event.keyCode != 13)">
       <nav>
-        <li><a>Search</a>
+        <li :class="search_out ? 'active' : ''"><a @click.prevent.stop="search_out = !search_out">Search</a>
           <nav>
             <li><router-link to="/docs">How do I search?</router-link></li>
             <li><router-link to="/sets">What sets are there?</router-link></li>
@@ -59,7 +59,9 @@ Log.console(Log.INFO)
 
 export default {
   data() {
-    return {}
+    return {
+      search_out: false
+    }
   },
   mounted() {
     Log.info('mounted; loading through $store...')
@@ -186,6 +188,7 @@ header {
         padding: 16px;
       }
 
+      &.active > nav,
       &:hover > nav {
         display: block;
         z-index: 500;
