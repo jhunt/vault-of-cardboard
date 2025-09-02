@@ -2,7 +2,7 @@
   <span :class="cssClass" @click.prevent="$emit('click', $event)">
     <span v-if="backed" class="back"><span><img src="/img/mtgback.jpg"></span></span>
     <span :class="'face '/* + card.layout*/">
-      <span><a v-if="dualFaced" href="#" rel="flip" @click.prevent="flipped = !flipped"></a>
+      <span><a v-if="dualFaced" href="#" rel="flip" @click.stop.prevent="flipped = !flipped"></a>
       <img :src="img" :alt="altText" :title="altText" loading="lazy"></span>
     </span>
   </span>
