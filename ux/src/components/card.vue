@@ -43,7 +43,6 @@ export default {
   cursor: pointer;
   transform: rotate(5deg);
   transform-origin: 50% 50%;
-  clip-path: url(#card-clip);
 
   @media only screen and (max-width: 759px) {
     transform: none;
@@ -51,6 +50,7 @@ export default {
 
   .face, .back {
     display: block;
+    clip-path: url(#card-clip);
 
     span {
       display: block;
