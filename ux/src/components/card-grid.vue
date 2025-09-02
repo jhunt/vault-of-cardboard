@@ -89,3 +89,72 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.meta-results {
+  width: 97vw;
+  margin: 16px auto;
+  color: #777;
+  font-style: italic;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+
+  ul { opacity: 0.1; }
+  &:hover ul { opacity: 1; }
+
+  ul {
+    display: flex;
+    flex-direction: row;
+
+    li {
+      font-style: normal;
+      font-size: 80%;
+      font-family: sans-serif;
+      padding-left: 2em;
+
+      span {
+        color: #fff;
+        background: #9999;
+        padding: 3px;
+        border-radius: 3px;
+        font-size: 90%;
+        vertical-align: top;
+        font-family: monospace;
+
+      }
+
+      &:hover {
+        text-decoration: underline;
+        span {
+          background-color: #222;
+          color: yellow;
+        }
+      }
+    }
+  }
+}
+
+.grid {
+  width: 97vw;
+  margin: 8px auto;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-auto-flow: dense;
+  grid-gap: 0.68vw;
+
+  @media only screen and (max-width: 759px) {
+    grid-template-columns: 1fr;
+    grid-gap: 1em;
+
+    .card {
+      padding: 0 1em;
+    }
+  }
+
+  .card-detail {
+    grid-column: 1 / 6;
+  }
+}
+</style>

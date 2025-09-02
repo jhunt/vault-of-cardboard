@@ -7,7 +7,7 @@
       Invalid username or password.
     </div>
     <div class="oops" v-else-if="error">
-      Uh-oh, something broke pretty bad.  Tap <vcb-mana mana="2UU"></vcb-mana> and summon James, Fixer of Codes!
+      Uh-oh, something broke pretty bad.  Tap <vcb-mana mana="{2}{U}{U}"></vcb-mana> and summon James, Fixer of Codes!
     </div>
     <div class="control">
       <label>Username</label>

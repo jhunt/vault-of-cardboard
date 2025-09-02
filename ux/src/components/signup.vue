@@ -13,7 +13,7 @@
       The password you chose is too short; try for at least eight (8) characters, or use a password manager.
     </div>
     <div class="oops" v-else-if="error">
-      Uh-oh, something broke pretty bad.<br>Pay <vcb-mana mana="2UU"></vcb-mana> and summon James, Fixer of Codes!
+      Uh-oh, something broke pretty bad.<br>Pay <vcb-mana mana="{2}{U}{U}"></vcb-mana> and summon James, Fixer of Codes!
     </div>
     <div class="control">
       <label>Username</label>

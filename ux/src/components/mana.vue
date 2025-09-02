@@ -16,7 +16,7 @@ export default {
   },
   methods: {
     colorize(s) {
-      return s.split('').map(c => manasym([c])).join('')
+      return s.replace(/^{|\/|}$/g,'').split('}{').filter(x => x != '').map(c => manasym([c])).join('')
     }
   }
 }
