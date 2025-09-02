@@ -142,7 +142,7 @@ export default {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   grid-auto-flow: dense;
-  grid-gap: 0.68vw;
+  grid-gap: 16pt;
 
   @media only screen and (max-width: 759px) {
     grid-template-columns: 1fr;
