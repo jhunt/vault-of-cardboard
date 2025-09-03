@@ -182,6 +182,7 @@ export default {
 
       a[rel] {
         text-decoration: none;
+        border: none;
         font-family: sans-serif;
         color: white;
         cursor: pointer;
