@@ -5209,10 +5209,10 @@ jsprim@^1.2.2:
     json-schema "0.2.3"
     verror "1.10.0"
 
-keyrune@^3.7.1:
-  version "3.7.2"
-  resolved "https://registry.yarnpkg.com/keyrune/-/keyrune-3.7.2.tgz#e55d47af56956d87601f6821dd5c334f9ca48ac6"
-  integrity sha512-OyC5MTrVUjJkjF7L2aeBdJFgS+Jonl30FcjPrTXhOdF+8anmjqKpgvPc0dmOJm3jv2dnhBoyj7uAE1BlnQjd2Q==
+keyrune@^3.17.0:
+  version "3.17.0"
+  resolved "https://registry.yarnpkg.com/keyrune/-/keyrune-3.17.0.tgz#6f471531445a6e0b01e8fc3545e93faf9685ab07"
+  integrity sha512-war++WXDmFz4rO5Jr+SZTTGozqpaorAOPwppIiD8ipSpUTLX/5/Yad9TV0v7molhyRyV6qt0PKUh2mR0r52V2A==
 
 killable@^1.0.1:
   version "1.0.1"
