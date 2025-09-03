@@ -1,5 +1,5 @@
 <template>
-  <div id="app" @click.stop.prevent="search_out = false">
+  <div id="app" @click="search_out = false">
     <header>
       <h1 @click="goto('/')">Vault of Cardboard</h1>
       <input name="q" placeholder="i.e.: Ral color:RU +draw" autocomplete="off"
