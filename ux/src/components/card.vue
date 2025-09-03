@@ -48,11 +48,18 @@ export default {
     transform: none;
   }
 
+  &.sleeved .face {
+    clip-path: none; /* no clip-path when we have sleeve borders */
+  }
+
   .face, .back {
     display: block;
+    /* do clip-path twice for showcase modal */
+    clip-path: url(#card-clip);
 
     span {
       display: block;
+      /* do clip-path twice for hand/draw in deck builder */
       clip-path: url(#card-clip);
 
       overflow: hidden;
