@@ -174,9 +174,11 @@ export default {
 .deck {
   .hand .grid.results {
     grid-template-columns: repeat(7, 1fr);
+    > span { margin-right: -7em; }
   }
   .draws .grid.results {
     grid-template-columns: repeat(8, 1fr);
+    > span { margin-right: -7em; }
   }
   .title {
     h1 {
@@ -305,9 +307,6 @@ export default {
 
   .grid {
     width: auto;
-    &.results > span {
-      margin-right: -7em;
-    }
     &.results > span:hover {
       z-index: 5;
       transform: scale(120%);
