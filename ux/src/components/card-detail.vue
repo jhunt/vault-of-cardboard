@@ -287,6 +287,7 @@ export default {
               font-size: 28px;
             }
             .card-set-info-1 {
+              line-height: 1em;
               display: flex;
               flex-direction: row;
               font-family: monospace;
