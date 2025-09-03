@@ -156,6 +156,10 @@ export default {
       z-index: 5;
     }
 
+    .card .face {
+      clip-path: url(#card-clip);
+    }
+
     .detail {
       position: relative;
       max-height: calc(100vh - 5em - 2em);

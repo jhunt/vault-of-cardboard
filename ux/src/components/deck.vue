@@ -33,7 +33,7 @@
       <div class="hand"><vcb-card-grid :sleeve="sleeve" :actual="true" :cards="sample_hand"></vcb-card-grid></div>
 
       <h2>Next 16 Draws <a href="#" @click.prevent="shuffle()" rel="shuffle">↻</a></h2>
-      <div class="hand"><vcb-card-grid :sleeve="sleeve" :actual="true" :cards="next_draws(16)"></vcb-card-grid></div>
+      <div class="draws"><vcb-card-grid :sleeve="sleeve" :actual="true" :cards="next_draws(16)"></vcb-card-grid></div>
 
       <h2>Mana Curve</h2>
       <div class="curve">
@@ -172,6 +172,12 @@ export default {
 
 <style lang="scss">
 .deck {
+  .hand .grid.results {
+    grid-template-columns: repeat(7, 1fr);
+  }
+  .draws .grid.results {
+    grid-template-columns: repeat(8, 1fr);
+  }
   .title {
     h1 {
       display: block;
@@ -223,6 +229,7 @@ export default {
       position: absolute;
       left: 26%;
       top: 10%;
+      max-width: 16vw;
 
       &:nth-child(1) { transform: rotate(-26deg); }
       &:nth-child(2) { transform: rotate(  0deg); }
@@ -265,6 +272,7 @@ export default {
     img {
       width: 100%;
       border-radius: 5pt;
+      clip-path: url(#card-clip);
     }
 
     > div {

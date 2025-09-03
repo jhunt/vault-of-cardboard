@@ -97,6 +97,9 @@ export default {
 .clarify {
   .results {
     width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-gap: 16pt;
   }
 
   .clarif {

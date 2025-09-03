@@ -50,10 +50,10 @@ export default {
 
   .face, .back {
     display: block;
-    clip-path: url(#card-clip);
 
     span {
       display: block;
+      clip-path: url(#card-clip);
 
       overflow: hidden;
 
