@@ -12,7 +12,7 @@
           <template v-else><em>This deck's builder wishes for it to remain a mystery...</em></template>
           <div class="buttons">
             <button class="action" @click.prevent="mode = 'edit'">Edit</button>
-            <button class="action" rel="play">Play!</button>
+            <!--button class="action" rel="play">Play!</button-->
           </div>
         </div>
         <div>
