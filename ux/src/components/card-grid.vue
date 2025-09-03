@@ -14,7 +14,7 @@
           <vcb-card @click.prevent="showcase = card" :key="i"
                     :backed="!actual && card.owned > 0"
                     :sleeve="sleeve" :card="card"></vcb-card>
-          <vcb-card-detail :key="i" :card="showcase" v-if="showcase && card == showcase"
+          <vcb-card-detail :key="'showcase-' + i.toString()" :card="showcase" v-if="showcase && card == showcase"
                            @close="showcase = null"></vcb-card-detail>
         </template>
       </div>
