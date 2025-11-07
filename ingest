@@ -122,17 +122,20 @@ for code in "$@"; do
   fi
 
   if [[ ${IMAGES} = "yes" ]]; then
+    n=0
     jq <$CACHE/dat/$code.json -Mr '.cards[] | select(.layout == "transform" or .layout == "modal_dfc" or .layout == "double_faced_token") | [.id,.card_faces[0].image_uris.large,.card_faces[1].image_uris.large] | @tsv' |\
       while IFS=$'\t' read -r id front back; do
-        echo " >> uploading card images for $code (transform) card [$id]..."
-        upload $front cards/$code/$code-$id.jpg
-        upload $back  cards/$code/$code-$id.flip.jpg
+        n=$((n + 1))
+        echo " >> uploading card images for $code (transform) card [$id] #$n..."
+        test -n "$front" && upload "$front" cards/$code/$code-$id.jpg
+        test -n "$back"  && upload "$back"  cards/$code/$code-$id.flip.jpg
       done
 
     jq <$CACHE/dat/$code.json -Mr '.cards[] | select(.layout != "transform" and .layout != "modal_dfc" and .layout != "double_faced_token") | [.id,.image_uris.large] | @tsv' |\
-    while IFS=$'\t' read -r id front; do
-        echo " >> uploading card images for $code card [$id]..."
-        upload $front cards/$code/$code-$id.jpg
-    done
+      while IFS=$'\t' read -r id front; do
+        n=$((n + 1))
+        echo " >> uploading card images for $code card [$id] #$n..."
+        test -n "$front" && upload "$front" cards/$code/$code-$id.jpg
+      done
   fi
 done
